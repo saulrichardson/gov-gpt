@@ -36,15 +36,9 @@ from typing import List
 
 try:
     from auto_mcp.extractor_llm import run_extraction  # type: ignore
-except ModuleNotFoundError as exc:  # pragma: no cover – graceful message
-    msg = (
-        "The parallel batch extractor relies on the `auto_mcp` package\n"
-        "which is not installed in the current environment.  Install it via\n\n"
-        "    pip install auto_mcp\n\n"
-        "or add the repository containing `auto_mcp.extractor_llm` to your\n"
-        "PYTHONPATH, then rerun the command."
-    )
-    raise SystemExit(msg) from exc
+except ModuleNotFoundError:
+    # Use the built-in LLM extractor (requires online OpenAI access).
+    from .llm_extractor import run_extraction  # type: ignore
 
 
 _DEFAULT_EXTS = (".md", ".yaml", ".yml")
@@ -125,9 +119,9 @@ def _main(argv):  # noqa: D401 – parallel CLI replacing the sequential version
     parser.add_argument(
         "db_path",
         nargs="?",
-        default=Path("output/sections.db"),
+        default=Path("sections.db"),
         type=Path,
-        help="SQLite DB path to write to (default: output/sections.db)",
+        help="SQLite DB path to write to (default: ./sections.db)",
     )
     parser.add_argument(
         "root_dir",
@@ -146,9 +140,13 @@ def _main(argv):  # noqa: D401 – parallel CLI replacing the sequential version
     # folders such as "output/sections.db".
     if db_path.parent and not db_path.parent.exists():
         db_path.parent.mkdir(parents=True, exist_ok=True)
-    roots: List[Path] = args.root_dir or [
-        Path("usaspending-api/usaspending_api/api_contracts/contracts")
-    ]
+    if args.root_dir:
+        roots: List[Path] = args.root_dir
+    else:
+        roots = [
+            Path("usaspending-api/usaspending_api/api_contracts/contracts/v1"),
+            Path("usaspending-api/usaspending_api/api_contracts/contracts/v2"),
+        ]
     jobs = max(1, args.jobs)
 
     doc_files: List[Path] = []
