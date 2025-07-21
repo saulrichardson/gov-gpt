@@ -1,9 +1,0 @@
-Run the batch extractor with 8 parallel workers (default):
-
-    python -m llm_pipeline.batch_extract sections.db -j 8
-
-You can specify one or more documentation root directories after the database path.  Example for two custom folders using 4 workers:
-
-    python -m llm_pipeline.batch_extract sections.db ./docs ./extra_specs -j 4
-
-The extractor requires `OPENAI_API_KEY` in the environment and the `openai` package installed.
