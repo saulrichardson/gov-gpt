@@ -23,10 +23,14 @@ Environment requirements
 • ``OPENAI_API_KEY`` must be set.
 • ``openai`` python package installed.
 
-If either condition is *not* satisfied we transparently fall back to the
-lightweight heuristic extractor so that local development and CI remain
-unblocked.
+The extractor **fails fast** if either requirement is missing – no offline
+fallback – so callers immediately know that online access is required.
 """
+
+#
+# Enhanced version with Pydantic validation and automatic retries when the
+# model returns invalid JSON.  Requires *online* OpenAI access; no offline
+# fallback.
 
 from __future__ import annotations
 
@@ -34,28 +38,26 @@ import json
 import os
 import textwrap
 from pathlib import Path
-from typing import Dict
 
+from tenacity import retry, stop_after_attempt, wait_fixed
+from pydantic import ValidationError
 
 from .section_store import SectionStore
-
+from .models import ExtractedSpec
 
 # ---------------------------------------------------------------------------
-# Capability detection – decide at import time whether OpenAI is available.
+# Ensure OpenAI client & key are present at import time
 # ---------------------------------------------------------------------------
 
 
-_OPENAI_AVAILABLE = False
 try:
     import openai  # type: ignore
+except ModuleNotFoundError as exc:  # pragma: no cover – fail fast
+    raise EnvironmentError("`openai` package is required but missing. Install it via `pip install openai`."
+    ) from exc
 
-    if os.getenv("OPENAI_API_KEY"):
-        _OPENAI_AVAILABLE = True
-except ModuleNotFoundError:  # pragma: no cover – gracefully handled
-    _OPENAI_AVAILABLE = False
-
-# Fallback heuristic extractor (imported lazily only when needed)
-# ---------------------------------------------------------------------------
+if not os.getenv("OPENAI_API_KEY"):
+    raise EnvironmentError("OPENAI_API_KEY environment variable not set – online extraction cannot run.")
 # Public API – drop-in replacement for auto_mcp.extractor_llm.run_extraction
 # ---------------------------------------------------------------------------
 
@@ -74,11 +76,7 @@ def run_extraction(  # noqa: D401 – external entry point
     do not need to care about setup.
     """
 
-    if not _OPENAI_AVAILABLE:
-        raise EnvironmentError(
-            "OpenAI client not available – ensure `openai` package is installed "
-            "and OPENAI_API_KEY is set. Offline fallback has been removed."
-        )
+
 
     text = doc_path.read_text(encoding="utf-8", errors="replace")
 
@@ -86,6 +84,14 @@ def run_extraction(  # noqa: D401 – external entry point
     You are an assistant that converts human-written REST documentation
     into a MAXIMALLY-RICH machine-readable JSON object.  Follow *exactly*
     the JSON schema below and output ONLY the JSON (no markdown fences).
+
+    IMPORTANT:
+    • Keys must appear in the exact *snake_case* shown below – do not
+      change casing or invent new keys.
+    • Allowed values:
+        – auth            : none | apiKey | basic | oauth2
+        – pagination.style: link | offset | cursor | none
+        – param.type      : string | integer | number | boolean | enum
 
     ─── Desired JSON shape ───
     {
@@ -151,28 +157,40 @@ def run_extraction(  # noqa: D401 – external entry point
     )
 
     client = openai.OpenAI()
-    rsp = client.chat.completions.create(
-        model=model,
-        temperature=temperature,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
 
-    content = rsp.choices[0].message.content.strip()
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+    def _call_llm() -> ExtractedSpec:  # noqa: D401 – inner helper
+        rsp = client.chat.completions.create(
+            model=model,
+            temperature=temperature,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
 
-    # Occasionally the model wraps the JSON in markdown; strip fences.
-    if content.startswith("```"):
-        content = content.strip("`\n")
+        content = rsp.choices[0].message.content.strip()
+        if content.startswith("```"):
+            content = content.strip("`\n")
 
-    try:
-        parsed: Dict[str, object] = json.loads(content)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"LLM returned invalid JSON for {doc_path}: {content}") from exc
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON: {exc}\nRAW:\n{content}") from exc
 
-    # Store pretty-printed for readability.
-    content_str = json.dumps(parsed, indent=2, ensure_ascii=False)
+        try:
+            return ExtractedSpec.model_validate(data)
+        except ValidationError as exc:
+            raise ValueError(f"Schema validation failed: {exc}\nRAW:\n{content}") from exc
+
+    spec = _call_llm()
 
     with SectionStore(db_path) as store:
-        store.upsert(id=str(doc_path), content=content_str, meta={"source": "llm_extractor"})
+        store.upsert(
+            id=str(doc_path),
+            # pydantic v2's `model_dump_json` no longer supports the
+            # `ensure_ascii` keyword, so we simply omit it. The default
+            # behaviour already avoids escaping non-ASCII characters.
+            content=spec.model_dump_json(indent=2),
+            meta={"source": "llm_extractor"},
+        )
