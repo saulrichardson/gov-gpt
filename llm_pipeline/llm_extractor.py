@@ -83,22 +83,58 @@ def run_extraction(  # noqa: D401 – external entry point
     text = doc_path.read_text(encoding="utf-8", errors="replace")
 
     system_prompt = """
-    You are an assistant that extracts *structured* API metadata from
-    documentation files.  Return ONLY valid JSON following *exactly* this
-    schema; do NOT wrap it in markdown:
+    You are an assistant that converts human-written REST documentation
+    into a MAXIMALLY-RICH machine-readable JSON object.  Follow *exactly*
+    the JSON schema below and output ONLY the JSON (no markdown fences).
 
+    ─── Desired JSON shape ───
     {
       "method": "GET | POST | PUT | DELETE | PATCH | OPTIONS | HEAD",
-      "path": "/api/v2/…",
-      "summary": "Human one-line description",
+      "path": "/api/v…",                        // full path template
+      "summary": "One-line human summary",        // shorter than 120 chars
+      "description": "Longer human description",
+      "auth": "none | apiKey | basic | oauth2",
+
       "path_params": {
-        "id": {"type": "string", "description": "…", "required": true},
-        "...": {"type": "…", "description": "…", "required": false}
+        "name": {
+          "type": "string | integer | number | boolean | enum",
+          "description": "…",
+          "required": true,
+          "enum": ["A", "B"]            // include only if applicable
+        },
+        "…": { … }
       },
-      "query_params": {"…": {"type": "string", "description": "…", "required": false}},
-      "request_body": "Textual description or JSON schema",
-      "auth": "none | apiKey | basic | oauth2"
+
+      "query_params": {  // same structure as path_params
+        "…": { … }
+      },
+
+      "request_body": {
+        "json_schema": { … },            // full JSON-Schema Draft-07 if present
+        "example": { … }                // representative example body
+      },
+
+      "response": {
+        "json_schema": { … },
+        "examples": [ { … } ]
+      },
+
+      "pagination": {
+        "style": "link | offset | cursor | none",
+        "param_names": ["page", "limit"]
+      },
+
+      "errors": [
+        { "code": 400, "meaning": "Bad Request" },
+        { "code": 404, "meaning": "Not Found" }
+      ]
     }
+
+    RULES:
+    • If the docs do not mention a field, include the key and set its
+      value to null or an empty object/array as appropriate.
+    • Do NOT add extra keys.
+    • Output MUST be valid JSON – no comments.
     """
 
     user_prompt = textwrap.dedent(
