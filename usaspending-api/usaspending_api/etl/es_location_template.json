@@ -1,0 +1,65 @@
+{
+  "settings": {
+    "index.mapping.ignore_malformed": true,
+    "index.max_result_window": null,
+    "index.refresh_interval": -1,
+    "index": {
+      "number_of_shards": 5,
+      "number_of_replicas": 0
+    },
+    "analysis": {
+      "analyzer": {
+        "contains_analyzer": {
+          "type": "custom",
+          "tokenizer": "edge_ngram_tokenizer",
+          "filter": [
+            "uppercase"
+          ]
+        },
+        "whole_string_analyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "uppercase"
+          ]
+        }
+      },
+      "tokenizer": {
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": [
+            "letter",
+            "digit",
+            "whitespace"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "location": {
+        "type": "text",
+        "analyzer": "whole_string_analyzer",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "location_json": {
+        "type": "object",
+        "enabled": false
+      },
+      "location_type": {
+        "type": "keyword"
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "SELECT * FROM submission WHERE submission_id = -9999": [
+    {
+      "submission_id": -9999,
+      "publishable": true,
+      "publish_status_id": 2,
+      "cgac_code": 999,
+      "reporting_fiscal_year": 1700,
+      "reporting_fiscal_period": 1,
+      "is_quarter_format": true,
+      "reporting_start_date": "1700-10-01",
+      "reporting_end_date": "1700-12-31",
+      "updated_at": "1700-12-31"
+    }
+  ],
+  "SELECT * FROM tas_lookup WHERE (financial_indicator2 IS DISTINCT FROM 'F') AND account_num = -99999": [
+    {
+      "allocation_transfer_agency": "999",
+      "agency_identifier": "999",
+      "beginning_period_of_availa": "1700-01-01",
+      "ending_period_of_availabil": "1700-12-31",
+      "availability_type_code": "000",
+      "main_account_code": "0000",
+      "sub_account_code": "0000",
+      "financial_indicator2": null,
+      "account_number": -99999
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+# General
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+
+# Packaging / distribution artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+wheels/
+share/python-wheels/
+
+# Testing / coverage
+.pytest_cache/
+.coverage*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Type checker caches
+.mypy_cache/
+.pytype/
+.pyre/
+
+# Editors / IDEs
+.vscode/
+.idea/
+.ropeproject/
+.spyderproject
+.spyproject
+
+# Documentation builds
+docs/_build/
+site/
+
+# Databases & datasets
+*.db
+*.sqlite*
+*.parquet
+
+# Logs & reports
+*.log
+
+# Operating-system files
+ehthumbs.db
+Desktop.ini
+
+# Binary, core & profiling files
+*.so
+*.dylib
+*.dll
+*.prof
+core
+
+# Project specific
+.attic/
+sections.db
+
