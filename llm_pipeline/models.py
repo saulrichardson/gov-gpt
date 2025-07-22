@@ -21,8 +21,18 @@ class Param(BaseModel):
     enum: Optional[List[str]] = None
 
 
+# Some endpoints do not support pagination and the extractor represents that
+# by returning `null` for ``pagination.style``.  Relax the type annotation to
+# allow ``None`` so we can still parse those endpoints instead of failing the
+# whole extraction run.
+
+# NOTE: When ``style`` is omitted entirely we keep the existing behaviour of
+# defaulting to the literal string "none" so that downstream code that expects
+# a string continues to function without change.
+
+
 class Pagination(BaseModel):
-    style: Literal["link", "offset", "cursor", "none"]
+    style: Optional[Literal["link", "offset", "cursor", "none"]] = "none"
     param_names: List[str] = Field(default_factory=list)
 
 
@@ -43,4 +53,3 @@ class ExtractedSpec(BaseModel):
     response: Optional[dict] = None
     pagination: Optional[Pagination] = None
     errors: List[ErrorItem] = Field(default_factory=list)
-

@@ -183,7 +183,20 @@ def run_extraction(  # noqa: D401 – external entry point
         except ValidationError as exc:
             raise ValueError(f"Schema validation failed: {exc}\nRAW:\n{content}") from exc
 
-    spec = _call_llm()
+    # ``@retry`` wraps *all* failures into :class:`tenacity.RetryError` once the
+    # maximum number of attempts is exhausted.  That container is hard to read
+    # and, more importantly, makes it cumbersome for callers (and tests) to
+    # branch on the *actual* root-cause exception type.  To keep the public
+    # behaviour intuitive we unwrap the error and re-raise the original
+    # exception instead.
+
+    from tenacity import RetryError  # local import to avoid polluting exports
+
+    try:
+        spec = _call_llm()
+    except RetryError as exc:  # pragma: no cover – network dependent
+        underlying = exc.last_attempt.exception() if exc.last_attempt else None
+        raise underlying or exc  # fall back to wrapper if nothing captured
 
     with SectionStore(db_path) as store:
         store.upsert(
