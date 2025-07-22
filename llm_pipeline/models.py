@@ -15,7 +15,9 @@ from pydantic import BaseModel, Field
 class Param(BaseModel):
     """Description of a single path/query parameter."""
 
-    type: Literal["string", "integer", "number", "boolean", "enum"]
+    # Allow additional primitive container types such as "array" to support
+    # endpoints that accept lists in query parameters (e.g. award_type_codes).
+    type: Literal["string", "integer", "number", "boolean", "enum", "array"]
     description: str = ""
     required: bool = False
     enum: Optional[List[str]] = None
