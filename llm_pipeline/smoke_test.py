@@ -17,6 +17,9 @@ import sys
 import time
 from pathlib import Path
 
+# Centralised output directory helper
+from llm_pipeline.config import get_output_root  # type: ignore
+
 from section_store import SectionStore
 
 # When the package is executed as a script (``python smoke_test.py``) the
@@ -113,9 +116,8 @@ def _main(argv):  # noqa: D401 – simple CLI
 def _create_log_file() -> Path:  # noqa: D401
     """Return a (created) path ``logs/smoke_test_<timestamp>.log``."""
 
-    # Write smoke-test logs to a stable outputs directory (no timestamps)
-    out_dir = Path.cwd() / "outputs"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = get_output_root()
+    out_dir.mkdir(parents=True, exist_ok=True)
     return out_dir / "smoke_test.log"
 
 

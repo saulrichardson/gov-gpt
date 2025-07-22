@@ -1,12 +1,10 @@
-"""LLM-powered documentation extractor (self-contained replacement for auto_mcp).
+"""LLM-powered documentation extractor.
 
-Given a Markdown or YAML file that describes a REST endpoint, call an
-OpenAI model to distil the *machine-readable* bits and store them inside
-the shared ``SectionStore`` database.
-
-The extracted object roughly matches the schema produced by the original
-`auto_mcp.extractor_llm` project so the rest of the pipeline (converter,
-executor, smoke_test) continues to work unchanged.
+Given a Markdown or YAML file that describes a REST endpoint, the extractor
+invokes an OpenAI model to distil the *machine-readable* parts and stores
+them inside the shared ``SectionStore`` database.  Its JSON output matches
+the schema expected by the rest of the pipeline (converter, executor,
+smoke_test) so it can be used drop-in without additional glue code.
 
 Fields returned by the LLM prompt (all optional; empty values are fine):
 
@@ -58,7 +56,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover – fail fast
 
 if not os.getenv("OPENAI_API_KEY"):
     raise EnvironmentError("OPENAI_API_KEY environment variable not set – online extraction cannot run.")
-# Public API – drop-in replacement for auto_mcp.extractor_llm.run_extraction
+# Public API – run_extraction()
 # ---------------------------------------------------------------------------
 
 

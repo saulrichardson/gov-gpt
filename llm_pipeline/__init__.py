@@ -1,4 +1,5 @@
-"""Light-weight runtime that sits *after* `auto_mcp.extractor_llm`.
+"""Light-weight runtime that operates *after* the documentation extraction
+step and turns YAML specs into function-calling friendly artefacts.
 
 This package provides three building blocks:
 

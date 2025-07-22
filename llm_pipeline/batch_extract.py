@@ -1,4 +1,4 @@
-"""CLI to run `auto_mcp.extractor_llm` over an entire documentation tree.
+"""CLI to run the built-in LLM extractor over an entire documentation tree.
 
 Example
 -------
@@ -11,13 +11,12 @@ results into the shared SQLite DB (default ``sections.db``).
 Environment
 -----------
 Requires ``OPENAI_API_KEY`` to be set and the ``openai`` package to be
-installed – those requirements are identical to running
-``python -m auto_mcp.extractor_llm`` directly.
+installed.
 """
 
 # The import above already brings in *annotations* future once; remove duplicate
 
-"""Parallel batch extractor wrapper around ``auto_mcp.extractor_llm``.
+"""Parallel batch extractor wrapper around the built-in LLM extractor.
 
 Each documentation file is processed concurrently (default 8 worker threads,
 configurable via ``-j/--jobs``).  This speeds up large documentation trees
@@ -28,17 +27,20 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+
+from llm_pipeline.config import get_output_root  # type: ignore
 from typing import List
 
 # ---------------------------------------------------------------------------
-# Dependency handling – auto_mcp.extractor_llm ------------------------------
+# ---------------------------------------------------------------------------
+# Extraction backend – always use the built-in llm_extractor -----------------
 # ---------------------------------------------------------------------------
 
-try:
-    from auto_mcp.extractor_llm import run_extraction  # type: ignore
-except ModuleNotFoundError:
-    # Use the built-in LLM extractor (requires online OpenAI access).
-    from .llm_extractor import run_extraction  # type: ignore
+# The project relies solely on the bundled ``llm_extractor``.  Import errors
+# (for example when the ``openai`` package or API key is missing) are
+# propagated so the caller is immediately aware of the mis-configuration.
+
+from .llm_extractor import run_extraction  # type: ignore
 
 
 _DEFAULT_EXTS = (".md", ".yaml", ".yml")
@@ -116,12 +118,13 @@ def _main(argv):  # noqa: D401 – parallel CLI replacing the sequential version
         description="Extract documentation files in parallel using OpenAI LLM",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    default_db = get_output_root() / "sections.db"
     parser.add_argument(
         "db_path",
         nargs="?",
-        default=Path("sections.db"),
+        default=default_db,
         type=Path,
-        help="SQLite DB path to write to (default: ./sections.db)",
+        help=f"SQLite DB path to write to (default: {default_db})",
     )
     parser.add_argument(
         "root_dir",

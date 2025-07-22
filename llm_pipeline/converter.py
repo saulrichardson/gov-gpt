@@ -1,7 +1,7 @@
 """Convert SectionStore rows into ChatGPT/MCP function definitions.
 
-The *sole* responsibility of this module is to map the YAML blobs stored
-by ``auto_mcp.extractor_llm`` into:
+The *sole* responsibility of this module is to map the YAML blobs produced
+by the LLM extractor into:
 
 1. a JSON *function schema* suitable for ``functions=[…]`` in the
    ChatCompletion API,
