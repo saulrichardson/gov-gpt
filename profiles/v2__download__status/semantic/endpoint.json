@@ -12,7 +12,10 @@
     "confidence": "high",
     "lastVerified": "2026-05-12",
     "summary": "A bounded award-download probe returned a fresh file_name, and a follow-up GET to /api/v2/download/status returned HTTP 200 with a live running status payload on 2026-05-12.",
-    "evidenceRefs": ["dst-probe-create-award-job", "dst-probe-valid-status"]
+    "evidenceRefs": [
+      "dst-probe-create-award-job",
+      "dst-probe-valid-status"
+    ]
   },
   "provenance": {
     "sources": [
@@ -23,10 +26,10 @@
         "locator": "staging/docs/v2/download/status.md"
       },
       {
-        "id": "dst-current-profile-src",
-        "kind": "current_profile",
-        "title": "Current raw MCP profile for download status",
-        "locator": "profiles/v2__download__status/profile.json"
+        "id": "dst-retired-profile-src",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact for download status",
+        "locator": "retired-artifact:v2__download__status"
       },
       {
         "id": "dst-source-view-src",
@@ -65,15 +68,23 @@
           "notes": "Taken from the file_name field of a download endpoint response."
         },
         "observed": {
-          "examples": ["PrimeAwardSummariesAndSubawards_2026-05-12_H05M00S24134275.zip"],
-          "notes": "A fresh file_name from the award download endpoint was accepted on 2026-05-12. Current raw profile also recorded 400 errors for blank or missing values and 404 errors for unknown filenames."
+          "examples": [
+            "PrimeAwardSummariesAndSubawards_2026-05-12_H05M00S24134275.zip"
+          ],
+          "notes": "A fresh file_name from the award download endpoint was accepted on 2026-05-12. Retired low-level artifact also recorded 400 errors for blank or missing values and 404 errors for unknown filenames."
         },
         "constraints": [
           "Must match a known download job filename exactly.",
           "Blank or omitted values are rejected as missing.",
           "Unknown or expired filenames return a 404 detail error instead of a status payload."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-probe-create-award-job",
+          "dst-probe-valid-status"
+        ]
       }
     ],
     "templates": [
@@ -87,7 +98,12 @@
             "file_name": "FILE_NAME_FROM_DOWNLOAD_RESPONSE.zip"
           }
         },
-        "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-source-view",
+          "dst-probe-create-award-job",
+          "dst-probe-valid-status"
+        ]
       }
     ]
   },
@@ -106,19 +122,35 @@
         "documented": {
           "type": "enum[string]",
           "required": true,
-          "allowedValues": ["failed", "finished", "ready", "running"],
+          "allowedValues": [
+            "failed",
+            "finished",
+            "ready",
+            "running"
+          ],
           "notes": "Docs list four states."
         },
         "observed": {
-          "acceptedValues": ["running", "finished"],
-          "examples": ["running"],
-          "notes": "A fresh 2026-05-12 probe returned running; the current raw profile previously observed running and finished. Source code and lookup tables show the API returns raw job_status.name values, which include additional names such as queued, resumed, created, and uploading."
+          "acceptedValues": [
+            "running",
+            "finished"
+          ],
+          "examples": [
+            "running"
+          ],
+          "notes": "A fresh 2026-05-12 probe returned running; the retired low-level artifact previously observed running and finished. Source code and lookup tables show the API returns raw job_status.name values, which include additional names such as queued, resumed, created, and uploading."
         },
         "constraints": [
           "Treat the value as an open-ended backend status string rather than a closed four-value enum.",
           "Do not assume undocumented nonterminal statuses are impossible."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "message",
@@ -134,13 +166,20 @@
           "notes": "Documentation says it is null unless status is failed."
         },
         "observed": {
-          "examples": [null],
+          "examples": [
+            null
+          ],
           "notes": "A live running response returned null; failed-state content remains unobserved in this bundle."
         },
         "constraints": [
           "Presence of a non-null message is most relevant when the job status indicates failure."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "file_name",
@@ -155,10 +194,18 @@
           "required": true
         },
         "observed": {
-          "examples": ["PrimeAwardSummariesAndSubawards_2026-05-12_H05M00S24134275.zip"]
+          "examples": [
+            "PrimeAwardSummariesAndSubawards_2026-05-12_H05M00S24134275.zip"
+          ]
         },
         "constraints": [],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-probe-create-award-job",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "file_url",
@@ -174,13 +221,21 @@
           "notes": "The staged example shows a relative /usaspending-api/csv_downloads path."
         },
         "observed": {
-          "examples": ["https://files.usaspending.gov/generated_downloads/PrimeAwardSummariesAndSubawards_2026-05-12_H05M00S24134275.zip"],
+          "examples": [
+            "https://files.usaspending.gov/generated_downloads/PrimeAwardSummariesAndSubawards_2026-05-12_H05M00S24134275.zip"
+          ],
           "notes": "Fresh and prior observed responses used absolute HTTPS URLs, which matches the non-local source implementation."
         },
         "constraints": [
           "Use the URL exactly as returned; do not prepend the API host."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-probe-create-award-job",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "total_size",
@@ -196,13 +251,21 @@
           "notes": "Docs say the field is null if the job is not finished."
         },
         "observed": {
-          "examples": [null, 118.731],
-          "notes": "The fresh running probe returned null, and the current raw profile previously recorded a numeric value once the job finished."
+          "examples": [
+            null,
+            118.731
+          ],
+          "notes": "The fresh running probe returned null, and the retired low-level artifact previously recorded a numeric value once the job finished."
         },
         "constraints": [
           "Null indicates the backend has not yet computed or stored a file size."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "total_columns",
@@ -218,13 +281,23 @@
           "notes": "Docs say this is null until finished."
         },
         "observed": {
-          "examples": [0, 89, 504],
-          "notes": "The fresh running probe returned 0 rather than null, the current raw profile previously recorded numeric counts while running and finished, and source code does not gate this field on finished status."
+          "examples": [
+            0,
+            89,
+            504
+          ],
+          "notes": "The fresh running probe returned 0 rather than null, the retired low-level artifact previously recorded numeric counts while running and finished, and source code does not gate this field on finished status."
         },
         "constraints": [
           "Treat counts before a terminal status as provisional."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "total_rows",
@@ -240,13 +313,23 @@
           "notes": "Docs say this is null until finished."
         },
         "observed": {
-          "examples": [0, 1, 70],
-          "notes": "The fresh running probe returned 0 rather than null, the current raw profile previously recorded a nonzero running count, and source code returns the stored field directly."
+          "examples": [
+            0,
+            1,
+            70
+          ],
+          "notes": "The fresh running probe returned 0 rather than null, the retired low-level artifact previously recorded a nonzero running count, and source code returns the stored field directly."
         },
         "constraints": [
           "Treat counts before a terminal status as provisional."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "seconds_elapsed",
@@ -261,13 +344,23 @@
           "required": true
         },
         "observed": {
-          "examples": ["159.360491", "3.70822", "8.373618"],
+          "examples": [
+            "159.360491",
+            "3.70822",
+            "8.373618"
+          ],
           "notes": "Source code returns a Python timedelta and observed API responses serialize it as a string."
         },
         "constraints": [
           "Parse defensively as a string rather than assuming a JSON number."
         ],
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "path": "detail",
@@ -278,25 +371,21 @@
         "status": "observed",
         "description": "Error detail returned instead of the status payload for missing, blank, or unknown file_name requests.",
         "observed": {
-          "examples": ["Missing one or more required query parameters: file_name", "Download job with filename foo does not exist."],
-          "notes": "This field is absent from the staged docs but present in current raw profile error examples and implied by source exceptions."
+          "examples": [
+            "Missing one or more required query parameters: file_name",
+            "Download job with filename foo does not exist."
+          ],
+          "notes": "This field is absent from the staged docs but present in retired low-level artifact error examples and implied by source exceptions."
         },
         "constraints": [
           "Error responses may contain only detail and omit all success fields."
         ],
-        "evidenceRefs": ["dst-current-profile", "dst-source-view"]
+        "evidenceRefs": [
+          "dst-retired-profile",
+          "dst-source-view"
+        ]
       }
     ]
-  },
-  "mcpToolCoverage": {
-    "currentProfilePath": "profiles/v2__download__status/profile.json",
-    "exposedTopLevelRequestFields": ["file_name"],
-    "missingImportantRequestFields": [],
-    "notes": [
-      "The raw MCP profile already exposes the only material request parameter.",
-      "The semantic bundle adds contradiction handling for status enum completeness, absolute file_url behavior, error-only detail responses, and the shared bulk_download/status alias."
-    ],
-    "evidenceRefs": ["dst-current-profile", "dst-derived-mcp", "dst-source-view", "dst-source-lookups"]
   },
   "behavior": {
     "contradictions": [
@@ -304,19 +393,34 @@
         "statement": "The documentation treats status as a four-value enum, but the backend returns the raw job_status.name and the lookup table defines additional states such as queued, resumed, created, and uploading.",
         "impact": "Clients should treat status as an open-ended backend state string and handle undocumented nonterminal values gracefully.",
         "status": "contradicted",
-        "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-source-view",
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       },
       {
-        "statement": "The staged docs show file_url as a relative path, while current raw profile observations, fresh live responses, and non-local source code indicate an absolute storage URL.",
+        "statement": "The staged docs show file_url as a relative path, while retired low-level artifact observations, fresh live responses, and non-local source code indicate an absolute storage URL.",
         "impact": "Use file_url as returned and do not prepend the API host.",
         "status": "contradicted",
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-view",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "statement": "The staged docs say total_rows and total_columns are null until finished, but fresh and prior running responses contained numeric counts and source code does not gate those fields on terminal status.",
         "impact": "Counts in nonterminal states should be treated as provisional rather than absent.",
         "status": "contradicted",
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       }
     ],
     "quirks": [
@@ -324,19 +428,28 @@
         "statement": "The endpoint returns download-job metadata rather than the exported CSV rows themselves.",
         "impact": "Use it to poll readiness and discover file_url, not to inspect spending records.",
         "status": "documented_and_observed",
-        "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-source-view",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "statement": "Bad requests and unknown filenames can return a compact error object with only detail instead of the documented status payload.",
         "impact": "Response parsing must branch on HTTP status or the presence of detail.",
         "status": "observed",
-        "evidenceRefs": ["dst-current-profile", "dst-source-view"]
+        "evidenceRefs": [
+          "dst-retired-profile",
+          "dst-source-view"
+        ]
       },
       {
         "statement": "The same backend view is reachable through both /api/v2/download/status and /api/v2/bulk_download/status.",
         "impact": "file_name values from bulk and row-limited download workflows can be polled through the same logic.",
         "status": "inferred",
-        "evidenceRefs": ["dst-source-view"]
+        "evidenceRefs": [
+          "dst-source-view"
+        ]
       }
     ],
     "gaps": [
@@ -344,13 +457,20 @@
         "statement": "This bundle did not live-observe a failed job response, so non-null message content and exact failure timing remain unresolved.",
         "impact": "Consumers should treat failed-job message text as opaque until observed in a future run.",
         "status": "unknown",
-        "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-doc-contract",
+          "dst-retired-profile",
+          "dst-probe-valid-status"
+        ]
       },
       {
         "statement": "Undocumented statuses beyond ready, running, finished, and failed are source-visible but were not live-observed in this run.",
         "impact": "The endpoint surface should remain open to additional status values even if current callers usually see running or finished.",
         "status": "unknown",
-        "evidenceRefs": ["dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       }
     ],
     "risks": [
@@ -358,13 +478,20 @@
         "statement": "Polling with stale or mistyped file_name values frequently yields 404 detail errors because the endpoint does not search for near matches.",
         "impact": "Preserve the exact file_name returned by the initiating download endpoint.",
         "status": "inferred",
-        "evidenceRefs": ["dst-current-profile", "dst-source-view"]
+        "evidenceRefs": [
+          "dst-retired-profile",
+          "dst-source-view"
+        ]
       },
       {
         "statement": "Row and column counts can change before the job reaches a terminal state.",
         "impact": "Do not report nonterminal totals as final analytic facts.",
         "status": "inferred",
-        "evidenceRefs": ["dst-current-profile", "dst-source-lookups", "dst-probe-valid-status"]
+        "evidenceRefs": [
+          "dst-retired-profile",
+          "dst-source-lookups",
+          "dst-probe-valid-status"
+        ]
       }
     ]
   }

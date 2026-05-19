@@ -65,7 +65,7 @@ Validation should be strict, generic, and artifact-focused:
 - evidence references must resolve
 - observed facts must cite evidence
 - availability claims must cite live probes
-- contradictions and MCP gaps must remain visible
+- contradictions, caveats, and risky-but-valid request patterns must remain visible
 - prose must not introduce claims absent from JSON artifacts
 - producer self-story gates must exercise the candidate bundle through MCP
   before finalization, with owned blocker/major gaps repaired inside the same
@@ -77,11 +77,10 @@ surface the blocker.
 ## Code Organization Rules
 
 - Put semantic production logic in `scripts/agents`.
-- Keep raw profile generation in `scripts/codex` unless it is being retired
-  explicitly.
 - Keep MCP runtime and semantic bundle loading in `scripts/mcp`.
 - Keep shared schemas in `src/agent/core`.
 - Remove prototype generators once a stronger agentic workflow supersedes them.
+- Do not keep compatibility paths for retired raw-profile tooling.
 - Prefer tests that prove role instructions, tool access, artifact contracts,
   validators, and MCP behavior over tests that snapshot generated endpoint facts.
 
@@ -98,5 +97,4 @@ questions:
 - Does the runtime expose the semantic context needed to construct valid,
   scoped API calls?
 
-If the answer is no, the code is likely scaffolding, dead weight, or a legacy
-raw-profile concern that should be isolated from the semantic path.
+If the answer is no, the code is likely scaffolding or dead weight.

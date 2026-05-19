@@ -263,7 +263,7 @@
       "status": "unknown",
       "evidenceRefs": [
         "ev-doc-contract",
-        "ev-current-profile"
+        "ev-retired-profile"
       ]
     }
   ]

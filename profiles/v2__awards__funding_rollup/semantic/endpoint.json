@@ -28,9 +28,9 @@
       },
       {
         "id": "src-profile-funding-rollup",
-        "kind": "current_profile",
-        "title": "Current raw profile for v2__awards__funding_rollup",
-        "locator": "profiles/v2__awards__funding_rollup/profile.json",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact for v2__awards__funding_rollup",
+        "locator": "retired-artifact:v2__awards__funding_rollup",
         "retrievedAt": "2026-05-12T09:02:00-04:00"
       },
       {
@@ -44,7 +44,7 @@
         "id": "src-derived-funding-rollup-coverage",
         "kind": "derived_check",
         "title": "Derived MCP request coverage check for funding rollup",
-        "locator": "staging/docs/v2/awards/funding_rollup.md + profiles/v2__awards__funding_rollup/profile.json",
+        "locator": "staging/docs/v2/awards/funding_rollup.md + retired-artifact:v2__awards__funding_rollup",
         "retrievedAt": "2026-05-12T09:08:00-04:00"
       },
       {
@@ -123,7 +123,7 @@
         "constraints": [
           "Documented example field only.",
           "Ignored by the implementation.",
-          "The current raw MCP profile does not expose this field."
+          "The retired low-level artifact does not expose this field."
         ],
         "evidenceRefs": [
           "ev-doc-001",
@@ -151,7 +151,7 @@
         "constraints": [
           "Documented example field only.",
           "Ignored by the implementation.",
-          "The current raw MCP profile does not expose this field."
+          "The retired low-level artifact does not expose this field."
         ],
         "evidenceRefs": [
           "ev-doc-001",
@@ -179,7 +179,7 @@
         "constraints": [
           "Documented example field only.",
           "Ignored by the implementation.",
-          "The current raw MCP profile does not expose this field."
+          "The retired low-level artifact does not expose this field."
         ],
         "evidenceRefs": [
           "ev-doc-001",
@@ -207,7 +207,7 @@
         "constraints": [
           "Documented example field only.",
           "Ignored by the implementation.",
-          "The current raw MCP profile does not expose this field."
+          "The retired low-level artifact does not expose this field."
         ],
         "evidenceRefs": [
           "ev-doc-001",
@@ -255,7 +255,7 @@
           "examples": [
             2729344672.23
           ],
-          "notes": "The live sample returned a positive value; current-profile evidence indicates some awards can yield negative totals."
+          "notes": "The live sample returned a positive value; retired-profile evidence indicates some awards can yield negative totals."
         },
         "constraints": [
           "This is an aggregate total, not a list of transaction rows.",
@@ -363,27 +363,6 @@
       ]
     }
   },
-  "mcpToolCoverage": {
-    "currentProfilePath": "profiles/v2__awards__funding_rollup/profile.json",
-    "exposedTopLevelRequestFields": [
-      "award_id"
-    ],
-    "missingImportantRequestFields": [
-      "page",
-      "sort",
-      "order",
-      "limit"
-    ],
-    "notes": [
-      "The current raw MCP profile only exposes award_id.",
-      "The omitted fields come from the staged docs sample body and matter mainly because callers need to understand they are contradicted legacy fields rather than active controls."
-    ],
-    "evidenceRefs": [
-      "ev-prof-001",
-      "ev-der-001",
-      "ev-src-001"
-    ]
-  },
   "behavior": {
     "contradictions": [
       {
@@ -409,7 +388,7 @@
         ]
       },
       {
-        "statement": "Unknown or unmatched award identifiers are reported by the current raw profile as HTTP 200 responses with zero totals rather than errors.",
+        "statement": "Unknown or unmatched award identifiers are reported by the retired low-level artifact as HTTP 200 responses with zero totals rather than errors.",
         "impact": "A zeroed response is not sufficient proof that the supplied award_id was semantically correct.",
         "status": "inferred",
         "evidenceRefs": [

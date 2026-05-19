@@ -20,7 +20,7 @@ surface mixes transport details with federal spending concepts:
   workflow rules
 
 A thin MCP wrapper can expose the API, but it cannot tell an agent what the API
-means. `gov-gpt` is the semantic layer between those raw endpoints and the
+means. `gov-gpt` is the semantic layer between those API endpoints and the
 agent trying to reason about them.
 
 ## Functional Architecture

@@ -26,7 +26,6 @@ function main() {
           responseFacts: bundle.endpoint.response.fields.length,
           templates: bundle.endpoint.request.templates.length,
           workflows: bundle.semantics.workflows.length,
-          missingMcpFields: bundle.endpoint.mcpToolCoverage?.missingImportantRequestFields ?? [],
         })),
       },
       null,

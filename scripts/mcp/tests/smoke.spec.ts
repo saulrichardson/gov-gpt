@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
 
 describe("mcp startup smoke", () => {
-  it("starts server and reports profileCount > 0", async () => {
+  it("starts semantic-only server and reports semanticBundleCount > 0", async () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
     const repoRoot = resolve(__dirname, "..", "..", "..");
@@ -61,7 +61,8 @@ describe("mcp startup smoke", () => {
     });
 
     expect(startup).toBeTruthy();
-    expect(startup.profileCount).toBeGreaterThan(0);
-    expect(startup.schemaVersion).toBe("1.0.0");
+    expect(startup.semanticBundleCount).toBeGreaterThan(0);
+    expect(startup.publicToolMode).toBe("semantic_only");
+    expect(startup.schemaVersions).toContain("2.0.0");
   });
 });

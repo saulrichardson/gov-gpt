@@ -28,17 +28,17 @@
         "retrievedAt": "2026-05-09T12:00:00+00:00"
       },
       {
-        "id": "src-current-profile",
-        "kind": "current_profile",
-        "title": "Current raw profile path for spending by geography",
-        "locator": "profiles/v2__search__spending_by_geography/profile.json",
+        "id": "src-retired-profile",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact path for spending by geography",
+        "locator": "retired-artifact:v2__search__spending_by_geography",
         "retrievedAt": "2026-05-09T12:00:00+00:00"
       },
       {
         "id": "src-derived-coverage",
         "kind": "derived_check",
         "title": "Derived coverage ledger for spending by geography",
-        "locator": "derived-from-staged-docs-and-current-profile-context",
+        "locator": "derived-from-staged-docs-and-retired-profile-context",
         "retrievedAt": "2026-05-09T12:00:00+00:00"
       },
       {
@@ -1439,30 +1439,6 @@
       ]
     }
   },
-  "mcpToolCoverage": {
-    "currentProfilePath": "profiles/v2__search__spending_by_geography/profile.json",
-    "exposedTopLevelRequestFields": [],
-    "missingImportantRequestFields": [
-      "filters",
-      "scope",
-      "geo_layer",
-      "spending_level",
-      "geo_layer_filters",
-      "subawards",
-      "filters.time_period",
-      "filters.agencies",
-      "filters.place_of_performance_scope",
-      "filters.recipient_scope"
-    ],
-    "notes": [
-      "Loaded endpoint context did not include a current raw profile for this slug, so there is no legacy confirmed request schema to expose these fields.",
-      "The semantic bundle preserves documented top-level controls and major nested filter families even though only part of the filter surface has been live-probed."
-    ],
-    "evidenceRefs": [
-      "ev-current-profile-missing",
-      "ev-derived-coverage"
-    ]
-  },
   "behavior": {
     "contradictions": [],
     "quirks": [
@@ -1495,11 +1471,11 @@
         ]
       },
       {
-        "statement": "No current raw MCP profile exists in the loaded context for this slug.",
+        "statement": "No retired low-level artifact exists in the loaded context for this slug.",
         "impact": "Without the semantic bundle, MCP callers would lack a maintained request surface for this endpoint.",
         "status": "observed",
         "evidenceRefs": [
-          "ev-current-profile-missing"
+          "ev-retired-profile-missing"
         ]
       }
     ],

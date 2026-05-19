@@ -1,215 +1,126 @@
 # Semantic Profile V2
 
-Semantic Profile V2 is the durable artifact contract for the semantic MCP. The
-goal is to make USAspending queryable by coding agents at the business-semantics
-level, not merely expose a collection of HTTP wrappers.
+Semantic Profile V2 is the durable artifact contract for the USAspending
+semantic MCP.
 
-## Why This Exists
+The contract exists because API documentation, source behavior, live behavior,
+and business usage do not collapse into a simple request schema. A downstream
+coding agent needs to know what an endpoint means, how to call it, what the
+response grain is, what caveats matter, and what evidence supports those
+claims.
 
-The original confirmed-profile format is useful for raw execution, but it is too
-lossy for complicated USAspending analysis:
-
-- documentation can be correct, incomplete, stale, or contradictory
-- live probes can discover working fields that docs omit
-- some documented endpoints or request branches are unavailable
-- business meaning lives above raw request and response fields
-- an MCP input schema that omits a field can cause downstream agents to reject a
-  valid API argument before it ever reaches USAspending
-
-V2 keeps those concerns separate. It preserves material facts with status and
-evidence instead of forcing an authoring agent to choose between "confirmed" and
-"drop it."
-
-## Artifact Bundle
-
-Each endpoint gets one semantic bundle:
+## Files
 
 ```text
-profiles/<slug>/semantic/
-  endpoint.json
-  semantics.json
-  evidence.jsonl
-  usage.md
+endpoint.json
+semantics.json
+evidence.jsonl
+usage.md
 ```
 
-During production the same four files are written under a run root such as
-`runs/agents-sdk/<slug>/`. Promotion copies a validated bundle into
-`profiles/<slug>/semantic/`.
+## `endpoint.json`
 
-`endpoint.json` is the callable surface:
+`endpoint.json` is the callable and interpretable endpoint contract. It records:
 
 - endpoint method, host, and path
-- availability status: `available`, `partially_available`, `unavailable`, or
-  `unknown`
-- request facts with `path`, `location`, `type`, `required`, `status`, and
-  `evidenceRefs`
-- optional `request.validationWarnings` rules for evidence-backed near-miss
-  guardrails, such as warning when an optional scope field is omitted for a
-  workflow that needs explicit scope alignment
-- response facts with the same evidence model
-- pagination and template facts
-- MCP coverage gaps relative to the current promoted raw profile
+- availability status, confidence, verification date, and evidence refs
+- provenance sources
+- request facts, including nested body/query/path fields
+- request templates
+- request validation warnings for valid but risky near-miss calls
+- response shape, response fields, and pagination facts
 - contradictions, quirks, gaps, and risks
 
-Request fact `path` values are relative to the transport root used by
-`location`. Use `filters.time_period`, not `body.filters.time_period`; use
-`page`, not `query.page`.
+Request fact paths are relative to their transport root:
 
-`semantics.json` is the business layer:
+- POST body field: `filters.time_period`
+- query field: `page`
+- path field: `award_id`
 
+Do not prefix body paths with `body.` or query paths with `query.`.
+
+## `semantics.json`
+
+`semantics.json` captures the business layer:
+
+- summary
 - business purpose
 - analytical grain
 - primary entities
-- measures and dimensions
-- suitable and unsuitable question types
+- measures
+- dimensions
+- suitable questions
+- not-suitable-for cases
+- joins
+- workflows
+- caveats
+
+This file is where the bundle explains what the endpoint can support beyond a
+successful HTTP response.
+
+## `evidence.jsonl`
+
+Each line is an evidence record. Evidence sources can include:
+
+- documentation
+- live probes
+- source code
+- derived checks
+- reviewer reports
+- MCP story gates
+- retired artifacts used as historical context
+
+Every non-trivial claim in `endpoint.json` and `semantics.json` should cite one
+or more evidence ids. If evidence is incomplete, keep the field and mark it
+`documented_unverified`, `inferred`, `unknown`, or a gap instead of inventing
+certainty.
+
+## `usage.md`
+
+`usage.md` is a caller guide for downstream agents. It should explain:
+
+- when to use the endpoint
+- when not to use it
+- request templates and required fields
+- response interpretation
 - joins and workflows
-- caveats tied back to evidence
+- caveats and known traps
 
-`evidence.jsonl` is the audit trail:
+It must not include prompt text, validation logs, private reasoning, or process
+narration.
 
-- documentation observations
-- current-profile observations
-- live probe requests and response samples
-- source-code observations when local source explains behavior
-- derived checks when the derivation is transparent
-- reviewer or story-gate observations when a model-owned gate finds an MCP
-  usability issue
+## Validation
 
-Use evidence source kinds precisely. Do not relabel reviewer or story-gate
-observations as fresh live probes unless the repair agent actually executed the
-API call and recorded request and response evidence.
-
-`usage.md` is caller-facing prose for humans and model prompts. It must be
-derived from `endpoint.json` and `semantics.json`; it must not introduce new
-claims.
-
-## Field Statuses
-
-Status is the core scaling primitive:
-
-- `documented_unverified`: docs say it exists, but probes did not confirm it
-- `documented_and_observed`: docs and live probes agree
-- `observed`: live probes discovered it, but docs did not establish it
-- `contradicted`: docs and live behavior disagree
-- `observed_unavailable`: the endpoint or behavior is unavailable in live probes
-- `inferred`: logically derived from evidence but not directly probed
-- `unknown`: explicitly unresolved
-
-A field should not be dropped just because one run did not prove it. Dropping a
-field changes MCP behavior because the runtime validator can treat absent fields
-as invalid.
-
-Optional fields can still carry semantic risk. Use `request.validationWarnings`
-when a request remains valid but another coding agent should be warned about a
-business-semantics pitfall. These warnings are generic artifact data, not
-endpoint-specific runtime code: the bundle declares conditions such as
-`missingAll`, `presentAll`, and `valueIn`, and the MCP validator emits the
-declared warning when those conditions match.
-
-## Authoring Model
-
-The primary producer is the Agents SDK workflow in `scripts/agents`. The author
-is a general coding agent, not a deterministic extractor. The TypeScript wrapper
-provides tools, context loading, artifact writes, live API probes, validation,
-in-loop self-story gates, promotion, and standalone story gates. The model owns
-endpoint understanding, reconciliation, semantic synthesis, and the final bundle
-content.
-
-Default autonomy is `full_access`. In this mode each role also receives
-`full_access_shell_command`, which can run local shell commands with the same filesystem,
-environment, and network access available to the SDK process. The contract is the
-bundle and the gates, not a fixed investigation path.
-
-Run a producer:
+Run-root validation:
 
 ```bash
-npm --prefix scripts/agents run semantic:agent -- \
-  --slug v2__search__spending_by_geography \
-  --out-root runs/agents-sdk-demo \
-  --reasoning-effort high
+npm --prefix scripts/agents run semantic:validate -- --root <run-root>
 ```
 
-Equivalent Make target:
+Promoted-bundle validation:
 
 ```bash
-make agents-semantic SLUG=v2__search__spending_by_geography AGENTS_OUT_ROOT=runs/agents-sdk-demo
+scripts/mcp/bin/validate-semantic-bundles
 ```
 
-During a normal producer run, `validate_semantic_bundle` is not the final gate.
-The producer must call `run_self_story_gate` with an endpoint-specific
-downstream question, repair any owned blocker/major story gaps, and only then
-proceed to promotion and `finalize_validated_bundle`. Promotion and finalization
-enforce that this self-story report exists and is ready.
+Validation checks schema shape, evidence references, availability evidence,
+contradiction policy, and usage consistency. It is a generic gate, not a
+semantic author.
 
-Review and repair:
+## Promotion Criteria
 
-```bash
-npm --prefix scripts/agents run semantic:review -- \
-  --slug v2__search__spending_by_geography \
-  --out-root runs/agents-sdk-demo
+A bundle is promotion-grade when:
 
-npm --prefix scripts/agents run semantic:repair -- \
-  --slug v2__search__spending_by_geography \
-  --out-root runs/agents-sdk-demo \
-  --review-report runs/review.json \
-  --task-id <task-id>
-```
+- all four files exist under the declared output directory
+- schema validation passes
+- material claims cite evidence
+- live availability cites at least one live probe when the endpoint is marked
+  `available` or `partially_available`
+- documented-but-unprobed fields are preserved with explicit statuses
+- contradictions, gaps, risks, and caveats are visible
+- request templates are bounded and useful
+- a self-story MCP gate shows that another agent can use the bundle for a
+  realistic analytical question or returns repair tasks that have been handled
 
-Validate local run artifacts:
-
-```bash
-make semantic-validate SEMANTIC_ROOT=runs/agents-sdk-demo
-```
-
-The `scripts/codex` package still owns this generic validator because it shares
-the existing core schema implementation. It is not a semantic authoring path.
-
-## Required Producer Behavior
-
-A good endpoint-producing agent should:
-
-1. Load staged docs, current raw profile, existing semantic bundle if any, schema
-   docs, and the operating model.
-2. Create the four-file bundle early and keep evidence records current as it
-   learns.
-3. Extract the documented request and response surface without dropping obscure
-   or unprobed fields.
-4. Compare the current MCP raw profile and record important missing request
-   fields as MCP coverage gaps.
-5. Run a purposeful live probe set: happy path, important enum or nested field,
-   negative/error behavior, pagination or sort when relevant, and availability
-   when uncertain. Start small and expand when the endpoint's workflow genuinely
-   needs more evidence.
-6. Reconcile docs, source, current profile, and probes into status-tagged facts.
-7. Write business semantics that explain analytical grain, entities, measures,
-   dimensions, joins, workflows, caveats, and question fit.
-8. Validate the bundle and repair it without weakening the validator.
-9. Use MCP story testing to prove whether the bundle lets another agent answer a
-   meaningful analytical question.
-
-## Promotion Gate
-
-A bundle can be promoted only when:
-
-- all four files exist
-- every evidence reference resolves
-- material documented fields are retained with statuses
-- current MCP gaps are captured
-- contradictions are explicit
-- unavailable behavior is marked unavailable or partially available
-- `usage.md` contains no prompt leakage, process narration, or unsupported claims
-- `npm --prefix scripts/codex run semantic:validate -- --root <run-root>` passes
-- `scripts/mcp/bin/validate-semantic-bundles` passes after promotion
-- MCP story or smoke checks show the semantic surface can be used for real
-  discovery, request construction, validation, and scoped calls
-- semantic discovery can surface the bundle even when the raw profile is
-  missing or underclassified
-
-## Non-Goals
-
-- Do not build endpoint knowledge with endpoint-specific deterministic code.
-- Do not hide doc/API contradictions behind simplified schemas.
-- Do not drop documented-but-unprobed fields.
-- Do not promote prose that has no evidence-backed JSON support.
-- Do not make the orchestration framework the source of truth. The source of
-  truth is the validated semantic bundle.
+The source of truth is the validated semantic bundle, not the orchestration
+framework that produced it.

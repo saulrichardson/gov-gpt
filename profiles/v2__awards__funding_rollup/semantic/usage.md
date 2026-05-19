@@ -14,7 +14,7 @@ Live availability was confirmed on 2026-05-12 with a successful `POST /api/v2/aw
 ## When not to use it
 - Do **not** use it for row-level funding detail by reporting period, agency, account, object class, or program activity.
 - Do **not** use it to search across many awards; the request is scoped to one `award_id`.
-- Do **not** expect pagination or sorting behavior. The docs sample body shows `page`, `sort`, `order`, and `limit`, but source and current-profile evidence indicate those fields are ignored.
+- Do **not** expect pagination or sorting behavior. The docs sample body shows `page`, `sort`, `order`, and `limit`, but source and retired-profile evidence indicate those fields are ignored.
 - Do **not** treat an all-zero response as proof that the award identifier is valid. Current-profile evidence indicates unknown award ids can still return `200` with zeros.
 - Do **not** present `total_transaction_obligated_amount` as if it were the same measure as search `Award Amount`, award-detail `total_obligation`, or a guaranteed match to award-detail `total_account_obligation`.
 
@@ -37,7 +37,7 @@ The staged docs sample body also shows:
 - `order`
 - `limit`
 
-Keep them in mind only as a **documented contradiction**. Source and current-profile evidence indicate the implementation reads only `award_id`, and the endpoint always returns a single aggregate object.
+Keep them in mind only as a **documented contradiction**. Source and retired-profile evidence indicate the implementation reads only `award_id`, and the endpoint always returns a single aggregate object.
 
 ### Primary safe request template
 ```json

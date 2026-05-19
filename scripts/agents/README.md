@@ -132,10 +132,10 @@ Each successful run writes:
 The validation tools currently invoke the shared semantic validator:
 
 ```bash
-npm --prefix scripts/codex run semantic:validate -- --root <out-root>
+npm --prefix scripts/agents run semantic:validate -- --root <out-root>
 ```
 
 The agent must use validation before returning `status: "completed"`. The
-validator is retained in `scripts/codex` as generic artifact enforcement; it is
-not a semantic authoring path. Completion requires the stronger producer
-finalization gate, not validation alone.
+validator is package-local because semantic authoring, validation, and
+agent-loop recovery are one workflow. Completion still requires the stronger
+producer finalization gate, not validation alone.

@@ -175,7 +175,7 @@ function commandsForRepairTask(targetSlug: string, challengeOutputPath: string, 
       "--task-id",
       shellQuote(taskId),
     ].join(" "),
-    validate: ["npm --prefix scripts/codex run semantic:validate -- --root", shellQuote(repairRoot)].join(" "),
+    validate: ["npm --prefix scripts/agents run semantic:validate -- --root", shellQuote(repairRoot)].join(" "),
     promoteAfterReview: [
       "mkdir",
       "-p",

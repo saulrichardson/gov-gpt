@@ -165,7 +165,7 @@ npm --prefix scripts/agents run semantic:agent -- \
 Both produced valid Semantic Profile V2 bundles:
 
 ```bash
-npm --prefix scripts/codex run semantic:validate -- \
+npm --prefix scripts/agents run semantic:validate -- \
   --root runs/agents-sdk-full-access-dig
 
 USASPENDING_SEMANTIC_BUNDLE_GLOB='/Users/saulrichardson/projects/gov-gpt/runs/agents-sdk-full-access-dig/*/endpoint.json' \
@@ -175,9 +175,9 @@ USASPENDING_SEMANTIC_BUNDLE_GLOB='/Users/saulrichardson/projects/gov-gpt/runs/ag
 Final validation:
 
 - `v2__awards__funding`: available, 6 evidence records, 5 request facts, 28
-  response facts, 2 contradictions, 0 missing current-MCP fields.
+  response facts and 2 contradictions.
 - `v2__disaster__spending_by_geography`: available, 8 evidence records, 10
-  request facts, 10 response facts, 2 contradictions, 5 nested current-MCP gaps.
+  request facts, 10 response facts, and 2 contradictions.
 
 ## Useful MCP Result
 

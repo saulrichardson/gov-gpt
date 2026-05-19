@@ -1,202 +1,84 @@
-# MCP Runtime
+# USAspending Semantic MCP Runtime
 
-`scripts/mcp/` is the MCP runtime package for this repo.
+`scripts/mcp` is the runtime package for the semantic MCP surface.
 
-Its job is to load promoted USAspending raw profile fixtures and Semantic Profile
-V2 bundles from `profiles/`, then expose them as a strict stdio MCP server.
+It loads promoted Semantic Profile V2 bundles from:
 
-The server should make USAspending queryable, but it should not become the
-semantic author. Endpoint meaning belongs in checked-in semantic bundles; runtime
-code loads, validates, searches, explains, and executes those artifacts.
+```text
+profiles/<slug>/semantic/
+  endpoint.json
+  semantics.json
+  evidence.jsonl
+  usage.md
+```
 
-## Package Boundary
+The MCP does not expose legacy raw-profile wrapper tools. The only promoted
+runtime contract is the semantic bundle plus generic semantic tools for
+discovery, inspection, validation, bounded calls, evidence, and usage guidance.
 
-Inputs:
+## Tools
 
-- promoted profile fixtures in `profiles/<slug>/profile.json`
-- raw usage guides in `profiles/<slug>/prompt.md`
-- semantic bundles in `profiles/<slug>/semantic/`
-- staged contract docs indexed from `staging/docs/<version>/index.jsonl`
-- curated shipping metadata in `profiles/shipping.json`
-
-Outputs:
-
-- raw MCP tools, one per promoted endpoint slug
-- semantic discovery, inspection, request-construction, validation, and
-  execution tools
-- resources for profiles, prompts, staged docs, evidence, semantic usage, and
-  derived health
-
-Out of scope:
-
-- authoring endpoint semantics
-- hidden endpoint-specific heuristics
-- server-side trend analysis or anomaly scoring
-- benchmark code that is not part of the semantic MCP runtime
-
-## Main Files
-
-- `src/server.ts`
-  Registers the MCP surface and starts the stdio transport.
-- `src/loadProfiles.ts`
-  Scans `profiles/*/profile.json`, parses them against the canonical schema, derives planner metadata, and overlays shipping metadata.
-- `src/loadSemanticBundles.ts`
-  Loads `profiles/*/semantic/{endpoint.json,semantics.json,evidence.jsonl,usage.md}` and enforces the Semantic Profile V2 contract.
-- `src/call.ts`
-  Validates tool input and executes the outbound HTTP request to USAspending.
-- `src/semanticRequest.ts`
-  Builds semantic request templates, validates semantic request bodies, and
-  routes semantic `callEndpoint` execution.
-- `src/zodFromProfile.ts`
-  Converts profile input schema into MCP input schemas.
-- `src/search.ts`
-  Scores free-text discovery queries for semantic endpoint discovery.
-- `src/shipping.ts`
-  Loads `profiles/shipping.json` and derives endpoint health from checked-in artifacts.
-- `src/promoteProfile.ts`
-  Promotes final run artifacts into `profiles/` and updates `profiles/manifest.json`.
-- `src/validateProfiles.ts`
-  Validates manifest integrity, prompt presence, and shipping references.
-
-## Public MCP Surface
-
-Support tools:
-
-- `usaspending.findConcepts`
 - `usaspending.findEndpoints`
+  Search promoted semantic endpoints by business purpose, concepts, request
+  strategy, slug, and path.
+- `usaspending.findConcepts`
+  Search entities, measures, dimensions, suitable questions, caveats, and
+  not-suitable-for cases across bundles.
 - `usaspending.findWorkflows`
-- `usaspending.getEndpoint`
+  Search higher-level endpoint workflows.
 - `usaspending.getEndpointSchema`
+  Return `endpoint.json`.
 - `usaspending.getEndpointSemantics`
+  Return `semantics.json`.
 - `usaspending.getAnalysisPacket`
-- `usaspending.getEvidence`
-- `usaspending.getUsageGuide`
+  Return a consolidated packet for endpoint selection, request construction,
+  response interpretation, caveats, workflows, and evidence refs.
 - `usaspending.getRequestTemplate`
-- `usaspending.validateRequest`
-- `usaspending.explainValidationError`
+  Return evidence-backed templates, optionally ranked by use case.
 - `usaspending.listRequestFields`
+  Return request facts, optionally filtered by status.
+- `usaspending.validateRequest`
+  Preflight a proposed request against the semantic endpoint facts.
+- `usaspending.explainValidationError`
+  Explain validation failures or warnings using the endpoint artifact.
 - `usaspending.callEndpoint`
-- `usaspending.getDoc`
+  Make a bounded live USAspending API call through the semantic endpoint
+  contract.
+- `usaspending.getEvidence`
+  Return evidence records from `evidence.jsonl`.
+- `usaspending.getUsageGuide`
+  Return `usage.md`.
 
-Raw endpoint tools:
+## Resources
 
-- `usaspending.<slug>` for every promoted profile fixture
-
-Prompt:
-
-- `usaspending.endpointUsage`
-
-Resources:
-
-- `usaspending://profiles/all`
-- `usaspending://profiles/<slug>`
-- `usaspending://prompts/<slug>`
-- `usaspending://docs/<slug>`
-- `usaspending://evidence/<slug>`
-- `usaspending://health/<slug>`
+- `usaspending://semantic/all`
 - `usaspending://semantic/schema/<slug>`
+- `usaspending://semantic/semantics/<slug>`
+- `usaspending://semantic/evidence/<slug>`
 - `usaspending://semantic/usage/<slug>`
 
-The important design point is that semantic guidance is artifact-backed. The
-server helps clients discover and use endpoint knowledge, but it does not invent
-business meaning at runtime.
+## Validation
 
-For analysis and dashboard-building agents, `usaspending.getAnalysisPacket` is
-the preferred first endpoint-specific call after discovery. It consolidates the
-semantic bundle into one structured payload: purpose, analytical grain, request
-templates, required and uncertain fields, validation warnings, workflows,
-response interpretation, caveats, gaps, evidence refs, and optional usage/evidence
-detail. It is a packaging tool over checked-in artifacts, not a runtime analyst.
+```bash
+npm --prefix scripts/mcp run typecheck
+npm --prefix scripts/mcp run test
+scripts/mcp/bin/validate-semantic-bundles
+scripts/mcp/bin/smoke-server
+scripts/mcp/bin/smoke-client
+```
 
-## Startup and Load Path
+`validate-semantic-bundles` loads every promoted bundle and enforces schema
+validity, evidence links, availability evidence, and usage-guide consistency.
 
-Startup begins in [`src/server.ts`](/Users/saulrichardson/projects/gov-gpt/scripts/mcp/src/server.ts).
+`smoke-client` starts the MCP over stdio, verifies that the semantic-only tool
+surface is present, verifies that per-endpoint raw wrapper tools are absent, and
+exercises discovery, analysis packets, and request validation. Set
+`SMOKE_CALL_API=1` to also execute a small live call through
+`usaspending.callEndpoint`.
 
-`loadProfiles()` does the heavy lifting:
+## Design Boundary
 
-- scans `profiles/*/profile.json`
-- parses each file with the canonical profile schema from `src/agent/core/profileSchema.ts`
-- indexes sibling `prompt.md` files
-- indexes staged contract docs by slug from the staging manifest
-- overlays shipping metadata from `profiles/shipping.json`
-- derives planner metadata from `inputSchema`
-
-If profile loading fails, or if zero profiles load, the server exits immediately with `PROFILE_LOAD_FAILED`.
-
-`loadSemanticBundles()` then overlays the Semantic Profile V2 layer:
-
-- scans semantic bundle directories under `profiles/*/semantic/`
-- parses endpoint and semantic JSON against the canonical schema
-- parses evidence JSONL and validates evidence links
-- loads `usage.md`
-- indexes bundles by slug for semantic tools and search
-
-Semantic bundles are first-class discovery candidates. If a promoted semantic
-bundle exists without a corresponding raw profile, `findEndpoints` still
-surfaces it from the semantic artifact metadata. Exact slug matches receive a
-strong ranking boost so slug-first coding agents do not get routed to a related
-but different endpoint. Promoted semantic bundles also replace raw planner
-metadata with semantic request facts, including nested request paths and
-status-aware groups such as `optionalSafe`, `optionalUncertain`, and
-`optionalRisky`; this lets agents see risky-but-accepted fields during discovery
-instead of discovering them only after request validation.
-
-## Call Path and Guardrails
-
-Execution is handled by [`src/call.ts`](/Users/saulrichardson/projects/gov-gpt/scripts/mcp/src/call.ts).
-
-Current guardrails:
-
-- tool input is built from the published profile schema
-- semantic requests are validated against `endpoint.json` request facts and
-  templates before live calls
-- semantic request validation also honors generic `request.validationWarnings`
-  declared by bundles, so valid near-miss requests can produce evidence-backed
-  warnings without endpoint-specific runtime branches
-- request validation uses AJV with `additionalProperties: false`
-- outbound host access is restricted to the allowed USAspending host
-- requests are limited by `USASPENDING_REQUEST_TIMEOUT_MS`
-- responses are returned as raw `status`, `headers`, `body`, and normalized request metadata
-- failures are normalized into structured MCP error payloads such as `INVALID_INPUT`, `REQUEST_TIMEOUT`, `NETWORK_ERROR`, and `UNKNOWN_ENDPOINT`
-
-## Shipping Metadata and Health
-
-`profiles/shipping.json` is a curated metadata layer over the promoted fixtures.
-
-It currently carries:
-
-- `shipTier`
-- `tags`
-- `capabilities`
-- `auth`
-- `pagination`
-- `asyncJob`
-- optional `docPath`
-
-`src/shipping.ts` turns that plus the profile's `lastVerified`, `gaps`, `mismatches`, and `risks` into a derived health view. That health is descriptive only; it does not change raw endpoint behavior.
-
-## Operator Commands
-
-Common entrypoints:
-
-- `scripts/mcp/bin/stdio-server`
-- `scripts/mcp/bin/validate-profiles`
-- `scripts/mcp/bin/validate-semantic-bundles`
-- `scripts/mcp/bin/promote-profile`
-- `scripts/mcp/bin/smoke-server`
-- `scripts/mcp/bin/smoke-client`
-- `scripts/mcp/bin/export-profiles`
-- `scripts/mcp/bin/print-client-configs`
-
-Package-local equivalents are defined in [`package.json`](/Users/saulrichardson/projects/gov-gpt/scripts/mcp/package.json).
-
-## Architectural Approach
-
-This package is intentionally conservative:
-
-- semantic meaning lives in checked-in bundles, not hidden runtime logic
-- raw endpoint access remains available after semantic discovery/request
-  construction has made the call shape clear
-- higher-level analysis belongs to clients, story gates, or external evaluation
-  layers
-- uncertainty stays visible as evidence, gaps, mismatches, and risks instead of being smoothed away
+The runtime is intentionally generic. It may validate schemas, load bundles,
+preflight requests, enforce host allowlists, and report tool errors. It should
+not hard-code endpoint-specific business semantics. Endpoint-specific meaning
+belongs in the agent-authored semantic bundle.

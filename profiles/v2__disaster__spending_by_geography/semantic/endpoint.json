@@ -30,17 +30,17 @@
         "retrievedAt": "2026-05-10T12:00:00+00:00"
       },
       {
-        "id": "src-current-profile",
-        "kind": "current_profile",
-        "title": "Current raw MCP profile for disaster spending_by_geography",
-        "locator": "profiles/v2__disaster__spending_by_geography/profile.json",
+        "id": "src-retired-profile",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact for disaster spending_by_geography",
+        "locator": "retired-artifact:v2__disaster__spending_by_geography",
         "retrievedAt": "2026-05-10T12:00:01+00:00"
       },
       {
         "id": "src-derived-mcp-gaps",
         "kind": "derived_check",
-        "title": "Derived MCP coverage check for disaster spending_by_geography",
-        "locator": "Derived from staging/docs/v2/disaster/spending_by_geography.md and profiles/v2__disaster__spending_by_geography/profile.json",
+        "title": "Derived retired MCP coverage check for disaster spending_by_geography",
+        "locator": "Derived from staging/docs/v2/disaster/spending_by_geography.md and retired-artifact:v2__disaster__spending_by_geography",
         "retrievedAt": "2026-05-10T12:00:02+00:00"
       },
       {
@@ -88,7 +88,7 @@
         ],
         "evidenceRefs": [
           "geo-doc-contract",
-          "geo-current-profile"
+          "geo-retired-profile"
         ],
         "observed": {
           "examples": [
@@ -189,7 +189,7 @@
         ],
         "evidenceRefs": [
           "geo-doc-contract",
-          "geo-current-profile"
+          "geo-retired-profile"
         ]
       },
       {
@@ -203,14 +203,14 @@
         "documented": {
           "type": "array[{start_date,end_date,date_type?}]",
           "required": false,
-          "notes": "This shape comes from the current raw profile's shared Search Filters handling rather than the staged endpoint markdown."
+          "notes": "This shape comes from the retired low-level artifact's shared Search Filters handling rather than the staged endpoint markdown."
         },
         "constraints": [
           "Each item uses the shared Search Filters time-period shape with YYYY-MM-DD start_date and end_date.",
           "Do not rely on this field to create recent-only geography stories on this endpoint until a materially different bounded response is reverified."
         ],
         "evidenceRefs": [
-          "geo-current-profile",
+          "geo-retired-profile",
           "geo-live-shared-filters-ignored"
         ],
         "observed": {
@@ -236,14 +236,14 @@
         "documented": {
           "type": "string",
           "required": false,
-          "notes": "The current raw profile lists observed values domestic and foreign."
+          "notes": "The retired low-level artifact lists observed values domestic and foreign."
         },
         "constraints": [
           "Use only recognized shared-filter tokens such as domestic or foreign.",
           "Do not treat recipient_scope as a reliable population-bounding control on this endpoint until a materially narrowed response is reverified."
         ],
         "evidenceRefs": [
-          "geo-current-profile",
+          "geo-retired-profile",
           "geo-live-shared-filters-ignored"
         ],
         "observed": {
@@ -267,14 +267,14 @@
         "documented": {
           "type": "array[object]",
           "required": false,
-          "notes": "The current raw profile gives examples like {\"country\":\"USA\",\"state\":\"CA\"}."
+          "notes": "The retired low-level artifact gives examples like {\"country\":\"USA\",\"state\":\"CA\"}."
         },
         "constraints": [
           "Location objects follow the shared Search Filters pattern such as {\"country\":\"USA\",\"state\":\"CA\"}.",
           "Do not treat this field as a reliable same-scope or same-state bounding control on this endpoint until reverified with a materially narrowed response."
         ],
         "evidenceRefs": [
-          "geo-current-profile",
+          "geo-retired-profile",
           "geo-live-shared-filters-ignored"
         ],
         "observed": {
@@ -843,31 +843,6 @@
         "geo-live-filtered-state-outlay-pop"
       ]
     }
-  },
-  "mcpToolCoverage": {
-    "currentProfilePath": "profiles/v2__disaster__spending_by_geography/profile.json",
-    "exposedTopLevelRequestFields": [
-      "filter",
-      "geo_layer",
-      "geo_layer_filters",
-      "scope",
-      "spending_type"
-    ],
-    "missingImportantRequestFields": [
-      "filter.def_codes",
-      "filter.award_type_codes",
-      "filter.time_period",
-      "filter.recipient_scope",
-      "filter.recipient_locations"
-    ],
-    "notes": [
-      "Nested disaster filter fields are necessary for a coding agent to construct valid requests, but a top-level-only tool surface obscures them.",
-      "The endpoint has no pagination, so request-construction value comes mostly from nested filter guidance and enum semantics."
-    ],
-    "evidenceRefs": [
-      "geo-current-profile",
-      "geo-derived-mcp-gaps"
-    ]
   },
   "behavior": {
     "contradictions": [

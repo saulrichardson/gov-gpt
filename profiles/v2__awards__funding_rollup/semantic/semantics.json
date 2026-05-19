@@ -3,7 +3,7 @@
   "slug": "v2__awards__funding_rollup",
   "generatedAt": "2026-05-15T00:00:00Z",
   "endpointRef": "v2__awards__funding_rollup",
-  "summary": "Live-verified aggregate endpoint for a single award that returns one total obligation-like funding/accounting measure plus distinct counts of awarding agencies, funding agencies, and federal accounts derived from revealed File C funding records. The staged docs show page, sort, order, and limit in the request body, but source and current-profile evidence indicate those are legacy no-op fields and the current raw MCP profile exposes only award_id. For compact dashboards, treat the monetary total as revealed funding/accounting evidence that can reconcile differently across awards rather than as a guaranteed match to total_account_obligation or headline total_obligation.",
+  "summary": "Live-verified aggregate endpoint for a single award that returns one total obligation-like funding/accounting measure plus distinct counts of awarding agencies, funding agencies, and federal accounts derived from revealed File C funding records. The staged docs show page, sort, order, and limit in the request body, but source and retired-profile evidence indicate those are legacy no-op fields and the retired low-level artifact exposes only award_id. For compact dashboards, treat the monetary total as revealed funding/accounting evidence that can reconcile differently across awards rather than as a guaranteed match to total_account_obligation or headline total_obligation.",
   "businessPurpose": "Use this endpoint when you already know a specific award and want a quick funding footprint summary rather than detailed funding rows: total transaction obligations plus how many distinct awarding agencies, funding agencies, and federal accounts appear in the revealed File C funding data for that award. In dashboard workflows, present it as compact funding/accounting evidence rather than as the authoritative headline award-total tile, and reconcile it against multiple award-detail totals when needed.",
   "analyticalGrain": "One aggregate object per requested award_id.",
   "primaryEntities": [
@@ -243,7 +243,7 @@
         },
         {
           "order": 7,
-          "action": "Treat all-zero responses carefully because current-profile evidence indicates an unknown award_id can still return HTTP 200 with zero totals.",
+          "action": "Treat all-zero responses carefully because retired-profile evidence indicates an unknown award_id can still return HTTP 200 with zero totals.",
           "endpointSlug": "v2__awards__funding_rollup",
           "evidenceRefs": [
             "ev-prof-001"
@@ -263,7 +263,7 @@
   ],
   "caveats": [
     {
-      "statement": "The docs sample body shows page, sort, order, and limit, but source and current-profile evidence indicate the implementation ignores those fields and always returns one aggregate object.",
+      "statement": "The docs sample body shows page, sort, order, and limit, but source and retired-profile evidence indicate the implementation ignores those fields and always returns one aggregate object.",
       "impact": "Do not design pagination or sorting workflows around this endpoint.",
       "status": "contradicted",
       "evidenceRefs": [
@@ -274,7 +274,7 @@
       ]
     },
     {
-      "statement": "Unknown award ids can return HTTP 200 with zero totals according to the current raw profile.",
+      "statement": "Unknown award ids can return HTTP 200 with zero totals according to the retired low-level artifact.",
       "impact": "A zeroed rollup is not by itself proof that the request used a valid award identifier.",
       "status": "inferred",
       "evidenceRefs": [

@@ -23,7 +23,7 @@
       "description": "The ZIP artifact referenced by file_url; while status remains nonterminal, file_url can identify the eventual storage location before the archive is actually retrievable.",
       "evidenceRefs": [
         "dst-doc-contract",
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-view",
         "dst-probe-create-award-job",
         "dst-probe-valid-status",
@@ -37,7 +37,7 @@
       "description": "seconds_elapsed indicates how long the job has been running or how long it took before finishing or failing.",
       "evidenceRefs": [
         "dst-doc-contract",
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-lookups",
         "dst-probe-valid-status"
       ]
@@ -47,7 +47,7 @@
       "description": "total_size reports the generated file size in kilobytes when known.",
       "evidenceRefs": [
         "dst-doc-contract",
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-view",
         "dst-probe-valid-status"
       ]
@@ -56,7 +56,7 @@
       "name": "Export row and column counts",
       "description": "total_rows and total_columns summarize generated CSV content, but nonterminal responses can report provisional zeros or changing counts before the archive is actually ready for ingestion.",
       "evidenceRefs": [
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-lookups",
         "dst-probe-valid-status",
         "dst-review-rt3-handoff"
@@ -88,7 +88,7 @@
       "description": "message provides human-readable failure context when a job fails; it is otherwise null in observed running and finished responses.",
       "evidenceRefs": [
         "dst-doc-contract",
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-view",
         "dst-probe-valid-status"
       ]
@@ -110,7 +110,7 @@
       "description": "The response provides file_url for the generated ZIP archive.",
       "evidenceRefs": [
         "dst-doc-contract",
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-view",
         "dst-probe-create-award-job",
         "dst-probe-valid-status"
@@ -121,7 +121,7 @@
       "description": "Use total_size, total_rows, and total_columns after the job reaches a stable or terminal state.",
       "evidenceRefs": [
         "dst-doc-contract",
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-probe-valid-status"
       ]
     },
@@ -157,7 +157,7 @@
       "name": "Cataloging all available downloads",
       "description": "The endpoint looks up one exact file_name and returns 404 for unknown values rather than listing jobs.",
       "evidenceRefs": [
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-view"
       ]
     },
@@ -226,7 +226,7 @@
           "order": 3,
           "action": "If status is nonterminal, keep polling and treat file_url, total_rows, total_columns, and total_size as provisional workflow metadata only; do not start dashboard ingestion from those values yet.",
           "evidenceRefs": [
-            "dst-current-profile",
+            "dst-retired-profile",
             "dst-source-lookups",
             "dst-probe-valid-status",
             "dst-review-rt3-handoff"
@@ -246,7 +246,7 @@
           "action": "If the job fails, inspect message when present and rerun or repair the initiating request rather than trying to parse file_url output.",
           "evidenceRefs": [
             "dst-doc-contract",
-            "dst-current-profile",
+            "dst-retired-profile",
             "dst-source-view",
             "dst-probe-valid-status"
           ]
@@ -277,7 +277,7 @@
       "impact": "Branch response handling by HTTP status or by the presence of detail.",
       "status": "observed",
       "evidenceRefs": [
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-view"
       ]
     },
@@ -286,7 +286,7 @@
       "impact": "Do not treat nonterminal total_rows or total_columns as final analytic counts or as proof that the archive is ready for ingestion.",
       "status": "contradicted",
       "evidenceRefs": [
-        "dst-current-profile",
+        "dst-retired-profile",
         "dst-source-lookups",
         "dst-probe-valid-status",
         "dst-review-rt3-handoff"

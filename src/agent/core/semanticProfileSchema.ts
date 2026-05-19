@@ -5,7 +5,7 @@ export const SEMANTIC_PROFILE_SCHEMA_VERSION = "2.0.0" as const;
 export const SemanticHttpMethodSchema = z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 export const SourceKindSchema = z.enum([
   "documentation",
-  "current_profile",
+  "retired_artifact",
   "live_probe",
   "source_code",
   "derived_check",
@@ -46,7 +46,7 @@ export const EndpointRefSchema = z
   })
   .strict();
 
-const JsonObjectSchema: z.ZodType<Record<string, unknown>> = z.record(z.unknown());
+const JsonObjectSchema: z.ZodType<Record<string, unknown>> = z.record(z.string(), z.unknown());
 
 export const RequestRecordSchema = z
   .object({
@@ -182,7 +182,7 @@ export const RequestValidationWarningSchema = z
         missingAny: z.array(z.string().min(1)).default([]),
         presentAll: z.array(z.string().min(1)).default([]),
         presentAny: z.array(z.string().min(1)).default([]),
-        valueIn: z.record(z.array(z.string().min(1))).default({}),
+        valueIn: z.record(z.string(), z.array(z.string().min(1))).default({}),
       })
       .strict(),
     evidenceRefs: z.array(EvidenceRefSchema).min(1),
@@ -257,16 +257,6 @@ export const EndpointArtifactSchema = z
           .optional(),
       })
       .strict(),
-    mcpToolCoverage: z
-      .object({
-        currentProfilePath: z.string().min(1).optional(),
-        exposedTopLevelRequestFields: z.array(z.string()).default([]),
-        missingImportantRequestFields: z.array(z.string()).default([]),
-        notes: z.array(z.string()).default([]),
-        evidenceRefs: z.array(EvidenceRefSchema).default([]),
-      })
-      .strict()
-      .optional(),
     behavior: z
       .object({
         contradictions: z.array(BehaviorNoteSchema).default([]),

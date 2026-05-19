@@ -13,7 +13,7 @@ The experiment now uses a model-owned quality loop in `scripts/agents`:
 
 - producer agent: investigates one endpoint and authors the four Semantic
   Profile V2 artifacts.
-- reviewer agent: reads a generated bundle, staged docs, current raw profile,
+- reviewer agent: reads a generated bundle, staged docs,
   source context, and optional live probes; returns a structured critique.
 - repair agent: takes a reviewer or story report and edits one bundle in place.
   It is intentionally task-scoped: load context, write artifacts, validate,
@@ -265,7 +265,7 @@ The first run exposed a structural semantic gap:
 - The returned `download_request` showed injected defaults, including a large
   default `award_type_codes` set.
 - The workflow pointed to `v2__download__status`, but that endpoint existed only
-  as a raw endpoint. Semantic MCP calls failed with `unknown semantic slug`.
+  before it was promoted. Semantic MCP calls failed with `unknown semantic slug`.
 
 The producer agent then authored a new `v2__download__status` bundle in
 `runs/agents-sdk-story-download-status`. It initially wrote a valid docs/profile

@@ -37,10 +37,10 @@
         "retrievedAt": "2026-05-12T09:00:00Z"
       },
       {
-        "id": "src-current-profile",
-        "kind": "current_profile",
-        "title": "Current raw MCP profile for Download Count",
-        "locator": "profiles/v2__download__count/profile.json",
+        "id": "src-retired-profile",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact for Download Count",
+        "locator": "retired-artifact:v2__download__count",
         "retrievedAt": "2026-05-12T09:00:00Z"
       },
       {
@@ -60,8 +60,8 @@
       {
         "id": "src-derived-mcp-gaps",
         "kind": "derived_check",
-        "title": "Derived MCP coverage gap assessment for Download Count",
-        "locator": "Derived from staged docs, current raw profile, and source implementation",
+        "title": "Derived retired MCP coverage gap assessment for Download Count",
+        "locator": "Derived from staged docs, retired low-level artifact, and source implementation",
         "retrievedAt": "2026-05-12T09:00:00Z"
       },
       {
@@ -101,7 +101,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile",
+          "ev-retired-profile",
           "ev-live-baseline-default",
           "ev-live-unused-filter-warning"
         ],
@@ -371,7 +371,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[string]",
@@ -430,7 +430,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[LocationObject]",
@@ -448,7 +448,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[string]",
@@ -466,7 +466,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile",
+          "ev-retired-profile",
           "ev-review-keywords-award-types-count"
         ],
         "documented": {
@@ -515,7 +515,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[AwardAmounts]",
@@ -551,7 +551,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "NAICSCodeObject",
@@ -569,7 +569,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "PSCCodeObject|array[string]",
@@ -588,7 +588,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[string]",
@@ -606,7 +606,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[string]",
@@ -624,7 +624,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[string]",
@@ -642,7 +642,7 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[TASCodeObject]",
@@ -662,7 +662,7 @@
         ],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ],
         "documented": {
           "type": "array[TreasuryAccountComponentsObject]",
@@ -985,46 +985,19 @@
           "examples": [
             [
               "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
-              "'subawards' will be deprecated in the future. Set \u2018spending_level\u2019 to \u2018subawards\u2019 instead. See documentation for more information. ",
+              "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. See documentation for more information. ",
               "The above fields containing the transaction_* naming convention will be deprecated and replaced with fields without the transaction_*. "
             ],
             [
               "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. ",
               "The following filters from the request were not used: {'not_a_real_filter'}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters",
-              "'subawards' will be deprecated in the future. Set \u2018spending_level\u2019 to \u2018subawards\u2019 instead. See documentation for more information. ",
+              "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. See documentation for more information. ",
               "The above fields containing the transaction_* naming convention will be deprecated and replaced with fields without the transaction_*. "
             ]
           ],
           "notes": "The unused-filter probe returned four messages, including a warning that the unknown nested key was ignored."
         }
       }
-    ]
-  },
-  "mcpToolCoverage": {
-    "currentProfilePath": "profiles/v2__download__count/profile.json",
-    "exposedTopLevelRequestFields": [
-      "filters",
-      "spending_level"
-    ],
-    "missingImportantRequestFields": [
-      "subawards",
-      "filters.time_period.date_type",
-      "filters.place_of_performance_scope",
-      "filters.place_of_performance_locations",
-      "filters.agencies",
-      "filters.recipient_id",
-      "filters.recipient_scope",
-      "filters.award_ids",
-      "filters.program_numbers"
-    ],
-    "notes": [
-      "The current raw profile exposes filters and spending_level, and it enumerates some nested filter keys, but it omits several documented advanced-filter branches plus the hidden legacy subawards switch.",
-      "time_period.date_type is live and important for callers, but it is not represented as a discrete current-profile request fact."
-    ],
-    "evidenceRefs": [
-      "ev-current-profile",
-      "ev-derived-mcp-gaps",
-      "ev-live-time-period-date-signed"
     ]
   },
   "behavior": {
@@ -1068,7 +1041,7 @@
         "impact": "Avoid casual empty-filter calls because they count the full dataset and usually imply a bulk workflow instead of a row-limited custom download.",
         "status": "inferred",
         "evidenceRefs": [
-          "ev-current-profile",
+          "ev-retired-profile",
           "ev-source-download-count"
         ]
       },
@@ -1088,15 +1061,15 @@
         "status": "unknown",
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-retired-profile"
         ]
       },
       {
-        "statement": "This bundle did not re-probe the malformed-request cases previously recorded in the raw profile, such as missing filters producing a generic HTML 500.",
+        "statement": "This bundle did not re-probe the malformed-request cases previously recorded in the retired artifact, such as missing filters producing a generic HTML 500.",
         "impact": "The safer assumption is still to validate request structure client-side before calling the API.",
         "status": "unknown",
         "evidenceRefs": [
-          "ev-current-profile"
+          "ev-retired-profile"
         ]
       }
     ],
@@ -1125,7 +1098,7 @@
         "impact": "Validate body shape before calling the live API.",
         "status": "inferred",
         "evidenceRefs": [
-          "ev-current-profile"
+          "ev-retired-profile"
         ]
       }
     ]

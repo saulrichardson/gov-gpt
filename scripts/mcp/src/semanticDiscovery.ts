@@ -1,7 +1,41 @@
 import type { SemanticBundle } from "./loadSemanticBundles.js";
-import type { EndpointSummary, ParamLocation, PlannerMetadata, PlannerParameter, ShipTier } from "./types.js";
 
-export type SemanticDiscoverySummary = EndpointSummary & {
+export type ParamLocation = "query" | "body" | "path";
+export type ShipTier = "representative";
+export type PlannerParameter = {
+  name: string;
+  location: ParamLocation;
+  required: boolean;
+  description: string;
+  types: string[];
+  status?: string;
+  constraints?: string[];
+};
+export type PlannerMetadata = {
+  parameterCount: number;
+  requiredParams: string[];
+  optionalParams: string[];
+  safeOptionalParams: string[];
+  uncertainOptionalParams: string[];
+  riskyOptionalParams: string[];
+  queryParams: string[];
+  bodyParams: string[];
+  pathParams: string[];
+  supportsPagination: boolean;
+  supportsSorting: boolean;
+  supportsFiltering: boolean;
+  supportsDateRange: boolean;
+  parameters: PlannerParameter[];
+};
+export type SemanticDiscoverySummary = {
+  slug: string;
+  description: string;
+  path: string;
+  method: string;
+  shipTier: ShipTier;
+  tags: string[];
+  capabilities: string[];
+  planner: PlannerMetadata;
   semanticReadiness?: "promoted_semantic_bundle";
   semanticAvailability?: SemanticBundle["endpoint"]["availability"]["status"];
 };
@@ -35,10 +69,6 @@ function semanticCapabilities(bundle: SemanticBundle): string[] {
     ...bundle.semantics.workflows.map((workflow) => normalizeDiscoveryTerm(workflow.name)),
     ...bundle.semantics.suitableQuestions.map((question) => normalizeDiscoveryTerm(question.name)),
   ]).slice(0, 40);
-}
-
-function promotedSemanticTier(summary: EndpointSummary): ShipTier {
-  return "representative";
 }
 
 function plannerLocationFromSemanticLocation(location: string): ParamLocation {
@@ -111,23 +141,6 @@ export function endpointSummaryFromSemanticBundle(bundle: SemanticBundle): Seman
     shipTier: "representative",
     tags: semanticTags(bundle),
     capabilities: semanticCapabilities(bundle),
-    planner: semanticPlannerFromBundle(bundle),
-    semanticReadiness: "promoted_semantic_bundle",
-    semanticAvailability: bundle.endpoint.availability.status,
-  };
-}
-
-export function enrichEndpointSummaryWithSemanticProfile(
-  summary: EndpointSummary,
-  bundle?: SemanticBundle
-): SemanticDiscoverySummary {
-  if (!bundle) return summary;
-
-  return {
-    ...summary,
-    shipTier: promotedSemanticTier(summary),
-    tags: uniqueStrings([...(summary.tags || []), ...semanticTags(bundle)]),
-    capabilities: uniqueStrings([...(summary.capabilities || []), ...semanticCapabilities(bundle)]),
     planner: semanticPlannerFromBundle(bundle),
     semanticReadiness: "promoted_semantic_bundle",
     semanticAvailability: bundle.endpoint.availability.status,
@@ -213,7 +226,6 @@ export function analysisPacketFromSemanticBundle(
       uncertainFields: uncertainRequestFacts,
       templates: endpoint.request.templates,
       validationWarnings: endpoint.request.validationWarnings,
-      mcpCoverageGaps: endpoint.mcpToolCoverage ?? null,
     },
     responseInterpretation: {
       contentType: endpoint.response.contentType,

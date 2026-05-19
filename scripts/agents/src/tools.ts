@@ -233,7 +233,7 @@ async function validateAndSummarize(slug: string, outRoot: string, promoted: boo
   const relOutRoot = relative(repoRoot, resolvedOutRoot);
   const validation = await runCommand(
     "npm",
-    ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relOutRoot],
+    ["--prefix", "scripts/agents", "run", "semantic:validate", "--", "--root", relOutRoot],
     60_000
   );
 
@@ -270,7 +270,6 @@ async function validateAndSummarize(slug: string, outRoot: string, promoted: boo
       `Validator accepted ${result.requestFacts} request facts and ${result.responseFacts} response facts.`,
       `Availability is ${result.availability}.`,
       `Evidence records: ${result.evidenceRecords}.`,
-      `Missing current MCP fields captured: ${(result.missingMcpFields ?? []).join(", ") || "none"}.`,
       `Self-story gate ${storyReport?.status ?? "unknown"}: ${storyReport?.summary ?? "ready"}`,
     ],
     artifacts,
@@ -284,25 +283,19 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
   const loadEndpointContext = tool({
     name: "load_endpoint_context",
     description:
-      "Load source-of-truth context for one USAspending endpoint slug: staged docs, current raw profile, semantic schema docs, operating model, and existing semantic bundle if any.",
+      "Load source-of-truth context for one USAspending endpoint slug: staged docs, semantic schema docs, operating model, and existing semantic bundle if any.",
     parameters: z.object({
       slug: z.string(),
       maxCharsPerFile: z.number().int().positive().max(40000),
     }),
     execute: async ({ slug, maxCharsPerFile }) => {
       const stagedDocPath = docPathForSlug(slug);
-      const profilePath = join(repoRoot, "profiles", slug, "profile.json");
-      const promptPath = join(repoRoot, "profiles", slug, "prompt.md");
       const existingSemanticPath = join(repoRoot, "profiles", slug, "semantic", "endpoint.json");
       return {
         repoRoot,
         slug,
         stagedDocPath: repoRelative(stagedDocPath),
         stagedDoc: readOptional(stagedDocPath, maxCharsPerFile),
-        currentRawProfilePath: repoRelative(profilePath),
-        currentRawProfile: readOptional(profilePath, maxCharsPerFile),
-        currentPromptPath: repoRelative(promptPath),
-        currentPrompt: readOptional(promptPath, Math.min(maxCharsPerFile, 8000)),
         semanticProfileGuidePath: "docs/semantic-profile-v2.md",
         semanticProfileGuide: readOptional(join(repoRoot, "docs", "semantic-profile-v2.md"), maxCharsPerFile),
         mcpTargetShapePath: "docs/mcp-target-shape.md",
@@ -471,7 +464,7 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
       const relOutRoot = relative(repoRoot, resolvedOutRoot);
       const result = await runCommand(
         "npm",
-        ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relOutRoot],
+        ["--prefix", "scripts/agents", "run", "semantic:validate", "--", "--root", relOutRoot],
         60_000
       );
       return {
@@ -512,7 +505,7 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
       const relOutRoot = relative(repoRoot, resolvedOutRoot);
       const validation = await runCommand(
         "npm",
-        ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relOutRoot],
+        ["--prefix", "scripts/agents", "run", "semantic:validate", "--", "--root", relOutRoot],
         60_000
       );
       if (!validation.ok) {
@@ -605,7 +598,7 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
         "npm",
         [
           "--prefix",
-          "scripts/codex",
+          "scripts/agents",
           "run",
           "semantic:validate",
           "--",

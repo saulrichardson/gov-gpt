@@ -121,7 +121,6 @@ export function createSemanticReviewTools(defaultOutRoot: string) {
         ARTIFACT_FILES.map((fileName) => [fileName, readOptional(join(dir, fileName), maxCharsPerFile)])
       );
       const stagedDocPath = docPathForSlug(slug);
-      const profilePath = join(repoRoot, "profiles", slug, "profile.json");
       return {
         repoRoot,
         slug,
@@ -130,8 +129,6 @@ export function createSemanticReviewTools(defaultOutRoot: string) {
         artifacts,
         stagedDocPath: repoRelative(stagedDocPath),
         stagedDoc: readOptional(stagedDocPath, maxCharsPerFile),
-        currentRawProfilePath: repoRelative(profilePath),
-        currentRawProfile: readOptional(profilePath, Math.min(maxCharsPerFile, 24000)),
         semanticProfileGuidePath: "docs/semantic-profile-v2.md",
         semanticProfileGuide: readOptional(join(repoRoot, "docs", "semantic-profile-v2.md"), Math.min(maxCharsPerFile, 24000)),
         mcpTargetShapePath: "docs/mcp-target-shape.md",
@@ -303,7 +300,7 @@ export function createSemanticRepairTools(defaultOutRoot: string) {
       const relRoot = repoRelative(resolveInsideRepo(root));
       const result = await runCommand(
         "npm",
-        ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relRoot],
+        ["--prefix", "scripts/agents", "run", "semantic:validate", "--", "--root", relRoot],
         60_000
       );
       const unexpectedFiles = unexpectedRepairArtifactFiles(root);

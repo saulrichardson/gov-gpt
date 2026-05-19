@@ -17,7 +17,7 @@ describe("tool error classification", () => {
   });
 
   it("classifies unknown slugs as not_found", () => {
-    const error = classifyToolError(new Error("unknown slug: v2__missing"));
+    const error = classifyToolError(new Error("unknown semantic slug: v2__missing"));
     expect(error.code).toBe("UNKNOWN_ENDPOINT");
     expect(error.retryable).toBe(false);
     expect(error.category).toBe("not_found");

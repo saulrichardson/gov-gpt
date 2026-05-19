@@ -31,7 +31,7 @@ function readJson(path: string) {
   return JSON.parse(readFileSync(path, "utf-8"));
 }
 
-function readEvidenceJsonl(path: string) {
+function readEvidenceJsonl(path: string): EvidenceRecord[] {
   return readFileSync(path, "utf-8")
     .split("\n")
     .map((line) => line.trim())
@@ -67,15 +67,6 @@ function validateEvidenceLinks(slug: string, artifactName: string, artifact: unk
 }
 
 function validateEndpointPolicy(slug: string, endpoint: EndpointArtifact) {
-  const importantMissing = endpoint.mcpToolCoverage?.missingImportantRequestFields ?? [];
-  const factsByPath = new Map(endpoint.request.parameters.map((fact) => [fact.path, fact]));
-  const missingFacts = importantMissing.filter((path) => !factsByPath.has(path));
-  if (missingFacts.length > 0) {
-    throw new Error(
-      `${slug}/endpoint.json marks important fields missing from MCP coverage but does not describe them as request facts: ${missingFacts.join(", ")}`
-    );
-  }
-
   for (const fact of [...endpoint.request.parameters, ...endpoint.response.fields]) {
     if (
       ["observed", "documented_and_observed", "contradicted", "observed_unavailable"].includes(fact.status) &&
@@ -116,7 +107,7 @@ function validateBundle(root: string, slug: string) {
     if (!existsSync(path)) throw new Error(`${slug} is missing ${path}`);
   }
 
-  const endpoint = EndpointArtifactSchema.parse(readJson(endpointPath));
+  const endpoint = EndpointArtifactSchema.parse(readJson(endpointPath)) as EndpointArtifact;
   const semantics = SemanticArtifactSchema.parse(readJson(semanticsPath));
   const evidence = readEvidenceJsonl(evidencePath);
   const usage = readFileSync(usagePath, "utf-8");
@@ -140,7 +131,6 @@ function validateBundle(root: string, slug: string) {
     responseFacts: endpoint.response.fields.length,
     availability: endpoint.availability.status,
     contradictions: endpoint.behavior.contradictions.length,
-    missingMcpFields: endpoint.mcpToolCoverage?.missingImportantRequestFields ?? [],
   };
 }
 

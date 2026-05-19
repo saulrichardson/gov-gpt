@@ -462,7 +462,7 @@ describe("Agents SDK semantic endpoint producer", () => {
       ]);
       expect(String(agent.instructions)).toContain("agentic MCP acceptance test");
       expect(String(agent.instructions)).toContain("Use validateRequest before callEndpoint");
-      expect(String(agent.instructions)).toContain("inspect hasSemanticProfile");
+      expect(String(agent.instructions)).toContain("only promoted query surface");
       expect(String(agent.instructions)).toContain("usually 8-12 MCP calls are enough");
       expect(String(agent.instructions)).toContain("include evidence.jsonl in affectedArtifacts");
       expect(String(agent.instructions)).toContain("Full-access autonomous mode");

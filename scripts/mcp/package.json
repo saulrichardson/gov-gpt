@@ -3,22 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MCP server exposing USAspending semantic bundles and raw profiles",
+  "description": "MCP server exposing USAspending Semantic Profile V2 bundles",
   "scripts": {
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "validate-profiles": "tsx src/validateProfiles.ts",
     "validate-semantic": "tsx src/validateSemanticBundles.ts",
-    "promote-profile": "tsx src/promoteProfile.ts",
     "smoke": "tsx src/smokeServer.ts",
     "smoke-client": "tsx src/smokeClient.ts",
     "lint": "echo 'no lint configured'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.0",
-    "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1",
     "fast-glob": "^3.3.2",
     "undici": "^6.19.6",
     "zod": "^3.23.8"

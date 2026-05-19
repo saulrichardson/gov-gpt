@@ -77,8 +77,8 @@ surface options instead of silently choosing.
    to pass a generated bundle.
 
 5. Forward-looking design.
-   Remove superseded prototype code. Keep raw-profile pipeline concerns isolated
-   from the semantic MCP authoring path.
+   Remove superseded prototype code. Do not keep compatibility paths for the
+   retired raw-profile pipeline.
 
 ## Implementation Guidance
 
@@ -87,8 +87,8 @@ surface options instead of silently choosing.
 - Use `npm --prefix scripts/agents run semantic:frontier` for high-ceiling
   multi-story MCP stress tests. Treat its summary as a source of repair tasks,
   not as a replacement for endpoint bundles.
-- Use `scripts/codex` for the supporting raw-profile pipeline and the shared
-  `semantic:validate` command only.
+- Use `npm --prefix scripts/agents run semantic:validate -- --root <run-root>`
+  for run-root bundle validation.
 - Use `scripts/mcp` for runtime MCP tools, semantic bundle loading, validation,
   and smoke clients.
 - Keep shared schemas in `src/agent/core`.
@@ -113,8 +113,9 @@ surface options instead of silently choosing.
   lifetime-versus-period meaning, sample-versus-full-population boundaries,
   async/export artifact boundaries, and observed-versus-inferred shared filters.
 - Preserve documented-but-unprobed fields with explicit statuses; do not drop
-  them merely because the current MCP profile omitted them.
-- Record contradictions and MCP coverage gaps as first-class information.
+  them merely because they are absent from a generated template or probe.
+- Record contradictions, semantic caveats, and request-validation warnings as
+  first-class information.
 - Story/review repair tasks should include `targetSlug` when one endpoint bundle
   owns the repair so frontier runs can produce a directly usable repair queue.
 - Update docs whenever the operating model, commands, or artifact contract
@@ -129,7 +130,7 @@ changes, the usual checks are:
 npm --prefix scripts/agents run typecheck
 npm --prefix scripts/agents run test
 npm --prefix scripts/agents run smoke
-npm --prefix scripts/codex run semantic:validate -- --root <run-root>
+npm --prefix scripts/agents run semantic:validate -- --root <run-root>
 npm --prefix scripts/mcp run typecheck
 npm --prefix scripts/mcp run test
 scripts/mcp/bin/validate-semantic-bundles

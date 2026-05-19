@@ -171,7 +171,7 @@ async function tryRecoverValidatedSummary(options: RunSemanticEndpointAgentOptio
 
   const validation = await execFileAsync(
     "npm",
-    ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relative(repoRoot, outRoot)],
+    ["--prefix", "scripts/agents", "run", "semantic:validate", "--", "--root", relative(repoRoot, outRoot)],
     {
       cwd: repoRoot,
       timeout: 60_000,
@@ -202,7 +202,6 @@ async function tryRecoverValidatedSummary(options: RunSemanticEndpointAgentOptio
       `Validator accepted ${result.requestFacts} request facts and ${result.responseFacts} response facts.`,
       `Availability is ${result.availability}.`,
       `Evidence records: ${result.evidenceRecords}.`,
-      `Missing current MCP fields captured: ${(result.missingMcpFields ?? []).join(", ") || "none"}.`,
     ],
     artifacts,
     nextSteps: options.promote

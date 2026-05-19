@@ -1,12 +1,8 @@
-import { existsSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { loadProfiles } from "./loadProfiles.js";
-import { callEndpoint } from "./call.js";
-import { buildToolInputSchema } from "./zodFromProfile.js";
 import { createToolErrorResult } from "./toolErrors.js";
-import { buildEndpointHealth } from "./shipping.js";
 import { scoreSearchQuery } from "./search.js";
 import { loadSemanticBundles } from "./loadSemanticBundles.js";
 import type { SemanticBundle } from "./loadSemanticBundles.js";
@@ -14,10 +10,8 @@ import { callSemanticEndpoint, validateSemanticRequest } from "./semanticRequest
 import {
   analysisPacketFromSemanticBundle,
   endpointSummaryFromSemanticBundle,
-  enrichEndpointSummaryWithSemanticProfile,
 } from "./semanticDiscovery.js";
 
-type LoadedProfiles = ReturnType<typeof loadProfiles>;
 type LoadedSemanticBundles = ReturnType<typeof loadSemanticBundles>;
 
 function summarizeParamNames(names: string[], max = 6): string {
@@ -48,12 +42,6 @@ function plannerStrategyHint(planner: any): string {
   if (planner.supportsSorting) parts.push("supports=sorting");
   if (planner.supportsDateRange) parts.push("supports=date_range");
   return parts.join("; ");
-}
-
-function endpointToolDescription(profile: any): string {
-  const base = `${profile.endpoint.method.toUpperCase()} ${profile.endpoint.path}${profile.description ? ` — ${profile.description}` : ""}`;
-  const strategy = plannerStrategyHint(profile.planner);
-  return `${base}. Strategy: ${strategy}.`;
 }
 
 function sortBySearchScore<T>(items: T[], score: (item: T) => number): T[] {
@@ -99,58 +87,14 @@ function rankedTemplates(bundle: SemanticBundle, useCase?: string) {
   );
 }
 
-function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: LoadedSemanticBundles) {
-  const { profiles, summaries, profilePaths, promptPaths, docPaths } = loaded;
-  const profilesBySlug = Object.fromEntries(profiles.map((p) => [p.slug, p]));
+function registerSemanticTools(server: any, semanticLoaded: LoadedSemanticBundles) {
   const semanticBySlug = semanticLoaded.bundlesBySlug;
-
-  server.registerPrompt(
-    "usaspending.endpointUsage",
-    {
-      title: "USAspending Endpoint Usage",
-      description: "Return the raw usage guide (prompt.md) for a given endpoint slug.",
-      argsSchema: {
-        slug: z.string().describe("Endpoint slug like v2__agency__toptier_code"),
-      },
-    },
-    async ({ slug }: { slug: string }) => {
-      const profile = profilesBySlug[slug];
-      if (!profile) {
-        throw new Error(`unknown slug: ${slug}`);
-      }
-
-      const toolName = `usaspending.${slug}`;
-      const profileUri = `usaspending://profiles/${slug}`;
-      const promptUri = `usaspending://prompts/${slug}`;
-
-      const promptPath = promptPaths[slug];
-      if (!promptPath) {
-        throw new Error(`missing prompt path for slug: ${slug}`);
-      }
-      if (!existsSync(promptPath)) {
-        throw new Error(`prompt.md not found for slug '${slug}' at: ${promptPath}`);
-      }
-
-      const prompt = readFileSync(promptPath, "utf-8");
-
-      return {
-        messages: [
-          {
-            role: "user",
-            content: {
-              type: "text",
-              text: `Tool: ${toolName}\nProfile: ${profileUri}\nResource: ${promptUri}\n\n${prompt}`,
-            },
-          },
-        ],
-      };
-    }
-  );
 
   server.registerTool(
     "usaspending.findEndpoints",
     {
-      description: "Search USAspending endpoints by slug, path, description, tags, capabilities, and planner strategy metadata.",
+      description:
+        "Search promoted USAspending semantic endpoints by business meaning, analytical grain, concepts, workflows, request strategy, slug, and API path.",
       inputSchema: {
         query: z.string().optional(),
         limit: z.number().int().positive().optional(),
@@ -159,23 +103,13 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
     async ({ query, limit }: { query?: string; limit?: number }) => {
       try {
         const n = limit ?? 20;
-        const rawSlugs = new Set(summaries.map((summary) => summary.slug));
-        const discoverySummaries = [
-          ...summaries.map((summary) => {
-            const semanticBundle = semanticBySlug[summary.slug];
-            return enrichEndpointSummaryWithSemanticProfile(summary, semanticBundle);
-          }),
-          ...semanticLoaded.bundles
-            .filter((bundle) => !rawSlugs.has(bundle.slug))
-            .map((bundle) => endpointSummaryFromSemanticBundle(bundle)),
-        ];
+        const discoverySummaries = semanticLoaded.bundles.map((bundle) => endpointSummaryFromSemanticBundle(bundle));
         const matches = discoverySummaries
           .map((summary, index) => {
             const semanticBundle = semanticBySlug[summary.slug];
             return {
               summary,
               index,
-              representative: summary.shipTier === "representative" ? 1 : 0,
               score: scoreSearchQuery(query, [
                 summary.slug,
                 summary.path,
@@ -190,26 +124,23 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
           .filter((candidate) => candidate.score > 0)
           .sort((left, right) => {
             if (right.score !== left.score) return right.score - left.score;
-            if (right.representative !== left.representative) return right.representative - left.representative;
             return left.index - right.index;
           })
           .map((candidate) => candidate.summary);
-        const results = matches.slice(0, n);
-        const resultsWithHints = results.map((s) => ({
-          ...s,
-          strategyHint: plannerStrategyHint((s as any).planner),
-          toolName: `usaspending.${s.slug}`,
-          profileUri: `usaspending://profiles/${s.slug}`,
-          promptUri: `usaspending://prompts/${s.slug}`,
-          hasSemanticProfile: Boolean(semanticBySlug[s.slug]),
-          semanticSchemaUri: semanticBySlug[s.slug] ? `usaspending://semantic/schema/${s.slug}` : undefined,
-          semanticGuideUri: semanticBySlug[s.slug] ? `usaspending://semantic/usage/${s.slug}` : undefined,
-          businessPurpose: semanticBySlug[s.slug]?.semantics.businessPurpose,
-          analyticalGrain: semanticBySlug[s.slug]?.semantics.analyticalGrain,
+        const results = matches.slice(0, n).map((summary) => ({
+          ...summary,
+          strategyHint: plannerStrategyHint((summary as any).planner),
+          toolName: "usaspending.callEndpoint",
+          schemaTool: "usaspending.getEndpointSchema",
+          semanticsTool: "usaspending.getEndpointSemantics",
+          schemaUri: `usaspending://semantic/schema/${summary.slug}`,
+          semanticGuideUri: `usaspending://semantic/usage/${summary.slug}`,
+          businessPurpose: semanticBySlug[summary.slug]?.semantics.businessPurpose,
+          analyticalGrain: semanticBySlug[summary.slug]?.semantics.analyticalGrain,
         }));
         return {
-          content: [{ type: "text", text: JSON.stringify({ results: resultsWithHints }, null, 2) }],
-          structuredContent: { results: resultsWithHints },
+          content: [{ type: "text", text: JSON.stringify({ results }, null, 2) }],
+          structuredContent: { results },
         };
       } catch (error) {
         return createToolErrorResult(error, { tool: "usaspending.findEndpoints", query, limit });
@@ -324,7 +255,7 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
     "usaspending.getEndpointSchema",
     {
       description:
-        "Get the promoted Semantic Profile V2 endpoint schema: request facts, response facts, availability, templates, statuses, and MCP coverage gaps.",
+        "Get the promoted Semantic Profile V2 endpoint schema: request facts, response facts, availability, templates, behavior notes, and validation warnings.",
       inputSchema: {
         slug: z.string(),
       },
@@ -564,8 +495,7 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
   server.registerTool(
     "usaspending.getEvidence",
     {
-      description:
-        "Get evidence for an endpoint. Promoted semantic endpoints return evidence.jsonl records; raw profiles return probe/mismatch/gap summaries.",
+      description: "Get evidence.jsonl records for a promoted semantic endpoint bundle.",
       inputSchema: {
         slug: z.string(),
         refs: z.array(z.string()).optional(),
@@ -573,153 +503,23 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
     },
     async ({ slug, refs }: { slug: string; refs?: string[] }) => {
       try {
-        const semanticBundle = semanticBySlug[slug];
-        if (semanticBundle) {
-          const wanted = new Set(refs ?? []);
-          const records = wanted.size > 0
-            ? semanticBundle.evidence.filter((record) => wanted.has(record.id))
-            : semanticBundle.evidence;
-          const payload = {
-            slug,
-            records,
-            missingRefs: wanted.size > 0 ? [...wanted].filter((ref) => !records.some((record) => record.id === ref)) : [],
-          };
-          return {
-            content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-            structuredContent: payload as any,
-          };
-        }
-
-        const profile = profilesBySlug[slug];
-        if (!profile) {
-          throw new Error(`unknown slug: ${slug}`);
-        }
+        const semanticBundle = requireSemanticBundle(semanticLoaded, slug);
+        const wanted = new Set(refs ?? []);
+        const records =
+          wanted.size > 0 ? semanticBundle.evidence.filter((record) => wanted.has(record.id)) : semanticBundle.evidence;
         const payload = {
-          slug: profile.slug,
-          lastVerified: profile.lastVerified,
-          evidence: profile.evidence || null,
-          probes: profile.probes || [],
-          mismatches: profile.mismatches || [],
-          gaps: profile.gaps || [],
-          risks: profile.risks || [],
+          slug,
+          records,
+          missingRefs: wanted.size > 0 ? [...wanted].filter((ref) => !records.some((record) => record.id === ref)) : [],
         };
         return {
           content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-          structuredContent: payload,
+          structuredContent: payload as any,
         };
       } catch (error) {
         return createToolErrorResult(error, { tool: "usaspending.getEvidence", slug });
       }
     }
-  );
-
-  server.registerTool(
-    "usaspending.getDoc",
-    {
-      description: "Get the staged contract markdown and semantic prompt for a shipped endpoint profile.",
-      inputSchema: {
-        slug: z.string(),
-      },
-    },
-    async ({ slug }: { slug: string }) => {
-      try {
-        const profile = profilesBySlug[slug];
-        if (!profile) {
-          throw new Error(`unknown slug: ${slug}`);
-        }
-        const docPath = docPaths[slug];
-        if (!docPath || !existsSync(docPath)) {
-          throw new Error(`missing doc for slug '${slug}' at: ${docPath || "<unknown>"}`);
-        }
-        const promptPath = promptPaths[slug];
-        if (!promptPath || !existsSync(promptPath)) {
-          throw new Error(`prompt.md not found for slug '${slug}' at: ${promptPath || "<unknown>"}`);
-        }
-
-        const payload = {
-          slug,
-          docPath,
-          promptPath,
-          contractDoc: readFileSync(docPath, "utf-8"),
-          rawUsageGuide: readFileSync(promptPath, "utf-8"),
-        };
-        return {
-          content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
-          structuredContent: payload,
-        };
-      } catch (error) {
-        return createToolErrorResult(error, { tool: "usaspending.getDoc", slug });
-      }
-    }
-  );
-
-  server.registerTool(
-    "usaspending.getEndpoint",
-    {
-      description: "Get full endpoint profile by slug",
-      inputSchema: {
-        slug: z.string(),
-      },
-    },
-    async ({ slug }: { slug: string }) => {
-      try {
-        const profile = profilesBySlug[slug];
-        if (!profile) {
-          throw new Error(`unknown slug: ${slug}`);
-        }
-        return {
-          content: [{ type: "text", text: JSON.stringify(profile, null, 2) }],
-          structuredContent: profile as any,
-        };
-      } catch (error) {
-        return createToolErrorResult(error, { tool: "usaspending.getEndpoint", slug });
-      }
-    }
-  );
-
-  for (const profile of profiles) {
-    const toolName = `usaspending.${profile.slug}`;
-    server.registerTool(
-      toolName,
-      {
-        description: endpointToolDescription(profile),
-        inputSchema: buildToolInputSchema(profile),
-      },
-      async (params: any) => {
-        try {
-          const result = await callEndpoint(profile, (params || {}) as any);
-          return {
-            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-            structuredContent: result as any,
-          };
-        } catch (error) {
-          return createToolErrorResult(error, {
-            tool: toolName,
-            slug: profile.slug,
-            method: profile.endpoint.method,
-            path: profile.endpoint.path,
-          });
-        }
-      }
-    );
-  }
-
-  server.registerResource(
-    "profiles_all",
-    "usaspending://profiles/all",
-    {
-      mimeType: "application/json",
-      description: "All USAspending endpoint profiles in one payload",
-    },
-    async (uri: any) => ({
-      contents: [
-        {
-          uri: uri.toString(),
-          mimeType: "application/json",
-          text: JSON.stringify(profiles, null, 2),
-        },
-      ],
-    })
   );
 
   server.registerResource(
@@ -823,149 +623,20 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
       })
     );
   }
-
-  for (const slug of Object.keys(profilePaths)) {
-    server.registerResource(
-      `profile_${slug}`,
-      `usaspending://profiles/${slug}`,
-      {
-        mimeType: "application/json",
-        description: "USAspending endpoint profile",
-      },
-      async (uri: any) => {
-        const path = profilePaths[slug];
-        if (!path) throw new Error(`unknown profile: ${slug}`);
-        return {
-          contents: [
-            {
-              uri: uri.toString(),
-              mimeType: "application/json",
-              text: readFileSync(path, "utf-8"),
-            },
-          ],
-        };
-      }
-    );
-
-    server.registerResource(
-      `evidence_${slug}`,
-      `usaspending://evidence/${slug}`,
-      {
-        mimeType: "application/json",
-        description: "Probe evidence, mismatches, gaps, and risks for this endpoint profile.",
-      },
-      async (uri: any) => {
-        const profile = profilesBySlug[slug];
-        if (!profile) throw new Error(`unknown profile: ${slug}`);
-        return {
-          contents: [
-            {
-              uri: uri.toString(),
-              mimeType: "application/json",
-              text: JSON.stringify(
-                {
-                  slug: profile.slug,
-                  lastVerified: profile.lastVerified,
-                  evidence: profile.evidence || null,
-                  probes: profile.probes || [],
-                  mismatches: profile.mismatches || [],
-                  gaps: profile.gaps || [],
-                  risks: profile.risks || [],
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      }
-    );
-
-    server.registerResource(
-      `prompt_${slug}`,
-      `usaspending://prompts/${slug}`,
-      {
-        mimeType: "text/markdown",
-        description: "Semantic usage guide for this endpoint",
-      },
-      async (uri: any) => {
-        const path = promptPaths[slug];
-        if (!path) throw new Error(`unknown prompt: ${slug}`);
-        return {
-          contents: [
-            {
-              uri: uri.toString(),
-              mimeType: "text/markdown",
-              text: readFileSync(path, "utf-8"),
-            },
-          ],
-        };
-      }
-    );
-
-    if (docPaths[slug]) {
-      server.registerResource(
-        `doc_${slug}`,
-        `usaspending://docs/${slug}`,
-        {
-          mimeType: "text/markdown",
-          description: "Raw staged contract markdown for this endpoint.",
-        },
-        async (uri: any) => {
-          const path = docPaths[slug];
-          if (!path) throw new Error(`unknown doc: ${slug}`);
-          return {
-            contents: [
-              {
-                uri: uri.toString(),
-                mimeType: "text/markdown",
-                text: readFileSync(path, "utf-8"),
-              },
-            ],
-          };
-        }
-      );
-    }
-
-    server.registerResource(
-      `health_${slug}`,
-      `usaspending://health/${slug}`,
-      {
-        mimeType: "application/json",
-        description: "Derived freshness and ship-readiness health for this endpoint.",
-      },
-      async (uri: any) => {
-        const profile = profilesBySlug[slug];
-        if (!profile) throw new Error(`unknown profile: ${slug}`);
-        return {
-          contents: [
-            {
-              uri: uri.toString(),
-              mimeType: "application/json",
-              text: JSON.stringify(buildEndpointHealth(profile), null, 2),
-            },
-          ],
-        };
-      }
-    );
-  }
 }
 
 async function main() {
-  const loaded = loadProfiles();
   const semanticLoaded = loadSemanticBundles();
-  if (loaded.profiles.length === 0) {
-    throw new Error("[PROFILE_LOAD_FAILED] profileCount=0");
+  if (semanticLoaded.bundles.length === 0) {
+    throw new Error("[SEMANTIC_BUNDLE_LOAD_FAILED] semanticBundleCount=0");
   }
 
+  const schemaVersions = Array.from(new Set(semanticLoaded.bundles.map((bundle) => bundle.endpoint.schemaVersion)));
   const startupLog = {
     event: "mcp_startup",
-    schemaVersion: loaded.schemaVersion,
-    profileCount: loaded.profiles.length,
+    schemaVersions,
     semanticBundleCount: semanticLoaded.bundles.length,
-    representativeProfileCount: loaded.profiles.filter((profile) => profile.shipTier === "representative").length,
-    publicToolMode: "semantic_plus_raw",
-    slugs: loaded.profiles.map((p) => p.slug),
+    publicToolMode: "semantic_only",
     semanticSlugs: semanticLoaded.bundles.map((bundle) => bundle.slug),
     buildVersion: process.env.BUILD_VERSION || "dev",
   };
@@ -975,18 +646,16 @@ async function main() {
     name: "usaspending-mcp-server",
     version: "0.1.0",
   }) as any;
-  registerEndpoints(server, loaded, semanticLoaded);
+  registerSemanticTools(server, semanticLoaded);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error(
     JSON.stringify({
       event: "mcp_listening",
-      schemaVersion: loaded.schemaVersion,
-      profileCount: loaded.profiles.length,
+      schemaVersions,
       semanticBundleCount: semanticLoaded.bundles.length,
-      representativeProfileCount: loaded.profiles.filter((profile) => profile.shipTier === "representative").length,
-      publicToolMode: "semantic_plus_raw",
+      publicToolMode: "semantic_only",
       buildVersion: process.env.BUILD_VERSION || "dev",
     })
   );

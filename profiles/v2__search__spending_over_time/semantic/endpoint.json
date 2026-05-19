@@ -28,10 +28,10 @@
         "locator": "staging/docs/v2/search/spending_over_time.md"
       },
       {
-        "id": "sot-current-profile-src",
-        "kind": "current_profile",
-        "title": "Current promoted raw MCP profile",
-        "locator": "profiles/v2__search__spending_over_time/profile.json"
+        "id": "sot-retired-profile-src",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact",
+        "locator": "retired-artifact:v2__search__spending_over_time"
       },
       {
         "id": "sot-source-view-src",
@@ -671,33 +671,6 @@
           "sot-probe-subawards"
         ]
       }
-    ]
-  },
-  "mcpToolCoverage": {
-    "currentProfilePath": "profiles/v2__search__spending_over_time/profile.json",
-    "exposedTopLevelRequestFields": [
-      "filters",
-      "group",
-      "spending_level",
-      "subawards"
-    ],
-    "missingImportantRequestFields": [
-      "filters.time_period",
-      "filters.award_type_codes",
-      "filters.place_of_performance_scope",
-      "filters.recipient_scope",
-      "filters.program_activities",
-      "filters.keywords"
-    ],
-    "notes": [
-      "The raw MCP exposes filters as an object but does not make the nested filter semantics searchable or status-classified.",
-      "The raw profile describes aliases in prose; the semantic bundle exposes them as machine-readable acceptedValues.",
-      "This repaired semantic bundle surfaces the shared location-scope filters that the raw MCP profile still hides inside the generic filters object."
-    ],
-    "evidenceRefs": [
-      "sot-current-profile",
-      "sot-doc-contract",
-      "sot-probe-alias-fy"
     ]
   },
   "behavior": {

@@ -1,197 +1,74 @@
 # USAspending MCP Target Shape
 
-The MCP is the product. Agent frameworks are producers and consumers of the
-MCP knowledge, not the source of truth.
+The MCP is the product surface. Agent frameworks produce and test its knowledge,
+but the source of truth is the validated semantic bundle.
 
-## Goal
+## Target Experience
 
-Give a coding or analysis agent enough context to query USAspending correctly:
+A downstream coding agent should be able to:
 
-- discover the right endpoint for an analytical question
-- understand business meaning and analytical grain
-- build valid requests, including nested filters and pagination
-- know which documented fields are live, contradicted, unverified, or unavailable
-- understand response shapes, joins, caveats, and safe workflows
-- call raw endpoints only after the semantic layer has made the shape clear
+1. Discover relevant USAspending endpoints from a natural-language analytical
+   goal.
+2. Inspect endpoint business meaning, analytical grain, entities, measures,
+   dimensions, joins, caveats, and workflows.
+3. Construct a bounded valid request from evidence-backed templates and field
+   facts.
+4. Validate the request before sending it.
+5. Make a scoped live call.
+6. Interpret the response in business terms.
+7. Inspect evidence behind non-trivial claims.
 
-The MCP should not be a thin wrapper over HTTP. It should be an evidence-backed
-semantic interface to the USAspending API.
+## Runtime Tools
 
-## Source Artifact
+The promoted MCP exposes semantic tools only:
 
-Every endpoint should be promoted from a validated Semantic Profile V2 bundle:
-
-```text
-profiles/<slug>/semantic/
-  endpoint.json    # callable surface, statuses, request/response facts, MCP gaps
-  semantics.json   # business meaning, grain, entities, measures, joins, workflows
-  evidence.jsonl   # audit trail for every material claim
-  usage.md         # caller-facing guide derived from the JSON artifacts
-```
-
-No agent framework gets to bypass this contract. Codex SDK, Agents SDK, or a
-manual investigator can all produce bundles, but promotion depends on validation.
-
-## Runtime MCP Surface
-
-The MCP should expose four classes of capabilities.
-
-### 1. Discovery
-
-Tools:
-
-- `usaspending.findConcepts(query)`
-- `usaspending.findEndpoints(query, filters?)`
-- `usaspending.findWorkflows(query)`
-
-Implemented status:
-
+- `usaspending.findEndpoints`
 - `usaspending.findConcepts`
-- semantic-enriched `usaspending.findEndpoints`
 - `usaspending.findWorkflows`
-
-Purpose:
-
-Map user intent to concepts, endpoints, and workflows. Discovery should search
-business semantics, not only slugs and paths.
-
-### 2. Understanding
-
-Tools/resources:
-
-- `usaspending.getEndpointSchema(slug)`
-- `usaspending.getEndpointSemantics(slug)`
-- `usaspending.getEvidence(slug, refs?)`
-- `usaspending.getUsageGuide(slug)`
-
-Implemented status:
-
 - `usaspending.getEndpointSchema`
 - `usaspending.getEndpointSemantics`
-- semantic-aware `usaspending.getEvidence`
-- `usaspending.getUsageGuide`
-
-Purpose:
-
-Explain what an endpoint means and how trustworthy each fact is. This layer must
-surface statuses:
-
-- `documented_unverified`
-- `documented_and_observed`
-- `observed`
-- `contradicted`
-- `observed_unavailable`
-- `inferred`
-- `unknown`
-
-### 3. Request Construction
-
-Tools:
-
-- `usaspending.getRequestTemplate(slug, useCase?)`
-- `usaspending.validateRequest(slug, request)`
-- `usaspending.explainValidationError(slug, request, error)`
-- `usaspending.listRequestFields(slug, statusFilter?)`
-
-Implemented status:
-
+- `usaspending.getAnalysisPacket`
 - `usaspending.getRequestTemplate`
+- `usaspending.listRequestFields`
 - `usaspending.validateRequest`
 - `usaspending.explainValidationError`
-- `usaspending.listRequestFields`
-
-Purpose:
-
-Help agents form correct calls before sending them. This is where the MCP adds
-value over documentation: nested filters, live contradictions, cursor behavior,
-sort tokens, defaults, and known API validation behavior.
-
-### 4. Execution
-
-Tools:
-
-- `usaspending.callEndpoint(slug, request)`
-- raw endpoint aliases like `usaspending.v2__search__spending_by_award`
-
-Implemented status:
-
 - `usaspending.callEndpoint`
-- raw endpoint aliases remain available
+- `usaspending.getEvidence`
+- `usaspending.getUsageGuide`
 
-Purpose:
+There are no per-endpoint raw wrapper tools in the forward runtime.
 
-Actually call the API. Execution should return the raw response plus interpreted
-metadata when possible:
+## Semantic Bundle Requirements
 
-- request URL/body
-- HTTP status and content type
-- response body
-- matched response shape
-- warnings from known caveats
-- suggested next steps or joins
+Every promoted endpoint must include:
 
-## Promotion Gate
+- request fields with statuses and evidence
+- response fields with statuses and evidence
+- availability status and live evidence when marked callable
+- request templates that are safe and bounded
+- validation warnings for valid but risky calls
+- business purpose and analytical grain
+- entities, measures, dimensions, workflows, and caveats
+- evidence records for material claims
+- a caller-facing usage guide
 
-An endpoint can be promoted to semantic MCP only when:
+## What Makes It Valuable
 
-- `endpoint.json`, `semantics.json`, `evidence.jsonl`, and `usage.md` exist
-- every evidence reference resolves
-- material documented fields are retained with statuses
-- current MCP gaps are captured
-- contradictions are explicit
-- unavailable endpoints are marked unavailable
-- `usage.md` contains no process narration or prompt leakage
-- `scripts/mcp/bin/validate-semantic-bundles` passes
-- `scripts/mcp/bin/smoke-client` can call semantic tools and validate a known
-  bad request
+The MCP adds value when it prevents errors a thin wrapper would allow:
 
-## Promoted Semantic Bundles
+- using a display award id where a generated internal id is required
+- confusing lifetime award amounts with period activity
+- treating sample rows as a full population
+- assuming a row order is a ranking
+- missing a required nested filter
+- calling a download endpoint as if it returned immediate analysis rows
+- trusting documentation that live probes or source contradict
 
-The current promoted semantic MCP includes deliberately complicated endpoints
-that exercise the surface area the project needs to scale:
+## Promotion Bar
 
-- `v2__search__spending_over_time`: temporal aggregation, large nested search
-  filters, group aliases, subaward deprecation warning.
-- `v2__search__spending_by_award_count`: advanced-search count surface,
-  disaster-code/location drilldowns, award-type mix, and parent/child filter
-  validation.
-- `v2__search__spending_by_geography`: geography aggregation, nested location
-  scopes, map-oriented dimensions, and advanced-search filters.
-- `v2__download__awards`: asynchronous export job, server-injected defaults,
-  file format validation, external file/status workflow.
-- `v2__disaster__spending_by_geography`: disaster semantics, DEFC validation,
-  geography grain, scope, and spending type.
-- `v2__awards__funding`: award funding/accounting slices, pagination, sort
-  contradictions, federal-account references, and obligation/outlay caveats.
-- award detail and funding rollup endpoints: cross-endpoint award identifier
-  normalization, procurement branch interpretation, and account rollups.
-- download count/status endpoints: asynchronous workflow preflight, row-limit
-  meaning, status polling, and export boundary guidance.
+Promotion requires validation and a story gate. The story gate must use the MCP
+like a real downstream agent and either produce a defensible analytical story or
+return owned repair tasks.
 
-## Orchestration Boundary
-
-Framework choice belongs outside the MCP contract.
-
-Recommended producer workflow:
-
-```text
-Endpoint queue
-  -> one free-range endpoint-builder agent
-  -> semantic bundle validator
-  -> in-loop self-story MCP gate
-  -> optional reviewer agent
-  -> promote to MCP
-```
-
-Agents SDK is a good orchestration layer for this because it can provide traces,
-tool boundaries, structured outputs, and reviewer handoffs. But it should
-orchestrate production of the semantic bundle, not replace the bundle as the
-source of truth.
-
-## Non-Goals
-
-- Do not expose only raw endpoint wrappers.
-- Do not hide doc/API contradictions behind simplified schemas.
-- Do not drop documented-but-unprobed fields.
-- Do not make a multi-agent workflow the core abstraction.
-- Do not let generated prose contain claims absent from evidence-backed JSON.
+The target is not just "the endpoint call succeeds." The target is "the MCP
+helps another agent ask and answer a meaningful federal spending question."

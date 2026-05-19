@@ -34,16 +34,16 @@
         "locator": "usaspending-api/usaspending_api/search/v2/urls.py; usaspending-api/usaspending_api/search/v2/views/spending_by_award_count.py; usaspending-api/usaspending_api/search/tests/integration/test_spending_by_award_count.py"
       },
       {
-        "id": "current-profile",
-        "kind": "current_profile",
-        "title": "Current raw profile lookup for spending_by_award_count",
-        "locator": "profiles/v2__search__spending_by_award_count/profile.json"
+        "id": "retired-profile",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact lookup for spending_by_award_count",
+        "locator": "retired-artifact:v2__search__spending_by_award_count"
       },
       {
         "id": "derived-mcp-gap",
         "kind": "derived_check",
-        "title": "Derived MCP coverage gap assessment",
-        "locator": "Derived from staged docs plus missing current raw profile"
+        "title": "Derived retired MCP coverage gap assessment",
+        "locator": "Derived from staged docs plus missing retired low-level artifact"
       },
       {
         "id": "live-api",
@@ -1024,28 +1024,6 @@
       ]
     }
   },
-  "mcpToolCoverage": {
-    "currentProfilePath": "profiles/v2__search__spending_by_award_count/profile.json",
-    "exposedTopLevelRequestFields": [],
-    "missingImportantRequestFields": [
-      "filters",
-      "spending_level",
-      "subawards",
-      "filters.time_period",
-      "filters.agencies",
-      "filters.recipient_search_text",
-      "filters.award_type_codes",
-      "filters.def_codes"
-    ],
-    "notes": [
-      "No current raw profile content was loaded for this slug.",
-      "Until a semantic bundle is promoted, the current MCP surface for this slug does not expose the documented advanced-search request structure."
-    ],
-    "evidenceRefs": [
-      "ev-current-profile-missing",
-      "ev-derived-mcp-gap"
-    ]
-  },
   "behavior": {
     "contradictions": [],
     "quirks": [
@@ -1086,11 +1064,11 @@
     "gaps": [],
     "risks": [
       {
-        "statement": "There is no current raw profile for this slug, so MCP clients relying only on promoted raw profiles may miss the endpoint entirely or lack the documented filter structure.",
+        "statement": "There is no retired low-level artifact for this slug, so MCP clients relying only on promoted retired artifacts may miss the endpoint entirely or lack the documented filter structure.",
         "impact": "Semantic promotion is required before the MCP can offer reliable request construction help for this endpoint.",
         "status": "inferred",
         "evidenceRefs": [
-          "ev-current-profile-missing",
+          "ev-retired-profile-missing",
           "ev-derived-mcp-gap"
         ]
       }

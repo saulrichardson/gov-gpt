@@ -26,7 +26,7 @@ export function assertSafeReadablePath(path: string): string {
   if (parts.some((part) => part === "node_modules")) {
     throw new Error(`refusing to read node_modules path: ${rel}`);
   }
-  if (parts.some((part) => part.startsWith(".env")) || rel === ".env" || rel === "codex.config.json") {
+  if (parts.some((part) => part.startsWith(".env")) || rel === ".env") {
     throw new Error(`refusing to read credential-bearing path: ${rel}`);
   }
   return resolved;

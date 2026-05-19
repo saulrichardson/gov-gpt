@@ -1,1 +1,1330 @@
-{"schemaVersion":"2.0.0","slug":"v2__awards__award_id","generatedAt":"2026-05-16T00:00:00Z","endpoint":{"method":"GET","host":"https://api.usaspending.gov","path":"/api/v2/awards/{award_id}/"},"availability":{"status":"available","confidence":"high","lastVerified":"2026-05-11","summary":"A live GET probe for a known contract award id returned HTTP 200 JSON on 2026-05-11, confirming the award-detail route is currently callable.","evidenceRefs":["ev-live-001","ev-doc-001"]},"provenance":{"sources":[{"id":"src-doc-award-id","kind":"documentation","title":"Staged docs for GET /api/v2/awards/{award_id}/","locator":"staging/docs/v2/awards/award_id.md","retrievedAt":"2026-05-11T09:00:00-04:00"},{"id":"src-doc-award-id-structures","kind":"documentation","title":"Award detail response data structures","locator":"usaspending-api/usaspending_api/api_contracts/contracts/v2/awards/award_id.md#data-structures","retrievedAt":"2026-05-11T09:00:00-04:00"},{"id":"src-profile-award-id","kind":"current_profile","title":"Current raw profile for v2__awards__award_id","locator":"profiles/v2__awards__award_id/profile.json","retrievedAt":"2026-05-11T09:00:00-04:00"},{"id":"src-awards-view","kind":"source_code","title":"AwardRetrieveViewSet request parsing and category dispatch","locator":"usaspending-api/usaspending_api/awards/v2/views/awards.py","retrievedAt":"2026-05-11T09:00:00-04:00"},{"id":"src-awards-orm","kind":"source_code","title":"Award detail ORM response assembly","locator":"usaspending-api/usaspending_api/awards/v2/data_layer/orm.py","retrievedAt":"2026-05-11T09:00:00-04:00"},{"id":"src-derived-award-id-coverage","kind":"derived_check","title":"Derived request coverage check for award detail endpoint","locator":"profiles/v2__awards__award_id/profile.json + staging/docs/v2/awards/award_id.md","retrievedAt":"2026-05-11T09:00:00-04:00"},{"id":"src-review-repair-2","kind":"review_report","title":"Reviewer report for award detail canonical award lookup alias","locator":"Structured reviewer report selecting repair-2-canonical-award-id-alias for v2__awards__award_id","retrievedAt":"2026-05-11T23:30:00Z"},{"id":"src-review-procurement-subfields","kind":"review_report","title":"Reviewer report for repair-award-detail-procurement-subfields","locator":"Structured reviewer report selecting repair-award-detail-procurement-subfields for v2__awards__award_id","retrievedAt":"2026-05-14T00:00:00Z"},{"id":"src-review-acceptance-award-detail-procurement-facts","kind":"review_report","title":"Acceptance reviewer report selecting rt-award-detail-procurement-facts-01","locator":"Structured reviewer report selecting rt-award-detail-procurement-facts-01 for v2__awards__award_id","retrievedAt":"2026-05-14T02:30:00Z"},{"id":"src-review-award-detail-offers-count-caveat","kind":"review_report","title":"Reviewer report for repair-award-detail-offers-count-caveat","locator":"Structured reviewer report selecting repair-award-detail-offers-count-caveat for v2__awards__award_id","retrievedAt":"2026-05-16T00:00:00Z"}]},"request":{"parameters":[{"path":"award_id","direction":"request","location":"path","type":"string | integer","required":true,"status":"documented_and_observed","description":"Single path identifier for the award profile request. Treat this request field as the endpoint's carrier for canonical_award_lookup_id: if you are chaining from v2__search__spending_by_award, pass generated_internal_id unchanged here even though this route names the field award_id. Documentation also says the endpoint accepts a generated award hash or an internal database id, and source code shows a fallback lookup against generated_unique_award_id_legacy when string lookup misses.","documented":{"type":"string","required":true,"notes":"Docs show contract and assistance hash examples and say the endpoint accepts the generated hash or internal database id."},"constraints":["Required path segment.","Digit-only values are parsed as integer award ids; other values are treated as generated award identifiers.","When chaining from search or funding workflows, reuse canonical_award_lookup_id unchanged rather than substituting the human-facing Award ID label.","Current-profile evidence indicates the canonical route includes a trailing slash and preserves case."],"evidenceRefs":["ev-doc-001","ev-prof-001","ev-src-001","ev-der-001","ev-live-001","ev-review-canonical-award-lookup-id","ev-review-cross-endpoint-award-id-handoff"],"observed":{"examples":["CONT_AWD_H907_9700_SPE2DX16D1500_9700","CONT_AWD_HT940216C0001_9700_-NONE-_-NONE-"],"notes":"A live 200 response confirmed a generated award hash works, and the reviewer-backed drilldown confirmed CONT_AWD_HT940216C0001_9700_-NONE-_-NONE- carried successfully from search generated_internal_id into this path. Numeric, legacy, and canonicalization variants remain supported by current-profile/source evidence."}}],"templates":[{"name":"contract-award-by-generated-id","description":"Fetch one contract award profile using a generated award hash in the path.","request":{"method":"GET","path":"/api/v2/awards/CONT_AWD_H907_9700_SPE2DX16D1500_9700/","query":{}},"evidenceRefs":["ev-doc-001","ev-prof-001","ev-live-001"]},{"name":"award-by-numeric-id","description":"Fetch one award profile using a numeric internal award id in the path.","request":{"method":"GET","path":"/api/v2/awards/306293964/","query":{}},"evidenceRefs":["ev-doc-001","ev-prof-001","ev-src-001"]}]},"response":{"contentType":"application/json","shapeSummary":"Single JSON object for one requested award, with shared award-summary fields plus category-specific procurement or assistance branches; procurement responses explicitly map dashboard-relevant latest_transaction_contract_data paths for competition, solicitation, pricing, multi-year, interagency-authority, PSC, and NAICS interpretation, and latest_transaction_contract_data.number_of_offers_received should be treated as a count-like competition signal that may still contain unresolved coded values such as 999.","fields":[{"path":"id","direction":"response","location":"response","type":"number","required":true,"status":"documented_and_observed","description":"Internal USAspending numeric award identifier for the returned award profile. It can support some local lookups, but it is not the preferred cross-endpoint canonical_award_lookup_id when the generated award identifier is available.","documented":{"type":"number","required":true},"constraints":[],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"generated_unique_award_id","direction":"response","location":"response","type":"string","required":true,"status":"documented_and_observed","description":"Canonical generated award identifier echoed by the service. In this semantic bundle, normalize it as canonical_award_lookup_id: search may label the same business key generated_internal_id, this route accepts it as path award_id, and award funding expects the same value under request body field award_id.","documented":{"type":"string","required":true},"constraints":["Returned even when the request used a numeric internal id.","Use this echoed generated value as canonical_award_lookup_id when chaining into award funding or other award drilldowns."],"evidenceRefs":["ev-doc-001","ev-prof-001","ev-live-001","ev-review-canonical-award-lookup-id","ev-review-cross-endpoint-award-id-handoff"],"observed":{"examples":["CONT_AWD_H907_9700_SPE2DX16D1500_9700"],"notes":"Treat generated_unique_award_id as this endpoint's response label for canonical_award_lookup_id. Reviewer-backed drilldown evidence showed the same generated hash business key carried from search into award detail and then onward into award funding despite endpoint-specific field names."}},{"path":"category","direction":"response","location":"response","type":"string","required":true,"status":"documented_and_observed","description":"Award family used to determine which category-specific response branch is populated.","documented":{"type":"string","required":true,"allowedValues":["contract","idv","grant","direct payment","loans","other"]},"constraints":["Branch parsing should check category before reading category-specific fields."],"evidenceRefs":["ev-doc-001","ev-src-001","ev-live-001"]},{"path":"type","direction":"response","location":"response","type":"string","required":true,"status":"documented_and_observed","description":"Award subtype code within the returned category family.","documented":{"type":"string","required":true},"constraints":[],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"type_description","direction":"response","location":"response","type":"string | null","required":true,"status":"documented_and_observed","description":"Human-readable description of the award type.","documented":{"type":"string","required":true},"constraints":[],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"description","direction":"response","location":"response","type":"string | null","required":true,"status":"documented_and_observed","description":"Award narrative description derived from the award or latest transaction.","documented":{"type":"string","required":true},"constraints":[],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"piid","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Procurement Instrument Identifier for contract and IDV awards.","documented":{"type":"string","required":true,"notes":"Documented on contract and IDV response families only."},"constraints":["Usually absent for assistance awards."],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"fain","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_unverified","description":"Financial-assistance award identifier for assistance responses.","documented":{"type":"string","required":true,"notes":"Documented on financial-assistance response family only."},"constraints":["Usually absent for contract and IDV awards."],"evidenceRefs":["ev-doc-001"]},{"path":"uri","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_unverified","description":"Assistance URI / alternate assistance identifier when present.","documented":{"type":"string","required":true,"notes":"Documented on financial-assistance response family only."},"constraints":["Usually absent for procurement awards."],"evidenceRefs":["ev-doc-001"]},{"path":"total_obligation","direction":"response","location":"response","type":"number | null","required":true,"status":"documented_and_observed","description":"Award-level total obligation amount.","documented":{"type":"number","required":true},"constraints":["May be null for some assistance categories."],"evidenceRefs":["ev-doc-002","ev-live-001"]},{"path":"subaward_count","direction":"response","location":"response","type":"number","required":true,"status":"documented_and_observed","description":"Count of associated subawards.","documented":{"type":"number","required":true},"constraints":[],"evidenceRefs":["ev-doc-002","ev-live-001"]},{"path":"total_subaward_amount","direction":"response","location":"response","type":"number | null","required":true,"status":"documented_and_observed","description":"Total dollars associated with subawards when available.","documented":{"type":"number","required":true},"constraints":[],"evidenceRefs":["ev-doc-002","ev-live-001"]},{"path":"awarding_agency","direction":"response","location":"response","type":"object","required":true,"status":"documented_and_observed","description":"Agency object describing the awarding organization, including top-tier and subtier agency metadata and office name.","documented":{"type":"Agency","required":true},"constraints":[],"evidenceRefs":["ev-doc-002","ev-src-002","ev-live-001"]},{"path":"funding_agency","direction":"response","location":"response","type":"object | null","required":true,"status":"documented_and_observed","description":"Agency object for the funding organization; source and current-profile evidence show it can be null for some assistance awards.","documented":{"type":"Agency","required":true,"notes":"Financial-assistance docs mark the field nullable."},"constraints":["Handle null on assistance payloads."],"evidenceRefs":["ev-doc-001","ev-prof-001","ev-src-002","ev-live-001"]},{"path":"recipient","direction":"response","location":"response","type":"object","required":true,"status":"documented_and_observed","description":"Recipient profile object with recipient identifiers, parent-recipient data, business categories, and nested recipient location fields.","documented":{"type":"Recipient","required":true},"constraints":[],"evidenceRefs":["ev-doc-002","ev-src-002","ev-live-001"]},{"path":"period_of_performance","direction":"response","location":"response","type":"object","required":true,"status":"documented_and_observed","description":"Award performance period object. Contract and IDV responses can include potential_end_date, while assistance responses use the assistance variant of the structure.","documented":{"type":"PeriodOfPerformance or PeriodOfPerformanceAssistance","required":true},"constraints":["Nested fields vary slightly by category."],"evidenceRefs":["ev-doc-002","ev-live-001"]},{"path":"place_of_performance","direction":"response","location":"response","type":"object","required":true,"status":"documented_and_observed","description":"Nested place-of-performance location object for the award.","documented":{"type":"Location","required":true},"constraints":[],"evidenceRefs":["ev-doc-002","ev-src-002","ev-live-001"]},{"path":"latest_transaction_contract_data","direction":"response","location":"response","type":"object | null","required":false,"status":"documented_and_observed","description":"Large contract / IDV-only object with latest-transaction procurement metadata. This repaired bundle explicitly enumerates the dashboard-relevant subfields for competition, solicitation, pricing, multi-year, interagency authority, product_or_service_code, and naics so callers do not have to treat the object as opaque nested JSON.","documented":{"type":"ContractDetails","required":true},"constraints":["Present for contract and IDV branches, absent for assistance branches."],"evidenceRefs":["ev-doc-001","ev-doc-003","ev-src-001","ev-review-award-detail-procurement-facts-gap-001","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"]},{"path":"latest_transaction_contract_data.extent_competed","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Competition-extent code from the latest procurement transaction. Use it to distinguish full-and-open competition from other competition outcomes on contract and IDV awards.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated.","Pair with latest_transaction_contract_data.extent_competed_description for caller-facing labels."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["A"],"notes":"Reviewer-backed Humana and Sandia drilldowns both surfaced code A, meaning FULL AND OPEN COMPETITION."}},{"path":"latest_transaction_contract_data.extent_competed_description","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Human-readable label for the latest transaction's extent_competed code.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["FULL AND OPEN COMPETITION"],"notes":"Reviewer-backed Humana and Sandia drilldowns both returned FULL AND OPEN COMPETITION."}},{"path":"latest_transaction_contract_data.number_of_offers_received","direction":"response","location":"response","type":"string | number | null","required":false,"status":"documented_and_observed","description":"Count-like latest-transaction competition signal showing how many offers were received for the procurement action represented here. Literal-looking low values can support competition narratives, but some observed values appear to be coded or otherwise unresolved rather than literal counts.","documented":{"type":"string","required":true,"notes":"Documentation lists the field as nullable string; reviewer-backed drilldowns summarized it numerically."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated.","Transport typing can vary by sample; preserve the raw value even when you interpret it as count-like competition metadata.","Treat small literal-looking values such as 1 as informative when they align with companion competition labels, but do not narrate sentinel-like values such as 999 as literal counts unless you can corroborate them elsewhere."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001","ev-review-award-detail-offers-count-gap-001","ev-review-award-detail-offers-count-ai-2020-001","ev-review-award-detail-offers-count-ai-2025-001"],"observed":{"examples":[4,"999",1],"notes":"Reviewer-backed procurement drilldowns observed ordinary values like 4 and 1, but the selected AI-keyword award-detail review also surfaced 999 with no decoding description. Treat 999 as potentially coded or unresolved rather than as a confirmed literal offer count."}},{"path":"latest_transaction_contract_data.solicitation_procedures","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Solicitation procedure code on the latest procurement transaction.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated.","Pair with latest_transaction_contract_data.solicitation_procedures_description for display labels."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001"],"observed":{"examples":["NP"],"notes":"Reviewer-backed Humana drilldown returned code NP."}},{"path":"latest_transaction_contract_data.solicitation_procedures_description","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Human-readable label for the latest transaction's solicitation procedure code.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001"],"observed":{"examples":["NEGOTIATED PROPOSAL/QUOTE"],"notes":"Reviewer-backed Humana drilldown returned NEGOTIATED PROPOSAL/QUOTE."}},{"path":"latest_transaction_contract_data.type_of_contract_pricing","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Pricing-type code from the latest procurement transaction.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated.","Pair with latest_transaction_contract_data.type_of_contract_pricing_description for dashboard labels."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["U"],"notes":"Reviewer-backed Humana and Sandia drilldowns both returned pricing code U."}},{"path":"latest_transaction_contract_data.type_of_contract_pricing_description","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Human-readable description for the latest transaction's pricing-type code.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["COST PLUS FIXED FEE"],"notes":"Reviewer-backed Humana and Sandia drilldowns both returned COST PLUS FIXED FEE."}},{"path":"latest_transaction_contract_data.multi_year_contract","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Yes/no-style indicator showing whether the latest procurement transaction is flagged as a multi-year contract.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated.","Pair with latest_transaction_contract_data.multi_year_contract_description for display labels."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["N","Y"],"notes":"Reviewer-backed Humana drilldown returned N, while Sandia returned Y."}},{"path":"latest_transaction_contract_data.multi_year_contract_description","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Human-readable label for the latest transaction's multi_year_contract indicator.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["YES"],"notes":"Reviewer-backed Sandia drilldown returned YES."}},{"path":"latest_transaction_contract_data.interagency_contracting_authority","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Interagency-contracting-authority code carried on the latest procurement transaction.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated.","Pair with latest_transaction_contract_data.interagency_contracting_authority_description for display labels."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["X","A"],"notes":"Reviewer-backed Humana drilldown returned X, while Sandia returned A."}},{"path":"latest_transaction_contract_data.interagency_contracting_authority_description","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Human-readable label for the latest transaction's interagency-contracting-authority code.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001"],"observed":{"examples":["NOT APPLICABLE","ECONOMY ACT"],"notes":"Reviewer-backed Humana drilldown returned NOT APPLICABLE, while Sandia returned ECONOMY ACT."}},{"path":"latest_transaction_contract_data.product_or_service_code","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Product or Service Code from the latest procurement transaction. Pair it with psc_hierarchy.base_code.description for a caller-facing label.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001","ev-live-001"],"observed":{"examples":["Q201","M1JZ","6505"],"notes":"Reviewer-backed Humana and Sandia drilldowns returned Q201 and M1JZ; the baseline live probe returned 6505."}},{"path":"latest_transaction_contract_data.naics","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"NAICS code from the latest procurement transaction. Pair it with naics_hierarchy.base_code.description for a caller-facing industry label.","documented":{"type":"string","required":true,"notes":"Documented as a nullable ContractDetails member on procurement branches."},"constraints":["Read only when category is contract or idv and latest_transaction_contract_data is populated."],"evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-humana-001","ev-review-award-detail-procurement-sandia-001","ev-live-001"],"observed":{"examples":["524114","561210","325411"],"notes":"Reviewer-backed Humana and Sandia drilldowns returned 524114 and 561210; the baseline live probe returned 325411."}},{"path":"psc_hierarchy.base_code.description","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Human-readable PSC label for the latest product_or_service_code when PSC hierarchy is populated.","documented":{"type":"string","required":true,"notes":"Returned inside the procurement-only psc_hierarchy object."},"constraints":["Read only when psc_hierarchy is populated.","Use together with latest_transaction_contract_data.product_or_service_code."],"evidenceRefs":["ev-doc-001","ev-live-001"],"observed":{"examples":["DRUGS AND BIOLOGICALS"],"notes":"The baseline live contract probe returned the PSC hierarchy base-code description DRUGS AND BIOLOGICALS."}},{"path":"naics_hierarchy.base_code.description","direction":"response","location":"response","type":"string | null","required":false,"status":"documented_and_observed","description":"Human-readable NAICS label for the latest naics code when NAICS hierarchy is populated.","documented":{"type":"string","required":true,"notes":"Returned inside the procurement-only naics_hierarchy object."},"constraints":["Read only when naics_hierarchy is populated.","Use together with latest_transaction_contract_data.naics."],"evidenceRefs":["ev-doc-001","ev-live-001"],"observed":{"examples":["Medicinal and Botanical Manufacturing"],"notes":"The baseline live contract probe returned the NAICS hierarchy base-code description Medicinal and Botanical Manufacturing."}},{"path":"parent_award","direction":"response","location":"response","type":"object | null","required":true,"status":"documented_and_observed","description":"Parent award / parent IDV metadata when the requested award has a parent relationship.","documented":{"type":"ParentDetails","required":true},"constraints":["Null for assistance awards and for root contract/IDV awards without a parent."],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"naics_hierarchy","direction":"response","location":"response","type":"object | null","required":false,"status":"documented_and_observed","description":"NAICS hierarchy for procurement awards when a NAICS code is available, including descriptive labels that can be paired with latest_transaction_contract_data.naics.","documented":{"type":"NAICSHierarchy","required":true},"constraints":["Procurement-only field."],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"psc_hierarchy","direction":"response","location":"response","type":"object | null","required":false,"status":"documented_and_observed","description":"PSC hierarchy for procurement awards when a product_or_service_code is available, including descriptive labels that can be paired with latest_transaction_contract_data.product_or_service_code.","documented":{"type":"PSCHierarchy","required":true},"constraints":["Procurement-only field."],"evidenceRefs":["ev-doc-001","ev-live-001"]},{"path":"record_type","direction":"response","location":"response","type":"number | null","required":false,"status":"documented_unverified","description":"Record type code returned on financial-assistance payloads.","documented":{"type":"number","required":true},"constraints":["Assistance-only field."],"evidenceRefs":["ev-doc-001"]},{"path":"cfda_info","direction":"response","location":"response","type":"array<object> | null","required":false,"status":"documented_unverified","description":"Assistance-only CFDA detail array with program metadata and funding totals by CFDA number.","documented":{"type":"array[CFDAInfo]","required":true},"constraints":["Assistance-only field."],"evidenceRefs":["ev-doc-001"]},{"path":"funding_opportunity","direction":"response","location":"response","type":"object | null","required":false,"status":"contradicted","description":"Assistance-only funding opportunity object. The data-structure section misspells the field as funding_opportunty, while examples and source code use funding_opportunity.","documented":{"type":"FundingOpportunity","required":true,"notes":"Docs contain a field-name typo in the financial-assistance structure."},"constraints":["Assistance-only field."],"evidenceRefs":["ev-doc-002","ev-src-002"]},{"path":"total_account_outlay","direction":"response","location":"response","type":"number","required":true,"status":"documented_and_observed","description":"Sum of account-level outlays derived from DEFC / File C financial account rows associated with the award.","documented":{"type":"number","required":true},"constraints":["Different concept from total_outlay."],"evidenceRefs":["ev-doc-002","ev-src-002","ev-live-001"]},{"path":"total_account_obligation","direction":"response","location":"response","type":"number","required":true,"status":"documented_and_observed","description":"Sum of account-level obligations derived from DEFC / File C financial account rows associated with the award.","documented":{"type":"number","required":true},"constraints":["Different concept from total_obligation."],"evidenceRefs":["ev-doc-002","ev-src-002","ev-live-001"]},{"path":"account_outlays_by_defc","direction":"response","location":"response","type":"array<object>","required":true,"status":"documented_and_observed","description":"Per-DEFC outlay amounts associated with the award.","documented":{"type":"array[DEFCAmount]","required":true},"constraints":["May be empty when no qualifying DEFC rows exist."],"evidenceRefs":["ev-doc-002","ev-src-002","ev-live-001"]},{"path":"account_obligations_by_defc","direction":"response","location":"response","type":"array<object>","required":true,"status":"documented_and_observed","description":"Per-DEFC obligation amounts associated with the award.","documented":{"type":"array[DEFCAmount]","required":true},"constraints":["May be empty when no qualifying DEFC rows exist."],"evidenceRefs":["ev-doc-002","ev-src-002","ev-live-001"]},{"path":"executive_details","direction":"response","location":"response","type":"object","required":true,"status":"documented_and_observed","description":"Executive compensation object with up to five officer entries.","documented":{"type":"Executive","required":true},"constraints":[],"evidenceRefs":["ev-doc-002","ev-live-001"]},{"path":"total_outlay","direction":"response","location":"response","type":"number | null","required":false,"status":"contradicted","description":"Award-level outlay measure computed separately from DEFC account totals. Source code adds it to all response branches, but documentation does not describe it consistently across award families.","documented":{"type":"number","required":false,"notes":"Documentation is uneven across response families."},"constraints":["Different concept from total_account_outlay."],"evidenceRefs":["ev-doc-002","ev-prof-001","ev-src-002","ev-live-001"],"observed":{"examples":[null],"notes":"Live contract payload included the field with a null value."}}]},"mcpToolCoverage":{"currentProfilePath":"profiles/v2__awards__award_id/profile.json","exposedTopLevelRequestFields":["award_id"],"missingImportantRequestFields":[],"notes":["The main MCP improvement here is semantic normalization: treat search generated_internal_id, this path award_id, and response generated_unique_award_id as the same canonical_award_lookup_id for cross-endpoint handoff.","The current raw profile already exposes the only documented request field, award_id.","The larger MCP need is semantic guidance: category-branch parsing, identifier-selection workflow, and documentation mismatches such as funding_opportunity naming and total_outlay presence."],"evidenceRefs":["ev-der-001","ev-review-canonical-award-lookup-id","ev-review-cross-endpoint-award-id-handoff"]},"behavior":{"contradictions":[{"statement":"The financial-assistance data structure misspells funding_opportunity as funding_opportunty, while the example payload and source code use funding_opportunity.","impact":"Callers should read funding_opportunity in actual responses and not hard-code the typo from the doc structure section.","status":"contradicted","evidenceRefs":["ev-doc-002","ev-src-002"]},{"statement":"Documentation does not describe total_outlay consistently across award families, but source code and the current raw profile indicate the field is returned more broadly.","impact":"Preserve total_outlay when present and do not confuse it with total_account_outlay.","status":"contradicted","evidenceRefs":["ev-doc-002","ev-prof-001","ev-src-002"]}],"quirks":[{"statement":"Digit-only award ids are parsed as integer award_id values, non-digit ids are treated as generated award identifiers, and source code retries generated_unique_award_id_legacy when the generated id lookup misses.","impact":"Numeric ids, current generated ids, and some legacy generated ids may all resolve to the same endpoint.","status":"inferred","evidenceRefs":["ev-src-001"]},{"statement":"Current-profile evidence indicates the canonical route includes a trailing slash and may normalize some assistance request hashes before echoing generated_unique_award_id in the response.","impact":"Clients should follow redirects and compare assistance identifiers against the returned generated_unique_award_id, not only the request path string.","status":"inferred","evidenceRefs":["ev-prof-001"]},{"statement":"A live contract probe confirmed the route returns a single JSON object for the requested award rather than an array.","impact":"Clients should parse one award object per call.","status":"observed","evidenceRefs":["ev-live-001"]}],"gaps":[{"statement":"latest_transaction_contract_data still contains additional procurement members beyond the dashboard-relevant fields explicitly mapped in this bundle.","impact":"Agents can now read named response paths for competition, solicitation, pricing, multi-year, interagency-authority, PSC, and NAICS facts, but uncommon procurement subfields may still require raw-payload inspection or a future bundle expansion.","status":"inferred","evidenceRefs":["ev-doc-003","ev-review-award-detail-procurement-facts-gap-001"]}],"risks":[{"statement":"The response schema changes materially by category: procurement awards use latest_transaction_contract_data, NAICS/PSC hierarchies, and parent-award procurement metadata, while assistance awards use CFDA and funding-opportunity sections.","impact":"Consumers must branch on category before assuming nested fields exist.","status":"inferred","evidenceRefs":["ev-doc-001","ev-src-001"]},{"statement":"Related award drilldown endpoints relabel the same handoff business key; normalize it as canonical_award_lookup_id. When chaining from award search, use generated_internal_id as canonical_award_lookup_id and pass it unchanged as this endpoint's award_id rather than relying on the display Award ID.","impact":"Using one canonical alias reduces fragile cross-endpoint joins: search emits generated_internal_id, this route accepts award_id, and the response exposes generated_unique_award_id for reuse in funding or other award drilldowns.","status":"observed","evidenceRefs":["ev-prof-001","ev-der-001","ev-review-canonical-award-lookup-id","ev-review-cross-endpoint-award-id-handoff"]},{"statement":"Current-profile evidence indicates error payloads vary by route match, with JSON 404s for some unresolved numeric ids and HTML 404s for some malformed string ids.","impact":"Robust clients should inspect HTTP status and content type before assuming error bodies are JSON.","status":"inferred","evidenceRefs":["ev-prof-001"]},{"statement":"latest_transaction_contract_data.number_of_offers_received can mix literal-looking offer counts with unresolved coded values such as 999.","impact":"Use low values like 1 as direct evidence only when they agree with extent_competed and solicitation labels; treat 999 or similar sentinel-like values as ambiguous and rely on companion competition fields before making procurement-posture claims.","status":"observed","evidenceRefs":["ev-review-award-detail-offers-count-gap-001","ev-review-award-detail-offers-count-ai-2020-001","ev-review-award-detail-offers-count-ai-2025-001"]}]}}
+{
+  "schemaVersion": "2.0.0",
+  "slug": "v2__awards__award_id",
+  "generatedAt": "2026-05-16T00:00:00Z",
+  "endpoint": {
+    "method": "GET",
+    "host": "https://api.usaspending.gov",
+    "path": "/api/v2/awards/{award_id}/"
+  },
+  "availability": {
+    "status": "available",
+    "confidence": "high",
+    "lastVerified": "2026-05-11",
+    "summary": "A live GET probe for a known contract award id returned HTTP 200 JSON on 2026-05-11, confirming the award-detail route is currently callable.",
+    "evidenceRefs": [
+      "ev-live-001",
+      "ev-doc-001"
+    ]
+  },
+  "provenance": {
+    "sources": [
+      {
+        "id": "src-doc-award-id",
+        "kind": "documentation",
+        "title": "Staged docs for GET /api/v2/awards/{award_id}/",
+        "locator": "staging/docs/v2/awards/award_id.md",
+        "retrievedAt": "2026-05-11T09:00:00-04:00"
+      },
+      {
+        "id": "src-doc-award-id-structures",
+        "kind": "documentation",
+        "title": "Award detail response data structures",
+        "locator": "usaspending-api/usaspending_api/api_contracts/contracts/v2/awards/award_id.md#data-structures",
+        "retrievedAt": "2026-05-11T09:00:00-04:00"
+      },
+      {
+        "id": "src-profile-award-id",
+        "kind": "retired_artifact",
+        "title": "Retired low-level artifact for v2__awards__award_id",
+        "locator": "retired-artifact:v2__awards__award_id",
+        "retrievedAt": "2026-05-11T09:00:00-04:00"
+      },
+      {
+        "id": "src-awards-view",
+        "kind": "source_code",
+        "title": "AwardRetrieveViewSet request parsing and category dispatch",
+        "locator": "usaspending-api/usaspending_api/awards/v2/views/awards.py",
+        "retrievedAt": "2026-05-11T09:00:00-04:00"
+      },
+      {
+        "id": "src-awards-orm",
+        "kind": "source_code",
+        "title": "Award detail ORM response assembly",
+        "locator": "usaspending-api/usaspending_api/awards/v2/data_layer/orm.py",
+        "retrievedAt": "2026-05-11T09:00:00-04:00"
+      },
+      {
+        "id": "src-derived-award-id-coverage",
+        "kind": "derived_check",
+        "title": "Derived request coverage check for award detail endpoint",
+        "locator": "retired-artifact:v2__awards__award_id + staging/docs/v2/awards/award_id.md",
+        "retrievedAt": "2026-05-11T09:00:00-04:00"
+      },
+      {
+        "id": "src-review-repair-2",
+        "kind": "review_report",
+        "title": "Reviewer report for award detail canonical award lookup alias",
+        "locator": "Structured reviewer report selecting repair-2-canonical-award-id-alias for v2__awards__award_id",
+        "retrievedAt": "2026-05-11T23:30:00Z"
+      },
+      {
+        "id": "src-review-procurement-subfields",
+        "kind": "review_report",
+        "title": "Reviewer report for repair-award-detail-procurement-subfields",
+        "locator": "Structured reviewer report selecting repair-award-detail-procurement-subfields for v2__awards__award_id",
+        "retrievedAt": "2026-05-14T00:00:00Z"
+      },
+      {
+        "id": "src-review-acceptance-award-detail-procurement-facts",
+        "kind": "review_report",
+        "title": "Acceptance reviewer report selecting rt-award-detail-procurement-facts-01",
+        "locator": "Structured reviewer report selecting rt-award-detail-procurement-facts-01 for v2__awards__award_id",
+        "retrievedAt": "2026-05-14T02:30:00Z"
+      },
+      {
+        "id": "src-review-award-detail-offers-count-caveat",
+        "kind": "review_report",
+        "title": "Reviewer report for repair-award-detail-offers-count-caveat",
+        "locator": "Structured reviewer report selecting repair-award-detail-offers-count-caveat for v2__awards__award_id",
+        "retrievedAt": "2026-05-16T00:00:00Z"
+      }
+    ]
+  },
+  "request": {
+    "parameters": [
+      {
+        "path": "award_id",
+        "direction": "request",
+        "location": "path",
+        "type": "string | integer",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Single path identifier for the award profile request. Treat this request field as the endpoint's carrier for canonical_award_lookup_id: if you are chaining from v2__search__spending_by_award, pass generated_internal_id unchanged here even though this route names the field award_id. Documentation also says the endpoint accepts a generated award hash or an internal database id, and source code shows a fallback lookup against generated_unique_award_id_legacy when string lookup misses.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Docs show contract and assistance hash examples and say the endpoint accepts the generated hash or internal database id."
+        },
+        "constraints": [
+          "Required path segment.",
+          "Digit-only values are parsed as integer award ids; other values are treated as generated award identifiers.",
+          "When chaining from search or funding workflows, reuse canonical_award_lookup_id unchanged rather than substituting the human-facing Award ID label.",
+          "Current-profile evidence indicates the canonical route includes a trailing slash and preserves case."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-prof-001",
+          "ev-src-001",
+          "ev-der-001",
+          "ev-live-001",
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff"
+        ],
+        "observed": {
+          "examples": [
+            "CONT_AWD_H907_9700_SPE2DX16D1500_9700",
+            "CONT_AWD_HT940216C0001_9700_-NONE-_-NONE-"
+          ],
+          "notes": "A live 200 response confirmed a generated award hash works, and the reviewer-backed drilldown confirmed CONT_AWD_HT940216C0001_9700_-NONE-_-NONE- carried successfully from search generated_internal_id into this path. Numeric, legacy, and canonicalization variants remain supported by retired-profile/source evidence."
+        }
+      }
+    ],
+    "templates": [
+      {
+        "name": "contract-award-by-generated-id",
+        "description": "Fetch one contract award profile using a generated award hash in the path.",
+        "request": {
+          "method": "GET",
+          "path": "/api/v2/awards/CONT_AWD_H907_9700_SPE2DX16D1500_9700/",
+          "query": {}
+        },
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-prof-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "name": "award-by-numeric-id",
+        "description": "Fetch one award profile using a numeric internal award id in the path.",
+        "request": {
+          "method": "GET",
+          "path": "/api/v2/awards/306293964/",
+          "query": {}
+        },
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-prof-001",
+          "ev-src-001"
+        ]
+      }
+    ]
+  },
+  "response": {
+    "contentType": "application/json",
+    "shapeSummary": "Single JSON object for one requested award, with shared award-summary fields plus category-specific procurement or assistance branches; procurement responses explicitly map dashboard-relevant latest_transaction_contract_data paths for competition, solicitation, pricing, multi-year, interagency-authority, PSC, and NAICS interpretation, and latest_transaction_contract_data.number_of_offers_received should be treated as a count-like competition signal that may still contain unresolved coded values such as 999.",
+    "fields": [
+      {
+        "path": "id",
+        "direction": "response",
+        "location": "response",
+        "type": "number",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Internal USAspending numeric award identifier for the returned award profile. It can support some local lookups, but it is not the preferred cross-endpoint canonical_award_lookup_id when the generated award identifier is available.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "generated_unique_award_id",
+        "direction": "response",
+        "location": "response",
+        "type": "string",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Canonical generated award identifier echoed by the service. In this semantic bundle, normalize it as canonical_award_lookup_id: search may label the same business key generated_internal_id, this route accepts it as path award_id, and award funding expects the same value under request body field award_id.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [
+          "Returned even when the request used a numeric internal id.",
+          "Use this echoed generated value as canonical_award_lookup_id when chaining into award funding or other award drilldowns."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-prof-001",
+          "ev-live-001",
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff"
+        ],
+        "observed": {
+          "examples": [
+            "CONT_AWD_H907_9700_SPE2DX16D1500_9700"
+          ],
+          "notes": "Treat generated_unique_award_id as this endpoint's response label for canonical_award_lookup_id. Reviewer-backed drilldown evidence showed the same generated hash business key carried from search into award detail and then onward into award funding despite endpoint-specific field names."
+        }
+      },
+      {
+        "path": "category",
+        "direction": "response",
+        "location": "response",
+        "type": "string",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Award family used to determine which category-specific response branch is populated.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "allowedValues": [
+            "contract",
+            "idv",
+            "grant",
+            "direct payment",
+            "loans",
+            "other"
+          ]
+        },
+        "constraints": [
+          "Branch parsing should check category before reading category-specific fields."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-src-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "type",
+        "direction": "response",
+        "location": "response",
+        "type": "string",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Award subtype code within the returned category family.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "type_description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Human-readable description of the award type.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Award narrative description derived from the award or latest transaction.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "piid",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Procurement Instrument Identifier for contract and IDV awards.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented on contract and IDV response families only."
+        },
+        "constraints": [
+          "Usually absent for assistance awards."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "fain",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Financial-assistance award identifier for assistance responses.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented on financial-assistance response family only."
+        },
+        "constraints": [
+          "Usually absent for contract and IDV awards."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001"
+        ]
+      },
+      {
+        "path": "uri",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Assistance URI / alternate assistance identifier when present.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented on financial-assistance response family only."
+        },
+        "constraints": [
+          "Usually absent for procurement awards."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001"
+        ]
+      },
+      {
+        "path": "total_obligation",
+        "direction": "response",
+        "location": "response",
+        "type": "number | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Award-level total obligation amount.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [
+          "May be null for some assistance categories."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "subaward_count",
+        "direction": "response",
+        "location": "response",
+        "type": "number",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Count of associated subawards.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "total_subaward_amount",
+        "direction": "response",
+        "location": "response",
+        "type": "number | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Total dollars associated with subawards when available.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "awarding_agency",
+        "direction": "response",
+        "location": "response",
+        "type": "object",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Agency object describing the awarding organization, including top-tier and subtier agency metadata and office name.",
+        "documented": {
+          "type": "Agency",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "funding_agency",
+        "direction": "response",
+        "location": "response",
+        "type": "object | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Agency object for the funding organization; source and retired-profile evidence show it can be null for some assistance awards.",
+        "documented": {
+          "type": "Agency",
+          "required": true,
+          "notes": "Financial-assistance docs mark the field nullable."
+        },
+        "constraints": [
+          "Handle null on assistance payloads."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-prof-001",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "recipient",
+        "direction": "response",
+        "location": "response",
+        "type": "object",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Recipient profile object with recipient identifiers, parent-recipient data, business categories, and nested recipient location fields.",
+        "documented": {
+          "type": "Recipient",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "period_of_performance",
+        "direction": "response",
+        "location": "response",
+        "type": "object",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Award performance period object. Contract and IDV responses can include potential_end_date, while assistance responses use the assistance variant of the structure.",
+        "documented": {
+          "type": "PeriodOfPerformance or PeriodOfPerformanceAssistance",
+          "required": true
+        },
+        "constraints": [
+          "Nested fields vary slightly by category."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "place_of_performance",
+        "direction": "response",
+        "location": "response",
+        "type": "object",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Nested place-of-performance location object for the award.",
+        "documented": {
+          "type": "Location",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "latest_transaction_contract_data",
+        "direction": "response",
+        "location": "response",
+        "type": "object | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Large contract / IDV-only object with latest-transaction procurement metadata. This repaired bundle explicitly enumerates the dashboard-relevant subfields for competition, solicitation, pricing, multi-year, interagency authority, product_or_service_code, and naics so callers do not have to treat the object as opaque nested JSON.",
+        "documented": {
+          "type": "ContractDetails",
+          "required": true
+        },
+        "constraints": [
+          "Present for contract and IDV branches, absent for assistance branches."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-doc-003",
+          "ev-src-001",
+          "ev-review-award-detail-procurement-facts-gap-001",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ]
+      },
+      {
+        "path": "latest_transaction_contract_data.extent_competed",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Competition-extent code from the latest procurement transaction. Use it to distinguish full-and-open competition from other competition outcomes on contract and IDV awards.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated.",
+          "Pair with latest_transaction_contract_data.extent_competed_description for caller-facing labels."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "A"
+          ],
+          "notes": "Reviewer-backed Humana and Sandia drilldowns both surfaced code A, meaning FULL AND OPEN COMPETITION."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.extent_competed_description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-readable label for the latest transaction's extent_competed code.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "FULL AND OPEN COMPETITION"
+          ],
+          "notes": "Reviewer-backed Humana and Sandia drilldowns both returned FULL AND OPEN COMPETITION."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.number_of_offers_received",
+        "direction": "response",
+        "location": "response",
+        "type": "string | number | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Count-like latest-transaction competition signal showing how many offers were received for the procurement action represented here. Literal-looking low values can support competition narratives, but some observed values appear to be coded or otherwise unresolved rather than literal counts.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documentation lists the field as nullable string; reviewer-backed drilldowns summarized it numerically."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated.",
+          "Transport typing can vary by sample; preserve the raw value even when you interpret it as count-like competition metadata.",
+          "Treat small literal-looking values such as 1 as informative when they align with companion competition labels, but do not narrate sentinel-like values such as 999 as literal counts unless you can corroborate them elsewhere."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001",
+          "ev-review-award-detail-offers-count-gap-001",
+          "ev-review-award-detail-offers-count-ai-2020-001",
+          "ev-review-award-detail-offers-count-ai-2025-001"
+        ],
+        "observed": {
+          "examples": [
+            4,
+            "999",
+            1
+          ],
+          "notes": "Reviewer-backed procurement drilldowns observed ordinary values like 4 and 1, but the selected AI-keyword award-detail review also surfaced 999 with no decoding description. Treat 999 as potentially coded or unresolved rather than as a confirmed literal offer count."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.solicitation_procedures",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Solicitation procedure code on the latest procurement transaction.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated.",
+          "Pair with latest_transaction_contract_data.solicitation_procedures_description for display labels."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001"
+        ],
+        "observed": {
+          "examples": [
+            "NP"
+          ],
+          "notes": "Reviewer-backed Humana drilldown returned code NP."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.solicitation_procedures_description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-readable label for the latest transaction's solicitation procedure code.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001"
+        ],
+        "observed": {
+          "examples": [
+            "NEGOTIATED PROPOSAL/QUOTE"
+          ],
+          "notes": "Reviewer-backed Humana drilldown returned NEGOTIATED PROPOSAL/QUOTE."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.type_of_contract_pricing",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Pricing-type code from the latest procurement transaction.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated.",
+          "Pair with latest_transaction_contract_data.type_of_contract_pricing_description for dashboard labels."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "U"
+          ],
+          "notes": "Reviewer-backed Humana and Sandia drilldowns both returned pricing code U."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.type_of_contract_pricing_description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-readable description for the latest transaction's pricing-type code.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "COST PLUS FIXED FEE"
+          ],
+          "notes": "Reviewer-backed Humana and Sandia drilldowns both returned COST PLUS FIXED FEE."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.multi_year_contract",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Yes/no-style indicator showing whether the latest procurement transaction is flagged as a multi-year contract.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated.",
+          "Pair with latest_transaction_contract_data.multi_year_contract_description for display labels."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "N",
+            "Y"
+          ],
+          "notes": "Reviewer-backed Humana drilldown returned N, while Sandia returned Y."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.multi_year_contract_description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-readable label for the latest transaction's multi_year_contract indicator.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "YES"
+          ],
+          "notes": "Reviewer-backed Sandia drilldown returned YES."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.interagency_contracting_authority",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Interagency-contracting-authority code carried on the latest procurement transaction.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated.",
+          "Pair with latest_transaction_contract_data.interagency_contracting_authority_description for display labels."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "X",
+            "A"
+          ],
+          "notes": "Reviewer-backed Humana drilldown returned X, while Sandia returned A."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.interagency_contracting_authority_description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-readable label for the latest transaction's interagency-contracting-authority code.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ],
+        "observed": {
+          "examples": [
+            "NOT APPLICABLE",
+            "ECONOMY ACT"
+          ],
+          "notes": "Reviewer-backed Humana drilldown returned NOT APPLICABLE, while Sandia returned ECONOMY ACT."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.product_or_service_code",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Product or Service Code from the latest procurement transaction. Pair it with psc_hierarchy.base_code.description for a caller-facing label.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001",
+          "ev-live-001"
+        ],
+        "observed": {
+          "examples": [
+            "Q201",
+            "M1JZ",
+            "6505"
+          ],
+          "notes": "Reviewer-backed Humana and Sandia drilldowns returned Q201 and M1JZ; the baseline live probe returned 6505."
+        }
+      },
+      {
+        "path": "latest_transaction_contract_data.naics",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "NAICS code from the latest procurement transaction. Pair it with naics_hierarchy.base_code.description for a caller-facing industry label.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Documented as a nullable ContractDetails member on procurement branches."
+        },
+        "constraints": [
+          "Read only when category is contract or idv and latest_transaction_contract_data is populated."
+        ],
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001",
+          "ev-live-001"
+        ],
+        "observed": {
+          "examples": [
+            "524114",
+            "561210",
+            "325411"
+          ],
+          "notes": "Reviewer-backed Humana and Sandia drilldowns returned 524114 and 561210; the baseline live probe returned 325411."
+        }
+      },
+      {
+        "path": "psc_hierarchy.base_code.description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-readable PSC label for the latest product_or_service_code when PSC hierarchy is populated.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Returned inside the procurement-only psc_hierarchy object."
+        },
+        "constraints": [
+          "Read only when psc_hierarchy is populated.",
+          "Use together with latest_transaction_contract_data.product_or_service_code."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ],
+        "observed": {
+          "examples": [
+            "DRUGS AND BIOLOGICALS"
+          ],
+          "notes": "The baseline live contract probe returned the PSC hierarchy base-code description DRUGS AND BIOLOGICALS."
+        }
+      },
+      {
+        "path": "naics_hierarchy.base_code.description",
+        "direction": "response",
+        "location": "response",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-readable NAICS label for the latest naics code when NAICS hierarchy is populated.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Returned inside the procurement-only naics_hierarchy object."
+        },
+        "constraints": [
+          "Read only when naics_hierarchy is populated.",
+          "Use together with latest_transaction_contract_data.naics."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ],
+        "observed": {
+          "examples": [
+            "Medicinal and Botanical Manufacturing"
+          ],
+          "notes": "The baseline live contract probe returned the NAICS hierarchy base-code description Medicinal and Botanical Manufacturing."
+        }
+      },
+      {
+        "path": "parent_award",
+        "direction": "response",
+        "location": "response",
+        "type": "object | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Parent award / parent IDV metadata when the requested award has a parent relationship.",
+        "documented": {
+          "type": "ParentDetails",
+          "required": true
+        },
+        "constraints": [
+          "Null for assistance awards and for root contract/IDV awards without a parent."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "naics_hierarchy",
+        "direction": "response",
+        "location": "response",
+        "type": "object | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "NAICS hierarchy for procurement awards when a NAICS code is available, including descriptive labels that can be paired with latest_transaction_contract_data.naics.",
+        "documented": {
+          "type": "NAICSHierarchy",
+          "required": true
+        },
+        "constraints": [
+          "Procurement-only field."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "psc_hierarchy",
+        "direction": "response",
+        "location": "response",
+        "type": "object | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "PSC hierarchy for procurement awards when a product_or_service_code is available, including descriptive labels that can be paired with latest_transaction_contract_data.product_or_service_code.",
+        "documented": {
+          "type": "PSCHierarchy",
+          "required": true
+        },
+        "constraints": [
+          "Procurement-only field."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "record_type",
+        "direction": "response",
+        "location": "response",
+        "type": "number | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Record type code returned on financial-assistance payloads.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [
+          "Assistance-only field."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001"
+        ]
+      },
+      {
+        "path": "cfda_info",
+        "direction": "response",
+        "location": "response",
+        "type": "array<object> | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Assistance-only CFDA detail array with program metadata and funding totals by CFDA number.",
+        "documented": {
+          "type": "array[CFDAInfo]",
+          "required": true
+        },
+        "constraints": [
+          "Assistance-only field."
+        ],
+        "evidenceRefs": [
+          "ev-doc-001"
+        ]
+      },
+      {
+        "path": "funding_opportunity",
+        "direction": "response",
+        "location": "response",
+        "type": "object | null",
+        "required": false,
+        "status": "contradicted",
+        "description": "Assistance-only funding opportunity object. The data-structure section misspells the field as funding_opportunty, while examples and source code use funding_opportunity.",
+        "documented": {
+          "type": "FundingOpportunity",
+          "required": true,
+          "notes": "Docs contain a field-name typo in the financial-assistance structure."
+        },
+        "constraints": [
+          "Assistance-only field."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002"
+        ]
+      },
+      {
+        "path": "total_account_outlay",
+        "direction": "response",
+        "location": "response",
+        "type": "number",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Sum of account-level outlays derived from DEFC / File C financial account rows associated with the award.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [
+          "Different concept from total_outlay."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "total_account_obligation",
+        "direction": "response",
+        "location": "response",
+        "type": "number",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Sum of account-level obligations derived from DEFC / File C financial account rows associated with the award.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [
+          "Different concept from total_obligation."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "account_outlays_by_defc",
+        "direction": "response",
+        "location": "response",
+        "type": "array<object>",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Per-DEFC outlay amounts associated with the award.",
+        "documented": {
+          "type": "array[DEFCAmount]",
+          "required": true
+        },
+        "constraints": [
+          "May be empty when no qualifying DEFC rows exist."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "account_obligations_by_defc",
+        "direction": "response",
+        "location": "response",
+        "type": "array<object>",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Per-DEFC obligation amounts associated with the award.",
+        "documented": {
+          "type": "array[DEFCAmount]",
+          "required": true
+        },
+        "constraints": [
+          "May be empty when no qualifying DEFC rows exist."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "executive_details",
+        "direction": "response",
+        "location": "response",
+        "type": "object",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Executive compensation object with up to five officer entries.",
+        "documented": {
+          "type": "Executive",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001"
+        ]
+      },
+      {
+        "path": "total_outlay",
+        "direction": "response",
+        "location": "response",
+        "type": "number | null",
+        "required": false,
+        "status": "contradicted",
+        "description": "Award-level outlay measure computed separately from DEFC account totals. Source code adds it to all response branches, but documentation does not describe it consistently across award families.",
+        "documented": {
+          "type": "number",
+          "required": false,
+          "notes": "Documentation is uneven across response families."
+        },
+        "constraints": [
+          "Different concept from total_account_outlay."
+        ],
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-prof-001",
+          "ev-src-002",
+          "ev-live-001"
+        ],
+        "observed": {
+          "examples": [
+            null
+          ],
+          "notes": "Live contract payload included the field with a null value."
+        }
+      }
+    ]
+  },
+  "behavior": {
+    "contradictions": [
+      {
+        "statement": "The financial-assistance data structure misspells funding_opportunity as funding_opportunty, while the example payload and source code use funding_opportunity.",
+        "impact": "Callers should read funding_opportunity in actual responses and not hard-code the typo from the doc structure section.",
+        "status": "contradicted",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002"
+        ]
+      },
+      {
+        "statement": "Documentation does not describe total_outlay consistently across award families, but source code and the retired low-level artifact indicate the field is returned more broadly.",
+        "impact": "Preserve total_outlay when present and do not confuse it with total_account_outlay.",
+        "status": "contradicted",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-prof-001",
+          "ev-src-002"
+        ]
+      }
+    ],
+    "quirks": [
+      {
+        "statement": "Digit-only award ids are parsed as integer award_id values, non-digit ids are treated as generated award identifiers, and source code retries generated_unique_award_id_legacy when the generated id lookup misses.",
+        "impact": "Numeric ids, current generated ids, and some legacy generated ids may all resolve to the same endpoint.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-src-001"
+        ]
+      },
+      {
+        "statement": "Current-profile evidence indicates the canonical route includes a trailing slash and may normalize some assistance request hashes before echoing generated_unique_award_id in the response.",
+        "impact": "Clients should follow redirects and compare assistance identifiers against the returned generated_unique_award_id, not only the request path string.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-prof-001"
+        ]
+      },
+      {
+        "statement": "A live contract probe confirmed the route returns a single JSON object for the requested award rather than an array.",
+        "impact": "Clients should parse one award object per call.",
+        "status": "observed",
+        "evidenceRefs": [
+          "ev-live-001"
+        ]
+      }
+    ],
+    "gaps": [
+      {
+        "statement": "latest_transaction_contract_data still contains additional procurement members beyond the dashboard-relevant fields explicitly mapped in this bundle.",
+        "impact": "Agents can now read named response paths for competition, solicitation, pricing, multi-year, interagency-authority, PSC, and NAICS facts, but uncommon procurement subfields may still require raw-payload inspection or a future bundle expansion.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-facts-gap-001"
+        ]
+      }
+    ],
+    "risks": [
+      {
+        "statement": "The response schema changes materially by category: procurement awards use latest_transaction_contract_data, NAICS/PSC hierarchies, and parent-award procurement metadata, while assistance awards use CFDA and funding-opportunity sections.",
+        "impact": "Consumers must branch on category before assuming nested fields exist.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-src-001"
+        ]
+      },
+      {
+        "statement": "Related award drilldown endpoints relabel the same handoff business key; normalize it as canonical_award_lookup_id. When chaining from award search, use generated_internal_id as canonical_award_lookup_id and pass it unchanged as this endpoint's award_id rather than relying on the display Award ID.",
+        "impact": "Using one canonical alias reduces fragile cross-endpoint joins: search emits generated_internal_id, this route accepts award_id, and the response exposes generated_unique_award_id for reuse in funding or other award drilldowns.",
+        "status": "observed",
+        "evidenceRefs": [
+          "ev-prof-001",
+          "ev-der-001",
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff"
+        ]
+      },
+      {
+        "statement": "Current-profile evidence indicates error payloads vary by route match, with JSON 404s for some unresolved numeric ids and HTML 404s for some malformed string ids.",
+        "impact": "Robust clients should inspect HTTP status and content type before assuming error bodies are JSON.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-prof-001"
+        ]
+      },
+      {
+        "statement": "latest_transaction_contract_data.number_of_offers_received can mix literal-looking offer counts with unresolved coded values such as 999.",
+        "impact": "Use low values like 1 as direct evidence only when they agree with extent_competed and solicitation labels; treat 999 or similar sentinel-like values as ambiguous and rely on companion competition fields before making procurement-posture claims.",
+        "status": "observed",
+        "evidenceRefs": [
+          "ev-review-award-detail-offers-count-gap-001",
+          "ev-review-award-detail-offers-count-ai-2020-001",
+          "ev-review-award-detail-offers-count-ai-2025-001"
+        ]
+      }
+    ]
+  }
+}

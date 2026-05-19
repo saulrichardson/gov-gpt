@@ -6,7 +6,7 @@ export type ToolErrorCode =
   | "REQUEST_TIMEOUT"
   | "RATE_LIMITED"
   | "NETWORK_ERROR"
-  | "PROFILE_LOAD_FAILED"
+  | "SEMANTIC_BUNDLE_LOAD_FAILED"
   | "INTERNAL_ERROR";
 
 export type ToolErrorCategory =
@@ -64,15 +64,11 @@ export function classifyToolError(error: unknown, context?: Record<string, unkno
   if (combined.includes("validation failed") || combined.includes("inputschema")) {
     return mk("INVALID_INPUT", "validation", false, "Input arguments do not satisfy the endpoint schema.");
   }
-  if (combined.includes("unknown slug")) {
+  if (combined.includes("unknown slug") || combined.includes("unknown semantic slug")) {
     return mk("UNKNOWN_ENDPOINT", "not_found", false, "Requested endpoint slug is not available.");
   }
-  if (
-    combined.includes("prompt.md not found") ||
-    combined.includes("missing prompt") ||
-    combined.includes("missing doc")
-  ) {
-    return mk("MISSING_RESOURCE", "not_found", false, "Endpoint prompt/profile resource is missing.");
+  if (combined.includes("missing semantic bundle file")) {
+    return mk("MISSING_RESOURCE", "not_found", false, "Semantic endpoint resource is missing.");
   }
   if (combined.includes("host_not_allowed")) {
     return mk("HOST_NOT_ALLOWED", "security", false, "Endpoint host is not in the MCP allowlist.");
@@ -93,8 +89,8 @@ export function classifyToolError(error: unknown, context?: Record<string, unkno
   ) {
     return mk("NETWORK_ERROR", "network", true, "Network failure while calling upstream endpoint.");
   }
-  if (combined.includes("profile_load_failed")) {
-    return mk("PROFILE_LOAD_FAILED", "dependency", false, "Profile loading failed at server startup.");
+  if (combined.includes("semantic_bundle_load_failed")) {
+    return mk("SEMANTIC_BUNDLE_LOAD_FAILED", "dependency", false, "Semantic bundle loading failed at server startup.");
   }
   return mk("INTERNAL_ERROR", "internal", false, "Unhandled MCP tool error.");
 }

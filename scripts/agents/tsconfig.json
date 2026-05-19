@@ -12,7 +12,10 @@
     "allowImportingTsExtensions": true,
     "types": ["node"],
     "outDir": "dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "zod": ["./node_modules/zod"]
+    }
   },
   "include": ["src/**/*", "tests/**/*"]
 }

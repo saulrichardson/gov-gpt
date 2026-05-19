@@ -156,7 +156,7 @@
       "description": "Reuse a compatible filters object to move from aggregate trend to representative award-level records.",
       "evidenceRefs": [
         "sot-doc-contract",
-        "sot-current-profile"
+        "sot-retired-profile"
       ]
     },
     {
@@ -198,13 +198,13 @@
           "action": "Reuse the filters on spending_by_award and add fields/sort/page controls to retrieve award-level rows.",
           "endpointSlug": "v2__search__spending_by_award",
           "evidenceRefs": [
-            "sot-current-profile"
+            "sot-retired-profile"
           ]
         }
       ],
       "evidenceRefs": [
         "sot-probe-baseline-fy",
-        "sot-current-profile"
+        "sot-retired-profile"
       ]
     },
     {

@@ -1,1 +1,317 @@
-{"schemaVersion":"2.0.0","slug":"v2__download__awards","generatedAt":"2026-05-15T00:00:00Z","endpointRef":"POST https://api.usaspending.gov/api/v2/download/awards/","summary":"Starts an asynchronous award-summary and subaward ZIP download for a filtered USAspending search population.","businessPurpose":"Use this endpoint when the user needs exported award data files rather than interactive API result pages, especially when the desired result set is too large or too detailed for search endpoints.","analyticalGrain":"The immediate response grain is one download job. Once status reaches finished and file_url is retrieved, the eventual ZIP exposes a bounded starter artifact contract through response facts `file_url.archive_members[]`, `file_url.prime_award_summary_member`, optional `file_url.subaward_member`, and `file_url.prime_award_summary_header[]`.","primaryEntities":[{"name":"Download job","description":"The backend job represented by status_url, file_name, and file_url.","evidenceRefs":["daw-doc-contract","daw-source-base","daw-probe-baseline"]},{"name":"Exported award population","description":"The prime awards and subawards selected by the filters and written into generated files.","evidenceRefs":["daw-doc-contract","daw-source-view","daw-probe-baseline"]}],"measures":[{"name":"Row limit","description":"Maximum records included in generated files; live probe accepted limit 1.","evidenceRefs":["daw-probe-baseline","daw-current-profile"]}],"dimensions":[{"name":"filters","description":"Search filters such as keywords, time_period, agencies, award_type_codes, locations, recipient attributes, TAS, PSC, and NAICS.","evidenceRefs":["daw-doc-contract"]},{"name":"columns","description":"Selected export column IDs echoed into download_request. The companion endpoint request fact `columns[]` machine-readably exposes the currently verified-safe starter set for a bounded dashboard handoff: award_id_piid -> closest preview label Award ID (contract-oriented identifier only), recipient_name -> Recipient Name, total_obligated_amount -> Award Amount, and awarding_agency_name -> Awarding Agency. A bounded 2026-05-14 archive inspection reached finished status and the prime-award CSV header exactly matched those four requested column IDs in the same order.","evidenceRefs":["daw-probe-baseline","daw-probe-dashboard-archive","daw-review-rt1-columns","daw-source-column-crosswalk","daw-source-download-common-column-crosswalk","daw-source-preview-field-crosswalk","daw-doc-search-field-labels"]},{"name":"verified starter export columns","description":"Programmatically discover the currently verified-safe starter schema through endpoint request fact `columns[]`: award_id_piid, recipient_name, total_obligated_amount, and awarding_agency_name. Treat other export columns as unresolved in this bundle until another bounded export or source-backed review verifies them.","evidenceRefs":["daw-probe-dashboard-archive","daw-review-rt1-columns","daw-source-column-crosswalk","daw-source-download-common-column-crosswalk","daw-source-preview-field-crosswalk","daw-doc-search-field-labels"]},{"name":"post-download artifact contract","description":"After status reaches finished and file_url is retrieved, the verified bounded dashboard starter export can be treated as a small archive contract surfaced in endpoint response facts: `file_url.archive_members[]` lists the observed members, `file_url.prime_award_summary_member` marks `Contracts_PrimeAwardSummaries_2026-05-14_H03M12S48_1.csv` as the first parser target, `file_url.subaward_member` captures the companion `Contracts_Subawards_2026-05-14_H03M12S51.csv` member when present, and `file_url.prime_award_summary_header[]` encodes the verified prime header quartet `award_id_piid`, `recipient_name`, `total_obligated_amount`, `awarding_agency_name`.","evidenceRefs":["daw-probe-dashboard-archive","daw-review-rt3-archive-contract"]},{"name":"file_format","description":"Generated file format: csv, tsv, or pstxt.","evidenceRefs":["daw-doc-contract","daw-probe-bad-format"]}],"suitableQuestions":[{"name":"Export award records for offline analysis","description":"Use this endpoint when a workflow needs a file rather than paginated JSON rows.","evidenceRefs":["daw-doc-contract","daw-probe-baseline"]},{"name":"Create a bounded sample download","description":"Use filters plus a small limit to test columns and downstream parsing without generating a large file.","evidenceRefs":["daw-probe-baseline"]},{"name":"Pick a parser-safe starter schema for award export","description":"Use award_id_piid, recipient_name, total_obligated_amount, and awarding_agency_name when a workflow needs a common contract-oriented dashboard schema. The same quartet is exposed machine-readably through request fact `columns[]`. A bounded live archive inspection confirmed that the prime-award CSV emitted those exact header names in the same order. Extend beyond this quartet only after additional verification.","evidenceRefs":["daw-probe-dashboard-archive","daw-review-rt1-columns","daw-source-column-crosswalk","daw-source-download-common-column-crosswalk","daw-source-preview-field-crosswalk","daw-doc-search-field-labels"]},{"name":"Choose the first parser after ZIP download","description":"For the verified bounded dashboard starter, inspect `file_url.archive_members[]`, begin with the prime summary CSV member `Contracts_PrimeAwardSummaries_...csv`, validate its header against `award_id_piid`, `recipient_name`, `total_obligated_amount`, and `awarding_agency_name`, and treat any `Contracts_Subawards_...csv` member as a separate companion artifact.","evidenceRefs":["daw-probe-dashboard-archive","daw-review-rt3-archive-contract"]}],"notSuitableFor":[{"name":"Immediate award row inspection","description":"This endpoint returns job metadata. Use spending_by_award for immediate JSON award rows.","evidenceRefs":["daw-doc-contract","daw-probe-baseline"]},{"name":"Counting awards before export","description":"Use download/count or search count endpoints to estimate size before starting a broad job.","evidenceRefs":["daw-source-base","daw-current-profile"]}],"joins":[{"from":"v2__download__awards","to":"v2__download__status","on":["file_name"],"confidence":"high","description":"The response status_url includes file_name; use it to poll the status endpoint.","evidenceRefs":["daw-doc-contract","daw-source-base","daw-probe-baseline"]},{"from":"v2__download__awards","to":"v2__search__spending_by_award","on":["filters"],"confidence":"medium","description":"Reuse compatible filters on spending_by_award to preview the same filtered award population before export, but make preview-only requirements explicit: a keyword-only download starter does not round-trip verbatim because spending_by_award validation requires filters.award_type_codes. This join is still filter-level only: preview field labels, preview sort/order, and page position do not carry into the download schema or output ordering.","evidenceRefs":["daw-doc-contract","daw-current-profile","daw-review-preview-roundtrip","daw-review-rt2-continuity","daw-source-preview-field-crosswalk"]}],"workflows":[{"name":"Preview then download","description":"Use spending_by_award for a quick preview of the filtered population, then start a bounded award download with explicit export columns and poll for the generated ZIP. Treat the preview as a filter sanity check, not as a row-order or schema contract for the export, and make preview-only requirements such as award_type_codes explicit when starting from a keyword-led export scope.","steps":[{"order":1,"action":"Build filters and preview a small sample with spending_by_award to inspect the population and display labels. If you started from a keyword-led download starter, add an explicit award_type_codes set first; reviewer evidence showed that spending_by_award rejected the same keyword scope until award_type_codes was supplied.","endpointSlug":"v2__search__spending_by_award","evidenceRefs":["daw-current-profile","daw-review-preview-roundtrip","daw-source-preview-field-crosswalk","daw-review-rt2-continuity"]},{"order":2,"action":"Call download/awards with the same filters, explicit export column IDs, file_format, and an intentional limit; for a common contract-oriented dashboard starter, use award_id_piid, recipient_name, total_obligated_amount, and awarding_agency_name. Do not assume preview sort/page/order becomes the export contract.","endpointSlug":"v2__download__awards","evidenceRefs":["daw-probe-baseline","daw-probe-dashboard-archive","daw-review-rt2-continuity","daw-source-download-common-column-crosswalk"]},{"order":3,"action":"Poll the returned status_url or v2__download__status with file_name until the ZIP is ready.","endpointSlug":"v2__download__status","evidenceRefs":["daw-doc-contract","daw-source-base"]},{"order":4,"action":"Once status is finished, retrieve file_url and use response facts `file_url.archive_members[]`, `file_url.prime_award_summary_member`, optional `file_url.subaward_member`, and `file_url.prime_award_summary_header[]` to start downstream parsing. For the verified starter quartet, begin with `Contracts_PrimeAwardSummaries_...csv`, validate the emitted prime header as `award_id_piid`, `recipient_name`, `total_obligated_amount`, `awarding_agency_name`, and handle any `Contracts_Subawards_...csv` member as a separate subaward-grain file.","endpointSlug":"v2__download__awards","evidenceRefs":["daw-probe-dashboard-archive","daw-review-rt3-archive-contract"]}],"evidenceRefs":["daw-probe-baseline","daw-probe-dashboard-archive","daw-source-base","daw-review-preview-roundtrip","daw-review-rt2-continuity","daw-review-rt3-archive-contract"]}],"caveats":[{"statement":"The response is a job descriptor, not data rows.","impact":"A caller must poll status_url and then retrieve file_url when ready.","status":"documented_and_observed","evidenceRefs":["daw-doc-contract","daw-probe-baseline"]},{"statement":"Preview-to-download continuity is only at the filtered population level. spending_by_award preview labels come from its requested fields and its own sort/order/page controls, while download/awards accepts export column IDs and the reviewed effective download_request echoed filters, columns, limit, and file_format only.","impact":"Do not assume a preview label is a valid export column ID, and do not treat the first preview page or preview sort order as a guarantee about exported row order. Compare preview and export only through deliberately chosen identifier columns.","status":"observed","evidenceRefs":["daw-review-rt2-continuity","daw-probe-baseline","daw-source-preview-field-crosswalk","daw-doc-contract"]},{"statement":"A keyword-only download starter does not preview unchanged on spending_by_award; reviewer validation failed until filters.award_type_codes was added, and the paired search templates included award_type_codes from the start.","impact":"If a workflow promises preview before export, add an explicit award_type_codes set before calling spending_by_award instead of assuming download-side default injection will carry across endpoints.","status":"observed","evidenceRefs":["daw-review-preview-roundtrip"]},{"statement":"The service injects default award_type_codes; the observed default list changed beyond the older profile's examples.","impact":"Use download_request as the effective request and avoid hard-coding stale defaults.","status":"observed","evidenceRefs":["daw-probe-baseline","daw-current-profile"]},{"statement":"A bounded 2026-05-14 contract-oriented export reached finished status and the prime-award CSV header exactly matched award_id_piid,recipient_name,total_obligated_amount,awarding_agency_name.","impact":"Pipelines can bind directly to that emitted four-field header set for a common dashboard ingest path instead of treating total_obligated_amount and awarding_agency_name as source-only guidance.","status":"observed","evidenceRefs":["daw-probe-dashboard-archive","daw-review-rt1-columns","daw-source-download-common-column-crosswalk","daw-source-preview-field-crosswalk"]},{"statement":"award_id_piid is one identifier column, not a universal cross-award ID; source mappings also define award_id_fain and award_id_uri.","impact":"For mixed award-type exports, choose identifier columns deliberately instead of assuming award_id_piid covers assistance awards.","status":"observed","evidenceRefs":["daw-source-column-crosswalk"]},{"statement":"Only the quartet surfaced in request fact columns[] — Award ID, Recipient Name, Award Amount, and Awarding Agency — has bundle-specific preview-to-export crosswalk evidence here.","impact":"If a dashboard needs additional preview labels or export columns, treat their mappings as unresolved until verified by another bounded export or a source-backed column review.","status":"unknown","evidenceRefs":["daw-review-rt1-columns","daw-doc-search-field-labels","daw-source-preview-field-crosswalk"]},{"statement":"During the live four-column export, status polling remained running with provisional zero counts and file_url returned 403 until the job reached finished; only then did raw file retrieval succeed.","impact":"Do not over-interpret nonterminal total_rows or total_columns, and switch from MCP polling to raw archive retrieval only after terminal completion.","status":"observed","evidenceRefs":["daw-probe-dashboard-archive"]},{"statement":"Post-status archive inspection is outside the initial JSON response, but the verified starter export contract is now surfaced structurally through `file_url.archive_members[]`, `file_url.prime_award_summary_member`, optional `file_url.subaward_member`, and `file_url.prime_award_summary_header[]`.","impact":"Agents can choose the first parser, member-role boundary, and header validation rule without raw ZIP spelunking, while still treating other members or alternate requested columns as separate contracts.","status":"observed","evidenceRefs":["daw-probe-dashboard-archive","daw-review-rt3-archive-contract"]}]}
+{
+  "schemaVersion": "2.0.0",
+  "slug": "v2__download__awards",
+  "generatedAt": "2026-05-15T00:00:00Z",
+  "endpointRef": "POST https://api.usaspending.gov/api/v2/download/awards/",
+  "summary": "Starts an asynchronous award-summary and subaward ZIP download for a filtered USAspending search population.",
+  "businessPurpose": "Use this endpoint when the user needs exported award data files rather than interactive API result pages, especially when the desired result set is too large or too detailed for search endpoints.",
+  "analyticalGrain": "The immediate response grain is one download job. Once status reaches finished and file_url is retrieved, the eventual ZIP exposes a bounded starter artifact contract through response facts `file_url.archive_members[]`, `file_url.prime_award_summary_member`, optional `file_url.subaward_member`, and `file_url.prime_award_summary_header[]`.",
+  "primaryEntities": [
+    {
+      "name": "Download job",
+      "description": "The backend job represented by status_url, file_name, and file_url.",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-source-base",
+        "daw-probe-baseline"
+      ]
+    },
+    {
+      "name": "Exported award population",
+      "description": "The prime awards and subawards selected by the filters and written into generated files.",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-source-view",
+        "daw-probe-baseline"
+      ]
+    }
+  ],
+  "measures": [
+    {
+      "name": "Row limit",
+      "description": "Maximum records included in generated files; live probe accepted limit 1.",
+      "evidenceRefs": [
+        "daw-probe-baseline",
+        "daw-retired-profile"
+      ]
+    }
+  ],
+  "dimensions": [
+    {
+      "name": "filters",
+      "description": "Search filters such as keywords, time_period, agencies, award_type_codes, locations, recipient attributes, TAS, PSC, and NAICS.",
+      "evidenceRefs": [
+        "daw-doc-contract"
+      ]
+    },
+    {
+      "name": "columns",
+      "description": "Selected export column IDs echoed into download_request. The companion endpoint request fact `columns[]` machine-readably exposes the currently verified-safe starter set for a bounded dashboard handoff: award_id_piid -> closest preview label Award ID (contract-oriented identifier only), recipient_name -> Recipient Name, total_obligated_amount -> Award Amount, and awarding_agency_name -> Awarding Agency. A bounded 2026-05-14 archive inspection reached finished status and the prime-award CSV header exactly matched those four requested column IDs in the same order.",
+      "evidenceRefs": [
+        "daw-probe-baseline",
+        "daw-probe-dashboard-archive",
+        "daw-review-rt1-columns",
+        "daw-source-column-crosswalk",
+        "daw-source-download-common-column-crosswalk",
+        "daw-source-preview-field-crosswalk",
+        "daw-doc-search-field-labels"
+      ]
+    },
+    {
+      "name": "verified starter export columns",
+      "description": "Programmatically discover the currently verified-safe starter schema through endpoint request fact `columns[]`: award_id_piid, recipient_name, total_obligated_amount, and awarding_agency_name. Treat other export columns as unresolved in this bundle until another bounded export or source-backed review verifies them.",
+      "evidenceRefs": [
+        "daw-probe-dashboard-archive",
+        "daw-review-rt1-columns",
+        "daw-source-column-crosswalk",
+        "daw-source-download-common-column-crosswalk",
+        "daw-source-preview-field-crosswalk",
+        "daw-doc-search-field-labels"
+      ]
+    },
+    {
+      "name": "post-download artifact contract",
+      "description": "After status reaches finished and file_url is retrieved, the verified bounded dashboard starter export can be treated as a small archive contract surfaced in endpoint response facts: `file_url.archive_members[]` lists the observed members, `file_url.prime_award_summary_member` marks `Contracts_PrimeAwardSummaries_2026-05-14_H03M12S48_1.csv` as the first parser target, `file_url.subaward_member` captures the companion `Contracts_Subawards_2026-05-14_H03M12S51.csv` member when present, and `file_url.prime_award_summary_header[]` encodes the verified prime header quartet `award_id_piid`, `recipient_name`, `total_obligated_amount`, `awarding_agency_name`.",
+      "evidenceRefs": [
+        "daw-probe-dashboard-archive",
+        "daw-review-rt3-archive-contract"
+      ]
+    },
+    {
+      "name": "file_format",
+      "description": "Generated file format: csv, tsv, or pstxt.",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-probe-bad-format"
+      ]
+    }
+  ],
+  "suitableQuestions": [
+    {
+      "name": "Export award records for offline analysis",
+      "description": "Use this endpoint when a workflow needs a file rather than paginated JSON rows.",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-probe-baseline"
+      ]
+    },
+    {
+      "name": "Create a bounded sample download",
+      "description": "Use filters plus a small limit to test columns and downstream parsing without generating a large file.",
+      "evidenceRefs": [
+        "daw-probe-baseline"
+      ]
+    },
+    {
+      "name": "Pick a parser-safe starter schema for award export",
+      "description": "Use award_id_piid, recipient_name, total_obligated_amount, and awarding_agency_name when a workflow needs a common contract-oriented dashboard schema. The same quartet is exposed machine-readably through request fact `columns[]`. A bounded live archive inspection confirmed that the prime-award CSV emitted those exact header names in the same order. Extend beyond this quartet only after additional verification.",
+      "evidenceRefs": [
+        "daw-probe-dashboard-archive",
+        "daw-review-rt1-columns",
+        "daw-source-column-crosswalk",
+        "daw-source-download-common-column-crosswalk",
+        "daw-source-preview-field-crosswalk",
+        "daw-doc-search-field-labels"
+      ]
+    },
+    {
+      "name": "Choose the first parser after ZIP download",
+      "description": "For the verified bounded dashboard starter, inspect `file_url.archive_members[]`, begin with the prime summary CSV member `Contracts_PrimeAwardSummaries_...csv`, validate its header against `award_id_piid`, `recipient_name`, `total_obligated_amount`, and `awarding_agency_name`, and treat any `Contracts_Subawards_...csv` member as a separate companion artifact.",
+      "evidenceRefs": [
+        "daw-probe-dashboard-archive",
+        "daw-review-rt3-archive-contract"
+      ]
+    }
+  ],
+  "notSuitableFor": [
+    {
+      "name": "Immediate award row inspection",
+      "description": "This endpoint returns job metadata. Use spending_by_award for immediate JSON award rows.",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-probe-baseline"
+      ]
+    },
+    {
+      "name": "Counting awards before export",
+      "description": "Use download/count or search count endpoints to estimate size before starting a broad job.",
+      "evidenceRefs": [
+        "daw-source-base",
+        "daw-retired-profile"
+      ]
+    }
+  ],
+  "joins": [
+    {
+      "from": "v2__download__awards",
+      "to": "v2__download__status",
+      "on": [
+        "file_name"
+      ],
+      "confidence": "high",
+      "description": "The response status_url includes file_name; use it to poll the status endpoint.",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-source-base",
+        "daw-probe-baseline"
+      ]
+    },
+    {
+      "from": "v2__download__awards",
+      "to": "v2__search__spending_by_award",
+      "on": [
+        "filters"
+      ],
+      "confidence": "medium",
+      "description": "Reuse compatible filters on spending_by_award to preview the same filtered award population before export, but make preview-only requirements explicit: a keyword-only download starter does not round-trip verbatim because spending_by_award validation requires filters.award_type_codes. This join is still filter-level only: preview field labels, preview sort/order, and page position do not carry into the download schema or output ordering.",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-retired-profile",
+        "daw-review-preview-roundtrip",
+        "daw-review-rt2-continuity",
+        "daw-source-preview-field-crosswalk"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "name": "Preview then download",
+      "description": "Use spending_by_award for a quick preview of the filtered population, then start a bounded award download with explicit export columns and poll for the generated ZIP. Treat the preview as a filter sanity check, not as a row-order or schema contract for the export, and make preview-only requirements such as award_type_codes explicit when starting from a keyword-led export scope.",
+      "steps": [
+        {
+          "order": 1,
+          "action": "Build filters and preview a small sample with spending_by_award to inspect the population and display labels. If you started from a keyword-led download starter, add an explicit award_type_codes set first; reviewer evidence showed that spending_by_award rejected the same keyword scope until award_type_codes was supplied.",
+          "endpointSlug": "v2__search__spending_by_award",
+          "evidenceRefs": [
+            "daw-retired-profile",
+            "daw-review-preview-roundtrip",
+            "daw-source-preview-field-crosswalk",
+            "daw-review-rt2-continuity"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "Call download/awards with the same filters, explicit export column IDs, file_format, and an intentional limit; for a common contract-oriented dashboard starter, use award_id_piid, recipient_name, total_obligated_amount, and awarding_agency_name. Do not assume preview sort/page/order becomes the export contract.",
+          "endpointSlug": "v2__download__awards",
+          "evidenceRefs": [
+            "daw-probe-baseline",
+            "daw-probe-dashboard-archive",
+            "daw-review-rt2-continuity",
+            "daw-source-download-common-column-crosswalk"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Poll the returned status_url or v2__download__status with file_name until the ZIP is ready.",
+          "endpointSlug": "v2__download__status",
+          "evidenceRefs": [
+            "daw-doc-contract",
+            "daw-source-base"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Once status is finished, retrieve file_url and use response facts `file_url.archive_members[]`, `file_url.prime_award_summary_member`, optional `file_url.subaward_member`, and `file_url.prime_award_summary_header[]` to start downstream parsing. For the verified starter quartet, begin with `Contracts_PrimeAwardSummaries_...csv`, validate the emitted prime header as `award_id_piid`, `recipient_name`, `total_obligated_amount`, `awarding_agency_name`, and handle any `Contracts_Subawards_...csv` member as a separate subaward-grain file.",
+          "endpointSlug": "v2__download__awards",
+          "evidenceRefs": [
+            "daw-probe-dashboard-archive",
+            "daw-review-rt3-archive-contract"
+          ]
+        }
+      ],
+      "evidenceRefs": [
+        "daw-probe-baseline",
+        "daw-probe-dashboard-archive",
+        "daw-source-base",
+        "daw-review-preview-roundtrip",
+        "daw-review-rt2-continuity",
+        "daw-review-rt3-archive-contract"
+      ]
+    }
+  ],
+  "caveats": [
+    {
+      "statement": "The response is a job descriptor, not data rows.",
+      "impact": "A caller must poll status_url and then retrieve file_url when ready.",
+      "status": "documented_and_observed",
+      "evidenceRefs": [
+        "daw-doc-contract",
+        "daw-probe-baseline"
+      ]
+    },
+    {
+      "statement": "Preview-to-download continuity is only at the filtered population level. spending_by_award preview labels come from its requested fields and its own sort/order/page controls, while download/awards accepts export column IDs and the reviewed effective download_request echoed filters, columns, limit, and file_format only.",
+      "impact": "Do not assume a preview label is a valid export column ID, and do not treat the first preview page or preview sort order as a guarantee about exported row order. Compare preview and export only through deliberately chosen identifier columns.",
+      "status": "observed",
+      "evidenceRefs": [
+        "daw-review-rt2-continuity",
+        "daw-probe-baseline",
+        "daw-source-preview-field-crosswalk",
+        "daw-doc-contract"
+      ]
+    },
+    {
+      "statement": "A keyword-only download starter does not preview unchanged on spending_by_award; reviewer validation failed until filters.award_type_codes was added, and the paired search templates included award_type_codes from the start.",
+      "impact": "If a workflow promises preview before export, add an explicit award_type_codes set before calling spending_by_award instead of assuming download-side default injection will carry across endpoints.",
+      "status": "observed",
+      "evidenceRefs": [
+        "daw-review-preview-roundtrip"
+      ]
+    },
+    {
+      "statement": "The service injects default award_type_codes; the observed default list changed beyond the older profile's examples.",
+      "impact": "Use download_request as the effective request and avoid hard-coding stale defaults.",
+      "status": "observed",
+      "evidenceRefs": [
+        "daw-probe-baseline",
+        "daw-retired-profile"
+      ]
+    },
+    {
+      "statement": "A bounded 2026-05-14 contract-oriented export reached finished status and the prime-award CSV header exactly matched award_id_piid,recipient_name,total_obligated_amount,awarding_agency_name.",
+      "impact": "Pipelines can bind directly to that emitted four-field header set for a common dashboard ingest path instead of treating total_obligated_amount and awarding_agency_name as source-only guidance.",
+      "status": "observed",
+      "evidenceRefs": [
+        "daw-probe-dashboard-archive",
+        "daw-review-rt1-columns",
+        "daw-source-download-common-column-crosswalk",
+        "daw-source-preview-field-crosswalk"
+      ]
+    },
+    {
+      "statement": "award_id_piid is one identifier column, not a universal cross-award ID; source mappings also define award_id_fain and award_id_uri.",
+      "impact": "For mixed award-type exports, choose identifier columns deliberately instead of assuming award_id_piid covers assistance awards.",
+      "status": "observed",
+      "evidenceRefs": [
+        "daw-source-column-crosswalk"
+      ]
+    },
+    {
+      "statement": "Only the quartet surfaced in request fact columns[] — Award ID, Recipient Name, Award Amount, and Awarding Agency — has bundle-specific preview-to-export crosswalk evidence here.",
+      "impact": "If a dashboard needs additional preview labels or export columns, treat their mappings as unresolved until verified by another bounded export or a source-backed column review.",
+      "status": "unknown",
+      "evidenceRefs": [
+        "daw-review-rt1-columns",
+        "daw-doc-search-field-labels",
+        "daw-source-preview-field-crosswalk"
+      ]
+    },
+    {
+      "statement": "During the live four-column export, status polling remained running with provisional zero counts and file_url returned 403 until the job reached finished; only then did raw file retrieval succeed.",
+      "impact": "Do not over-interpret nonterminal total_rows or total_columns, and switch from MCP polling to raw archive retrieval only after terminal completion.",
+      "status": "observed",
+      "evidenceRefs": [
+        "daw-probe-dashboard-archive"
+      ]
+    },
+    {
+      "statement": "Post-status archive inspection is outside the initial JSON response, but the verified starter export contract is now surfaced structurally through `file_url.archive_members[]`, `file_url.prime_award_summary_member`, optional `file_url.subaward_member`, and `file_url.prime_award_summary_header[]`.",
+      "impact": "Agents can choose the first parser, member-role boundary, and header validation rule without raw ZIP spelunking, while still treating other members or alternate requested columns as separate contracts.",
+      "status": "observed",
+      "evidenceRefs": [
+        "daw-probe-dashboard-archive",
+        "daw-review-rt3-archive-contract"
+      ]
+    }
+  ]
+}

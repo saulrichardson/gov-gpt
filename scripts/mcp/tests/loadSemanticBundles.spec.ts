@@ -2,12 +2,10 @@ import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
 import { loadSemanticBundles } from "../src/loadSemanticBundles.js";
-import { loadProfiles } from "../src/loadProfiles.js";
 import { scoreSearchQuery } from "../src/search.js";
 import {
   analysisPacketFromSemanticBundle,
   endpointSummaryFromSemanticBundle,
-  enrichEndpointSummaryWithSemanticProfile,
 } from "../src/semanticDiscovery.js";
 import { validateSemanticRequest } from "../src/semanticRequest.js";
 
@@ -96,36 +94,22 @@ describe("semantic bundles", () => {
     }
   });
 
-  it("enriches raw discovery metadata for promoted semantic bundles", () => {
-    const profiles = loadProfiles({ repoRoot });
+  it("builds discovery metadata directly from promoted semantic bundles", () => {
     const semantic = loadSemanticBundles({ repoRoot });
-    const rawSummary = profiles.summaries.find((summary) => summary.slug === "v2__awards__funding");
-    expect(rawSummary).toBeTruthy();
-    expect(rawSummary?.shipTier).toBe("unshipped");
-    expect(rawSummary?.tags || []).toEqual([]);
-    expect(rawSummary?.capabilities || []).toEqual([]);
+    const summary = endpointSummaryFromSemanticBundle(semantic.bundlesBySlug.v2__awards__funding);
 
-    const enriched = enrichEndpointSummaryWithSemanticProfile(rawSummary!, semantic.bundlesBySlug.v2__awards__funding);
-
-    expect(enriched.shipTier).toBe("representative");
-    expect(enriched.semanticReadiness).toBe("promoted_semantic_bundle");
-    expect(enriched.semanticAvailability).toBe("available");
-    expect(enriched.tags || []).toContain("semantic_profile");
-    expect(enriched.tags || []).toContain("award");
-    expect(enriched.capabilities?.length).toBeGreaterThan(0);
+    expect(summary.shipTier).toBe("representative");
+    expect(summary.semanticReadiness).toBe("promoted_semantic_bundle");
+    expect(summary.semanticAvailability).toBe("available");
+    expect(summary.tags || []).toContain("semantic_profile");
+    expect(summary.tags || []).toContain("award");
+    expect(summary.capabilities?.length).toBeGreaterThan(0);
   });
 
   it("surfaces nested semantic request facts in discovery planner metadata", () => {
-    const profiles = loadProfiles({ repoRoot });
     const semantic = loadSemanticBundles({ repoRoot });
-    const rawSummary = profiles.summaries.find((summary) => summary.slug === "v2__disaster__spending_by_geography");
-    expect(rawSummary).toBeTruthy();
-
-    const enriched = enrichEndpointSummaryWithSemanticProfile(
-      rawSummary!,
-      semantic.bundlesBySlug.v2__disaster__spending_by_geography
-    );
-    const planner = enriched.planner!;
+    const summary = endpointSummaryFromSemanticBundle(semantic.bundlesBySlug.v2__disaster__spending_by_geography);
+    const planner = summary.planner!;
 
     expect(planner.requiredParams).toContain("filter.def_codes");
     expect(planner.optionalParams).not.toContain("filter.time_period");
@@ -142,11 +126,7 @@ describe("semantic bundles", () => {
   });
 
   it("builds discovery summaries for promoted semantic-only bundles", () => {
-    const profiles = loadProfiles({ repoRoot });
     const semantic = loadSemanticBundles({ repoRoot });
-    const rawSummary = profiles.summaries.find((summary) => summary.slug === "v2__search__spending_by_geography");
-    expect(rawSummary).toBeUndefined();
-
     const semanticSummary = endpointSummaryFromSemanticBundle(
       semantic.bundlesBySlug.v2__search__spending_by_geography
     );

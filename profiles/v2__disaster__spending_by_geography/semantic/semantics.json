@@ -12,16 +12,16 @@
       "description": "A rolled-up spending record for one geography code at the selected state, county, or district layer after applying disaster filters.",
       "evidenceRefs": [
         "geo-doc-contract",
-        "geo-current-profile",
+        "geo-retired-profile",
         "geo-live-state-obligation"
       ]
     },
     {
       "name": "DEFC-filtered award population",
-      "description": "The set of awards included in the geography rollup, defined primarily by filter.def_codes and optionally narrowed by award type. Shared passthrough filters appear in the current raw profile but were not reliable geography-bounding controls in this repair's live evidence.",
+      "description": "The set of awards included in the geography rollup, defined primarily by filter.def_codes and optionally narrowed by award type. Shared passthrough filters appear in the retired low-level artifact but were not reliable geography-bounding controls in this repair's live evidence.",
       "evidenceRefs": [
         "geo-doc-contract",
-        "geo-current-profile",
+        "geo-retired-profile",
         "geo-live-state-obligation",
         "geo-live-shared-filters-ignored"
       ]
@@ -92,14 +92,14 @@
       "description": "Optional award_type_codes can narrow the rollup to contracts, grants, loans, and related award categories.",
       "evidenceRefs": [
         "geo-doc-contract",
-        "geo-current-profile"
+        "geo-retired-profile"
       ]
     },
     {
       "name": "time period and recipient filters",
-      "description": "The current raw profile carries shared keys such as time_period, recipient_scope, and recipient_locations, but a 2026-05-15 live probe accepted those fields without materially narrowing the sampled DEFC L state rollup, so they are not reliable geography-bounding controls here.",
+      "description": "The retired low-level artifact carries shared keys such as time_period, recipient_scope, and recipient_locations, but a 2026-05-15 live probe accepted those fields without materially narrowing the sampled DEFC L state rollup, so they are not reliable geography-bounding controls here.",
       "evidenceRefs": [
-        "geo-current-profile",
+        "geo-retired-profile",
         "geo-live-shared-filters-ignored"
       ]
     }
@@ -155,7 +155,7 @@
       "name": "Trend analysis over time in a single response",
       "description": "The response grain is geography only with no time bucket dimension, and this repair's sampled time_period passthrough probe did not materially narrow the rollup.",
       "evidenceRefs": [
-        "geo-current-profile",
+        "geo-retired-profile",
         "geo-live-shared-filters-ignored",
         "geo-derived-mcp-gaps"
       ]
