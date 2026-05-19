@@ -1,131 +1,257 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__search__spending_by_geography",
-  "generatedAt": "2026-05-09T12:00:00+00:00",
-  "endpointRef": "v2__search__spending_by_geography",
-  "summary": "Aggregates advanced-search spending into geography buckets such as states, counties, congressional districts, or countries, returning obligation totals and optional per-capita context.",
-  "businessPurpose": "Use this endpoint when you need the advanced-search filter stack reduced to geographic totals rather than award-level detail. It is designed for map views, geographic comparisons, and location-based summaries of federal spending.",
-  "analyticalGrain": "One row per requested geographic unit within the selected geo_layer and scope for the filtered spending population.",
+  "generatedAt": "2026-05-13T00:00:00.000Z",
+  "endpointRef": "POST https://api.usaspending.gov/api/v2/search/spending_by_geography/",
+  "summary": "Aggregates advanced-search spending into geography buckets such as states, counties, congressional districts, or countries for maps, choropleths, and geography dashboard panels, returning obligation totals and optional per-capita context.",
+  "businessPurpose": "Use this endpoint when you need the advanced-search filter stack reduced to geographic totals rather than award-level detail. It is designed for state, county, district, or country maps; choropleths; geography dashboard panels; and paired trend-plus-map workflows where v2__search__spending_over_time provides the trend side.",
+  "analyticalGrain": "One row per returned geography bucket within the selected geo_layer and scope for the filtered spending population, making the output suitable for state/county/district/country map layers and geography dashboard panels. For geo_layer=state, reviewer-observed live output can also include territorial buckets and an uncoded blank bucket, so callers should not assume only the 50 states plus DC.",
   "primaryEntities": [
     {
       "name": "Geographic area",
-      "description": "A state, county, congressional district, or country identified by shape_code and display_name in the results array.",
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-doc-response-surface"]
+      "description": "A geography bucket identified by shape_code and display_name in the results array, such as a state, territory, county, congressional district, or country depending on geo_layer. Reviewer-observed state output also included an uncoded blank bucket.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-response-surface"
+      ]
     },
     {
       "name": "Filtered spending population",
       "description": "The set of transactions, awards, or subawards selected by the AdvancedFilterObject and grouped into geography buckets.",
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-doc-filter-surface"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-filter-surface"
+      ]
     }
   ],
   "measures": [
     {
       "name": "aggregated_amount",
       "description": "Obligation amount aggregated for each geography row.",
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-response-surface"
+      ]
     },
     {
       "name": "per_capita",
       "description": "Per-capita spending metric derived for the geography when population data is available.",
-      "evidenceRefs": ["ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-response-surface"
+      ]
     },
     {
       "name": "total_outlays",
       "description": "Optional outlay measure documented only for award-level responses.",
-      "evidenceRefs": ["ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-response-surface"
+      ]
     }
   ],
   "dimensions": [
     {
       "name": "scope",
       "description": "Whether geography is based on place of performance or recipient location.",
-      "evidenceRefs": ["ev-doc-endpoint-surface"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface"
+      ]
     },
     {
       "name": "geo_layer",
       "description": "The requested geography grain: state, county, district, or country.",
-      "evidenceRefs": ["ev-doc-endpoint-surface"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface"
+      ]
     },
     {
       "name": "spending_level",
       "description": "Whether totals are grouped from transactions, awards, or subawards.",
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-response-surface"
+      ]
     },
     {
       "name": "Advanced search filters",
-      "description": "The shared AdvancedFilterObject lets callers restrict the underlying spending population by time, agencies, locations, recipients, award types, program activity, disaster code, and related dimensions before aggregation.",
-      "evidenceRefs": ["ev-doc-filter-surface"]
+      "description": "The shared AdvancedFilterObject lets callers restrict the underlying spending population by time, agencies, locations, recipients, award types, program activity, disaster code, and related dimensions before aggregation. Reviewer-reported same-scope dashboard evidence confirms award_type_codes and place_of_performance_scope together on a bounded domestic state-map request.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-review-2026-05-13-dashboard-filters"
+      ]
     }
   ],
   "suitableQuestions": [
     {
       "name": "Where is filtered spending concentrated geographically?",
-      "description": "Good for state, county, district, or country rollups of a filtered spending population.",
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-doc-response-surface"]
+      "description": "Good for state, county, district, or country rollups when the output should drive a map, choropleth, or other geography comparison view.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-response-surface"
+      ]
     },
     {
       "name": "How do recipient-location totals differ from place-of-performance totals?",
       "description": "The scope parameter allows the same filter set to be summarized by either recipient location or place of performance.",
-      "evidenceRefs": ["ev-doc-endpoint-surface"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface"
+      ]
     },
     {
       "name": "Which geographies have the highest per-capita spending?",
       "description": "Results can include population and per_capita, making geographic normalization possible when population data is available.",
-      "evidenceRefs": ["ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-response-surface"
+      ]
+    },
+    {
+      "name": "How do I build the map side of a same-scope trend-plus-geography dashboard?",
+      "description": "Reuse the same bounded time_period and award_type_codes as the paired trend, set scope=place_of_performance, and set filters.place_of_performance_scope=domestic explicitly so the geography map panel matches the trend panel.",
+      "evidenceRefs": [
+        "ev-review-2026-05-13-dashboard-filters"
+      ]
+    },
+    {
+      "name": "Which endpoint should I use for a state map, geography map, or choropleth dashboard panel?",
+      "description": "Use this endpoint when the desired result is one row per geography bucket for a state, county, district, or country map. If you need award rows behind a geography bucket, switch to an award-detail endpoint after using this map-oriented aggregate.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-derived-coverage",
+        "ev-review-2026-05-13-dashboard-filters"
+      ]
     }
   ],
   "notSuitableFor": [
     {
       "name": "Award-level or transaction-level drilldown",
       "description": "This endpoint returns grouped geography rows, not detailed award or transaction records.",
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-derived-coverage"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-derived-coverage"
+      ]
     },
     {
       "name": "Stable pagination workflows",
       "description": "The docs do not describe page or sort controls, so this is not the right surface for scrolling through large detail sets.",
-      "evidenceRefs": ["ev-derived-coverage"]
+      "evidenceRefs": [
+        "ev-derived-coverage"
+      ]
     },
     {
       "name": "Pre-2007-10-01 search coverage",
       "description": "The documented warning says search time periods are currently limited to an earliest date of 2007-10-01.",
-      "evidenceRefs": ["ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-response-surface"
+      ]
     }
   ],
   "joins": [
     {
       "from": "results[].shape_code",
       "to": "Geography reference data",
-      "on": ["shape_code", "geo_layer"],
+      "on": [
+        "shape_code",
+        "geo_layer"
+      ],
       "confidence": "medium",
-      "description": "shape_code is the machine-readable geography identifier for the requested layer and can be joined to external geography reference tables or map shapes that use the same coding system for states, counties, districts, or countries.",
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-doc-response-surface"]
+      "description": "shape_code is the machine-readable geography identifier for the requested layer and can usually be joined to external geography reference tables or map shapes that use the same coding system. For geo_layer=state, territory codes may appear alongside states and DC, while blank shape_code values represent uncoded buckets that should be filtered or labeled separately before map joins.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-response-surface",
+        "ev-review-repair-2-state-layer-caveat"
+      ]
     }
   ],
   "workflows": [
     {
-      "name": "Build a geographic spending comparison",
-      "description": "Choose a filter set, select scope and geography grain, then rank or map the resulting geography rows by aggregated amount or per-capita values.",
+      "name": "Build a map or geography spending comparison",
+      "description": "Choose a filter set, select scope and geography grain, then use the resulting geography rows in a map, choropleth, ranked geography list, or other geography dashboard panel.",
       "steps": [
         {
           "order": 1,
           "action": "Define the AdvancedFilterObject for the spending population of interest.",
           "endpointSlug": "v2__search__spending_by_geography",
-          "evidenceRefs": ["ev-doc-filter-surface"]
+          "evidenceRefs": [
+            "ev-doc-filter-surface"
+          ]
         },
         {
           "order": 2,
-          "action": "Pick scope=place_of_performance or scope=recipient_location and a geo_layer such as state or county.",
+          "action": "Pick scope=place_of_performance or scope=recipient_location and a geo_layer such as state or county. If the user asked for a state map, choropleth, geography panel, or map half of a dashboard, this endpoint is the geography aggregate surface. For same-scope trend-plus-geography dashboards, pair scope=place_of_performance with filters.place_of_performance_scope and reuse the same award_type_codes as the paired trend.",
           "endpointSlug": "v2__search__spending_by_geography",
-          "evidenceRefs": ["ev-doc-endpoint-surface"]
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-review-2026-05-13-dashboard-filters"
+          ]
         },
         {
           "order": 3,
-          "action": "Interpret each result row as one geography bucket with aggregated_amount and optional population/per_capita metrics.",
+          "action": "Interpret each result row as one geography bucket with aggregated_amount and optional population/per_capita metrics. When geo_layer=state, handle territorial rows and any uncoded blank bucket before joining to map shapes, and sort client-side by aggregated_amount or another explicit metric before publishing ranked geography lists because response order is not a ranking guarantee.",
           "endpointSlug": "v2__search__spending_by_geography",
-          "evidenceRefs": ["ev-doc-response-surface"]
+          "evidenceRefs": [
+            "ev-doc-response-surface",
+            "ev-review-2026-05-14-row-order-not-ranked",
+            "ev-review-repair-2-state-layer-caveat"
+          ]
         }
       ],
-      "evidenceRefs": ["ev-doc-endpoint-surface", "ev-doc-response-surface", "ev-doc-filter-surface"]
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-filter-surface",
+        "ev-doc-response-surface",
+        "ev-review-2026-05-13-dashboard-filters",
+        "ev-review-2026-05-14-row-order-not-ranked",
+        "ev-review-repair-2-state-layer-caveat"
+      ]
+    },
+    {
+      "name": "Same-scope trend plus geography dashboard",
+      "description": "Use this endpoint for the map or geography panel in a dashboard that pairs geographic buckets with a matching v2__search__spending_over_time trend.",
+      "steps": [
+        {
+          "order": 1,
+          "action": "Start from the shared analytical slice: choose the bounded time_period, award_type_codes, and any other AdvancedFilterObject criteria that both the map and trend should reuse.",
+          "endpointSlug": "v2__search__spending_by_geography",
+          "evidenceRefs": [
+            "ev-doc-filter-surface",
+            "ev-review-2026-05-13-dashboard-filters"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "For the geography panel, set scope=place_of_performance, geo_layer=state, and filters.place_of_performance_scope=domestic explicitly when you want a domestic state map that matches the trend request exactly.",
+          "endpointSlug": "v2__search__spending_by_geography",
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-review-2026-05-13-dashboard-filters"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Render the returned geography rows as the map layer or geography panel, handling territory rows and any uncoded blank bucket before joining to standard state shapes. If the dashboard also shows a ranked geography list, sort client-side by aggregated_amount or another explicit metric instead of relying on response order.",
+          "endpointSlug": "v2__search__spending_by_geography",
+          "evidenceRefs": [
+            "ev-doc-response-surface",
+            "ev-review-2026-05-14-row-order-not-ranked",
+            "ev-review-repair-2-state-layer-caveat"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Send the same core filters to v2__search__spending_over_time for the companion trend, keeping the location scope aligned so both panels represent the same spending population.",
+          "endpointSlug": "v2__search__spending_over_time",
+          "evidenceRefs": [
+            "ev-review-2026-05-13-dashboard-filters"
+          ]
+        }
+      ],
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-doc-filter-surface",
+        "ev-doc-response-surface",
+        "ev-review-2026-05-13-dashboard-filters",
+        "ev-review-2026-05-14-row-order-not-ranked",
+        "ev-review-repair-2-state-layer-caveat"
+      ]
     }
   ],
   "caveats": [
@@ -133,19 +259,41 @@
       "statement": "The subawards boolean is documented but the sample warning indicates it will be deprecated in favor of spending_level=subawards.",
       "impact": "Prefer spending_level for new integrations.",
       "status": "documented_unverified",
-      "evidenceRefs": ["ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-response-surface"
+      ]
     },
     {
       "statement": "Population and per_capita are documented as nullable, so geographic comparisons may have missing normalization values.",
       "impact": "Handle nulls explicitly in ranking or choropleth workflows.",
       "status": "documented_unverified",
-      "evidenceRefs": ["ev-doc-response-surface"]
+      "evidenceRefs": [
+        "ev-doc-response-surface"
+      ]
     },
     {
       "statement": "Some nested filter object details live in shared search_filters documentation instead of this endpoint page.",
       "impact": "Shared filter shapes may need additional validation before building highly specific requests.",
       "status": "documented_unverified",
-      "evidenceRefs": ["ev-doc-filter-surface"]
+      "evidenceRefs": [
+        "ev-doc-filter-surface"
+      ]
+    },
+    {
+      "statement": "For geo_layer=state, reviewer-observed live output included territory codes GU, PR, VI, MP, and AS plus one uncoded blank bucket with shape_code=\"\" and display_name=null.",
+      "impact": "State-map and state-ranking workflows should explicitly allowlist the rows they want to render, support territory geometries when desired, and label or filter the uncoded bucket before joining to standard state shapes.",
+      "status": "observed",
+      "evidenceRefs": [
+        "ev-review-repair-2-state-layer-caveat"
+      ]
+    },
+    {
+      "statement": "Reviewer-reported live geography rows were not returned in descending aggregated_amount order, so response order is not a ranking guarantee.",
+      "impact": "Sort client-side by aggregated_amount or another explicit metric before building ranked state or geography lists.",
+      "status": "observed",
+      "evidenceRefs": [
+        "ev-review-2026-05-14-row-order-not-ranked"
+      ]
     }
   ]
 }

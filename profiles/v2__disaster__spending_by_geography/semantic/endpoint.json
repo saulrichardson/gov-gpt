@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__disaster__spending_by_geography",
-  "generatedAt": "2026-05-10T12:20:00+00:00",
+  "generatedAt": "2026-05-15T12:00:00+00:00",
   "endpoint": {
     "method": "POST",
     "host": "https://api.usaspending.gov",
@@ -10,13 +10,14 @@
   "availability": {
     "status": "available",
     "confidence": "high",
-    "lastVerified": "2026-05-10",
-    "summary": "Live probes on 2026-05-10 returned 200 responses for state-level obligation and outlay geography aggregations and returned documented validation errors for bad def_codes requests.",
+    "lastVerified": "2026-05-15",
+    "summary": "Live probes on 2026-05-10 and 2026-05-15 returned 200 responses for state-level obligation and outlay geography aggregations, returned documented validation errors for bad def_codes requests, and showed that shared time_period and recipient-location passthrough filters were accepted but did not materially narrow the sampled state rollup. Current live confidence is strongest for geo_layer=state; county and district remain documented but not re-probed in this repair.",
     "evidenceRefs": [
       "geo-live-state-obligation",
       "geo-live-filtered-state-outlay-pop",
       "geo-live-empty-defc",
-      "geo-live-lowercase-defc"
+      "geo-live-lowercase-defc",
+      "geo-live-shared-filters-ignored"
     ]
   },
   "provenance": {
@@ -48,6 +49,20 @@
         "title": "Live USAspending probes for disaster spending_by_geography on 2026-05-10",
         "locator": "https://api.usaspending.gov/api/v2/disaster/spending_by_geography/",
         "retrievedAt": "2026-05-10T12:10:00+00:00"
+      },
+      {
+        "id": "src-doc-defc-reference",
+        "kind": "documentation",
+        "title": "Staged USAspending DEFC reference contract",
+        "locator": "staging/docs/v2/references/def_codes.md",
+        "retrievedAt": "2026-05-15T10:40:00+00:00"
+      },
+      {
+        "id": "src-live-probe-2026-05-15",
+        "kind": "live_probe",
+        "title": "Live USAspending probes for disaster spending_by_geography on 2026-05-15",
+        "locator": "https://api.usaspending.gov/api/v2/disaster/spending_by_geography/",
+        "retrievedAt": "2026-05-15T10:45:00+00:00"
       }
     ]
   },
@@ -183,20 +198,32 @@
         "location": "body.filters",
         "type": "array[object]",
         "required": false,
-        "status": "inferred",
-        "description": "Optional shared search-filter date ranges passed through the disaster filter object.",
+        "status": "contradicted",
+        "description": "Shared search-filter date ranges carried in the disaster filter object; a 2026-05-15 live probe accepted this key but did not materially narrow the resulting geography rollup.",
         "documented": {
           "type": "array[{start_date,end_date,date_type?}]",
           "required": false,
           "notes": "This shape comes from the current raw profile's shared Search Filters handling rather than the staged endpoint markdown."
         },
         "constraints": [
-          "Each item should include start_date and end_date in YYYY-MM-DD format.",
-          "date_type may further specify which date dimension to filter."
+          "Each item uses the shared Search Filters time-period shape with YYYY-MM-DD start_date and end_date.",
+          "Do not rely on this field to create recent-only geography stories on this endpoint until a materially different bounded response is reverified."
         ],
         "evidenceRefs": [
-          "geo-current-profile"
-        ]
+          "geo-current-profile",
+          "geo-live-shared-filters-ignored"
+        ],
+        "observed": {
+          "examples": [
+            [
+              {
+                "start_date": "2020-04-01",
+                "end_date": "2020-04-30"
+              }
+            ]
+          ],
+          "notes": "A live probe accepted a one-month time_period value but still returned the same nationwide DEFC L state ordering and leading amounts seen in the unbounded baseline, so acceptance did not translate into reliable analytical narrowing."
+        }
       },
       {
         "path": "filter.recipient_scope",
@@ -204,19 +231,30 @@
         "location": "body.filters",
         "type": "string",
         "required": false,
-        "status": "inferred",
-        "description": "Optional shared search-filter toggle used to constrain recipient geography scope before aggregation.",
+        "status": "contradicted",
+        "description": "Shared recipient-geography scope toggle carried in the disaster filter object; a 2026-05-15 live probe accepted recipient_scope=domestic but the geography rollup still behaved like the unbounded baseline.",
         "documented": {
           "type": "string",
           "required": false,
           "notes": "The current raw profile lists observed values domestic and foreign."
         },
         "constraints": [
-          "Use only recognized recipient scope tokens such as domestic or foreign."
+          "Use only recognized shared-filter tokens such as domestic or foreign.",
+          "Do not treat recipient_scope as a reliable population-bounding control on this endpoint until a materially narrowed response is reverified."
         ],
         "evidenceRefs": [
-          "geo-current-profile"
-        ]
+          "geo-current-profile",
+          "geo-live-shared-filters-ignored"
+        ],
+        "observed": {
+          "acceptedValues": [
+            "domestic"
+          ],
+          "examples": [
+            "domestic"
+          ],
+          "notes": "The sampled request returned HTTP 200 with recipient_scope=domestic but still included many non-California rows, so the filter appeared inert in this run."
+        }
       },
       {
         "path": "filter.recipient_locations",
@@ -224,19 +262,32 @@
         "location": "body.filters",
         "type": "array[object]",
         "required": false,
-        "status": "inferred",
-        "description": "Optional list of recipient location objects used before the geography rollup is calculated.",
+        "status": "contradicted",
+        "description": "Shared recipient location objects carried in the disaster filter object; a 2026-05-15 live probe accepted a California recipient location but the geography rollup still returned a nationwide state list.",
         "documented": {
           "type": "array[object]",
           "required": false,
           "notes": "The current raw profile gives examples like {\"country\":\"USA\",\"state\":\"CA\"}."
         },
         "constraints": [
-          "Location-object structure follows the shared USAspending search filters pattern."
+          "Location objects follow the shared Search Filters pattern such as {\"country\":\"USA\",\"state\":\"CA\"}.",
+          "Do not treat this field as a reliable same-scope or same-state bounding control on this endpoint until reverified with a materially narrowed response."
         ],
         "evidenceRefs": [
-          "geo-current-profile"
-        ]
+          "geo-current-profile",
+          "geo-live-shared-filters-ignored"
+        ],
+        "observed": {
+          "examples": [
+            [
+              {
+                "country": "USA",
+                "state": "CA"
+              }
+            ]
+          ],
+          "notes": "The sampled request returned HTTP 200 with a California recipient location object but still included Maryland, Virginia, District of Columbia, Massachusetts, and other rows, so the filter appeared ignored in this run."
+        }
       },
       {
         "path": "geo_layer",
@@ -245,7 +296,7 @@
         "type": "string",
         "required": true,
         "status": "documented_and_observed",
-        "description": "Requested geographic aggregation level for the response rows.",
+        "description": "Requested geographic aggregation level for the response rows. State is the strongest live-verified layer in this bundle; county and district remain documented but not re-probed in this repair.",
         "documented": {
           "type": "enum[string]",
           "required": true,
@@ -256,7 +307,9 @@
           ]
         },
         "constraints": [
-          "The selected layer determines the meaning of shape_code and geo_layer_filters values."
+          "The selected layer determines the meaning of shape_code and geo_layer_filters values.",
+          "Prefer geo_layer=state for the strongest current live-verified path.",
+          "If you choose county or district, treat the request as documented-but-not-reverified and warn callers that layer-specific behavior was not re-probed in this repair."
         ],
         "evidenceRefs": [
           "geo-doc-contract",
@@ -270,7 +323,7 @@
           "examples": [
             "state"
           ],
-          "notes": "Only the state layer was live-probed in this run; county and district remain documented but unverified here."
+          "notes": "Only the state layer was live-probed in this run and remained safe for bounded requests using geo_layer_filters; county and district remain documented but unverified here and should trigger a caller warning rather than silent equivalence."
         }
       },
       {
@@ -347,7 +400,7 @@
         "type": "string",
         "required": true,
         "status": "documented_and_observed",
-        "description": "Selects which financial measure is summed for each geography row.",
+        "description": "Selects which financial measure is summed for each geography row. Obligation and outlay are the strongest live-reverified measures in this bundle; face_value_of_loan remains documented but not re-probed in this repair.",
         "documented": {
           "type": "enum[string]",
           "required": true,
@@ -358,7 +411,9 @@
           ]
         },
         "constraints": [
-          "The chosen measure changes the meaning of the amount field in the results."
+          "The chosen measure changes the meaning of the amount field in the results.",
+          "Prefer spending_type=obligation or spending_type=outlay for the strongest current live-verified path.",
+          "If you choose spending_type=face_value_of_loan, treat the request as documented-but-not-reverified and warn callers that loan-face-value behavior was not re-probed in this repair."
         ],
         "evidenceRefs": [
           "geo-doc-contract",
@@ -374,14 +429,14 @@
             "obligation",
             "outlay"
           ],
-          "notes": "face_value_of_loan remains documented but was not re-probed in this run."
+          "notes": "Live probes reverified obligation and outlay. face_value_of_loan remains documented but was not re-probed in this run and should trigger a lower-confidence caller warning rather than silent equivalence."
         }
       }
     ],
     "templates": [
       {
         "name": "state_obligation_default_scope",
-        "description": "Minimal live-validated state-level obligation request. Omitting scope defaults to recipient_location.",
+        "description": "Minimal live-validated state-level obligation request. Omitting scope defaults to recipient_location. This is one of the strongest verified measure+geo_layer patterns in the current bundle; face_value_of_loan is documented but lower-confidence because it was not re-probed in this repair.",
         "request": {
           "method": "POST",
           "path": "/api/v2/disaster/spending_by_geography/",
@@ -402,7 +457,7 @@
       },
       {
         "name": "filtered_state_outlay_place_of_performance",
-        "description": "Live-validated outlay request limited to selected states and grouped by place of performance.",
+        "description": "Live-validated outlay request limited to selected states and grouped by place of performance. This is one of the strongest verified measure+geo_layer patterns in the current bundle; face_value_of_loan is documented but lower-confidence because it was not re-probed in this repair.",
         "request": {
           "method": "POST",
           "path": "/api/v2/disaster/spending_by_geography/",
@@ -426,11 +481,76 @@
           "geo-live-filtered-state-outlay-pop"
         ]
       }
+    ],
+    "validationWarnings": [
+      {
+        "id": "geo-layer-county-documented-not-reverified",
+        "path": "geo_layer",
+        "message": "geo_layer=county is transport-valid and documented, but this bundle did not re-probe county behavior live. Treat county results as lower-confidence than the reverified state path unless you revalidate that layer yourself.",
+        "when": {
+          "missingAll": [],
+          "missingAny": [],
+          "presentAll": [
+            "geo_layer"
+          ],
+          "presentAny": [],
+          "valueIn": {
+            "geo_layer": [
+              "county"
+            ]
+          }
+        },
+        "evidenceRefs": [
+          "geo-review-geo-layer-validation-warnings"
+        ]
+      },
+      {
+        "id": "geo-layer-district-documented-not-reverified",
+        "path": "geo_layer",
+        "message": "geo_layer=district is transport-valid and documented, but this bundle did not re-probe district behavior live. Treat district results as lower-confidence than the reverified state path unless you revalidate that layer yourself.",
+        "when": {
+          "missingAll": [],
+          "missingAny": [],
+          "presentAll": [
+            "geo_layer"
+          ],
+          "presentAny": [],
+          "valueIn": {
+            "geo_layer": [
+              "district"
+            ]
+          }
+        },
+        "evidenceRefs": [
+          "geo-review-geo-layer-validation-warnings"
+        ]
+      },
+      {
+        "id": "spending-type-face-value-of-loan-documented-not-reverified",
+        "path": "spending_type",
+        "message": "spending_type=face_value_of_loan is transport-valid and documented, but this bundle did not re-probe that measure live. Treat face_value_of_loan results as lower-confidence than the reverified obligation and outlay paths unless you revalidate it yourself.",
+        "when": {
+          "missingAll": [],
+          "missingAny": [],
+          "presentAll": [
+            "spending_type"
+          ],
+          "presentAny": [],
+          "valueIn": {
+            "spending_type": [
+              "face_value_of_loan"
+            ]
+          }
+        },
+        "evidenceRefs": [
+          "geo-review-geo-layer-validation-warnings"
+        ]
+      }
     ]
   },
   "response": {
     "contentType": "application/json",
-    "shapeSummary": "Returns a single JSON object with echoed geo_layer, scope, and spending_type plus a results array. Each row is one geography aggregate for the selected layer; when geo_layer_filters are omitted, live probes showed an additional uncoded bucket with null shape_code and display_name.",
+    "shapeSummary": "Returns a single JSON object with echoed geo_layer, scope, and spending_type plus a results array. Each row is one geography aggregate for the selected layer; when geo_layer_filters are omitted, live probes showed an additional uncoded bucket with null shape_code and display_name. Do not assume the returned row order is a ranking contract.",
     "fields": [
       {
         "path": "geo_layer",
@@ -768,6 +888,15 @@
           "geo-doc-contract",
           "geo-live-state-obligation"
         ]
+      },
+      {
+        "statement": "A 2026-05-15 live probe accepted filter.time_period plus recipient_scope and recipient_locations, but the response still returned the same nationwide DEFC L state ordering and leading amounts as the unbounded baseline.",
+        "impact": "Do not rely on these shared passthrough filters to build recent-only or recipient-bounded geography stories on this endpoint until they are reverified with a materially narrowed result.",
+        "status": "contradicted",
+        "evidenceRefs": [
+          "geo-live-state-obligation",
+          "geo-live-shared-filters-ignored"
+        ]
       }
     ],
     "quirks": [
@@ -795,21 +924,29 @@
         "evidenceRefs": [
           "geo-live-state-obligation"
         ]
+      },
+      {
+        "statement": "The 2026-05-15 live probe returned California ahead of larger Maryland, Virginia, District of Columbia, and Massachusetts rows, so the results array is not sorted descending by amount.",
+        "impact": "Sort client-side by amount, per_capita, or award_count before publishing top-geography rankings.",
+        "status": "observed",
+        "evidenceRefs": [
+          "geo-live-shared-filters-ignored"
+        ]
       }
     ],
     "gaps": [
       {
-        "statement": "This run reverified only the state layer; county and district behavior remain documented but not re-probed here.",
+        "statement": "This bundle still has live confidence only for the state layer; county and district behavior remain documented but not re-probed here, so validation should warn rather than treat those layers as equally verified.",
         "status": "unknown",
         "evidenceRefs": [
           "geo-doc-contract"
         ]
       },
       {
-        "statement": "The live pass did not re-test face_value_of_loan or the shared filter passthrough fields carried in the current raw profile.",
+        "statement": "face_value_of_loan remains documented but not re-probed in this repair run.",
         "status": "unknown",
         "evidenceRefs": [
-          "geo-current-profile"
+          "geo-doc-contract"
         ]
       }
     ],
@@ -829,6 +966,16 @@
         "evidenceRefs": [
           "geo-live-empty-defc",
           "geo-live-lowercase-defc"
+        ]
+      },
+      {
+        "statement": "Choosing geo_layer=county or geo_layer=district can look semantically supported from the documented enum alone, but this repair only reverified state-layer behavior.",
+        "impact": "Emit an explicit confidence warning for county or district requests and present state as the default verified discovery path.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "geo-doc-contract",
+          "geo-live-state-obligation",
+          "geo-live-filtered-state-outlay-pop"
         ]
       }
     ]

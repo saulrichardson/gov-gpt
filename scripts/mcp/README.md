@@ -71,6 +71,7 @@ Support tools:
 - `usaspending.getEndpoint`
 - `usaspending.getEndpointSchema`
 - `usaspending.getEndpointSemantics`
+- `usaspending.getAnalysisPacket`
 - `usaspending.getEvidence`
 - `usaspending.getUsageGuide`
 - `usaspending.getRequestTemplate`
@@ -104,6 +105,13 @@ The important design point is that semantic guidance is artifact-backed. The
 server helps clients discover and use endpoint knowledge, but it does not invent
 business meaning at runtime.
 
+For analysis and dashboard-building agents, `usaspending.getAnalysisPacket` is
+the preferred first endpoint-specific call after discovery. It consolidates the
+semantic bundle into one structured payload: purpose, analytical grain, request
+templates, required and uncertain fields, validation warnings, workflows,
+response interpretation, caveats, gaps, evidence refs, and optional usage/evidence
+detail. It is a packaging tool over checked-in artifacts, not a runtime analyst.
+
 ## Startup and Load Path
 
 Startup begins in [`src/server.ts`](/Users/saulrichardson/projects/gov-gpt/scripts/mcp/src/server.ts).
@@ -127,6 +135,16 @@ If profile loading fails, or if zero profiles load, the server exits immediately
 - loads `usage.md`
 - indexes bundles by slug for semantic tools and search
 
+Semantic bundles are first-class discovery candidates. If a promoted semantic
+bundle exists without a corresponding legacy raw profile, `findEndpoints` still
+surfaces it from the semantic artifact metadata. Exact slug matches receive a
+strong ranking boost so slug-first coding agents do not get routed to a related
+but different endpoint. Promoted semantic bundles also replace raw planner
+metadata with semantic request facts, including nested request paths and
+status-aware groups such as `optionalSafe`, `optionalUncertain`, and
+`optionalRisky`; this lets agents see risky-but-accepted fields during discovery
+instead of discovering them only after request validation.
+
 ## Call Path and Guardrails
 
 Execution is handled by [`src/call.ts`](/Users/saulrichardson/projects/gov-gpt/scripts/mcp/src/call.ts).
@@ -136,6 +154,9 @@ Current guardrails:
 - tool input is built from the published profile schema
 - semantic requests are validated against `endpoint.json` request facts and
   templates before live calls
+- semantic request validation also honors generic `request.validationWarnings`
+  declared by bundles, so valid near-miss requests can produce evidence-backed
+  warnings without endpoint-specific runtime branches
 - request validation uses AJV with `additionalProperties: false`
 - outbound host access is restricted to the allowed USAspending host
 - requests are bounded by `USASPENDING_REQUEST_TIMEOUT_MS`

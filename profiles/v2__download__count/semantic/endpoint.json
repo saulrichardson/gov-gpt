@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__download__count",
-  "generatedAt": "2026-05-12T09:35:00Z",
+  "generatedAt": "2026-05-15T00:00:00Z",
   "endpoint": {
     "method": "POST",
     "host": "https://api.usaspending.gov",
@@ -77,6 +77,13 @@
         "title": "Derived same-filter comparison of transactions versus awards responses",
         "locator": "Derived from live probes ev-live-baseline-default and ev-live-awards-same-filter",
         "retrievedAt": "2026-05-12T09:25:00Z"
+      },
+      {
+        "id": "src-review-story-gate-2026-05-15",
+        "kind": "review_report",
+        "title": "Structured reviewer report for v2__download__count story-gate repairs",
+        "locator": "Structured reviewer report for v2__download__count (RT1-RT2, supplied 2026-05-15)",
+        "retrievedAt": "2026-05-15T00:00:00Z"
       }
     ]
   },
@@ -194,15 +201,24 @@
         "location": "body.filters",
         "type": "array[string]",
         "required": false,
-        "status": "documented_unverified",
+        "status": "documented_and_observed",
         "description": "Keyword list applied across the endpoint's searchable text fields.",
         "constraints": [],
         "evidenceRefs": [
-          "ev-doc-contract"
+          "ev-doc-contract",
+          "ev-review-keywords-award-types-count"
         ],
         "documented": {
           "type": "array[string]",
           "required": false
+        },
+        "observed": {
+          "examples": [
+            [
+              "forest"
+            ]
+          ],
+          "notes": "Reviewer-backed 2026-05-14 live count evidence accepted keywords=['forest'] alongside award_type_codes ['A','B','C','D'] and returned HTTP 200."
         }
       },
       {
@@ -445,16 +461,28 @@
         "location": "body.filters",
         "type": "array[string]",
         "required": false,
-        "status": "documented_unverified",
+        "status": "documented_and_observed",
         "description": "Award type code filter applied before counts are produced.",
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-contract",
-          "ev-current-profile"
+          "ev-current-profile",
+          "ev-review-keywords-award-types-count"
         ],
         "documented": {
           "type": "FilterObjectAwardTypes",
           "required": false
+        },
+        "observed": {
+          "examples": [
+            [
+              "A",
+              "B",
+              "C",
+              "D"
+            ]
+          ],
+          "notes": "Reviewer-backed 2026-05-14 live count evidence accepted award_type_codes ['A','B','C','D'] alongside keywords=['forest'] and returned calculated_count=521600."
         }
       },
       {
@@ -709,6 +737,32 @@
         },
         "evidenceRefs": [
           "ev-live-time-period-date-signed"
+        ]
+      },
+      {
+        "name": "keyword_award_type_over_cap_preflight",
+        "description": "Count an award-level population using reviewer-backed keywords plus award_type_codes evidence before choosing between production export, bounded sampling, or bulk workflow.",
+        "request": {
+          "method": "POST",
+          "path": "/api/v2/download/count/",
+          "query": {},
+          "body": {
+            "filters": {
+              "keywords": [
+                "forest"
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ]
+            },
+            "spending_level": "awards"
+          }
+        },
+        "evidenceRefs": [
+          "ev-review-keywords-award-types-count"
         ]
       }
     ]

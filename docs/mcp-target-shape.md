@@ -178,6 +178,7 @@ Recommended producer workflow:
 Endpoint queue
   -> one free-range endpoint-builder agent
   -> semantic bundle validator
+  -> in-loop self-story MCP gate
   -> optional reviewer agent
   -> promote to MCP
 ```

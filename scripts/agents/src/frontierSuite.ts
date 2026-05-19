@@ -1,7 +1,8 @@
 import { mkdirSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
+import { dirname, isAbsolute, join, relative } from "path";
 import { z } from "zod";
 import { DEFAULT_AUTONOMY_MODE, type AutonomyMode } from "./autonomy.js";
+import { repoRoot } from "./paths.js";
 import { ReasoningEffortSchema, runSemanticStoryAgent, type SemanticStoryAgentOptions } from "./storyAgent.js";
 import { SemanticStoryReportSchema, type SemanticStoryReport } from "./storyContract.js";
 
@@ -30,6 +31,32 @@ const FrontierChallengeSchema = z
   })
   .strict();
 
+const FrontierRepairCommandSchema = z
+  .object({
+    prepareWorkspace: z.string(),
+    runRepair: z.string(),
+    validate: z.string(),
+    promoteAfterReview: z.string(),
+  })
+  .strict();
+
+export const FrontierRepairQueueItemSchema = z
+  .object({
+    challengeId: z.string(),
+    challengeOutputPath: z.string(),
+    taskId: z.string(),
+    status: z.enum(["ready", "needs_triage"]),
+    targetSlug: z.string().optional(),
+    priority: z.enum(["blocker", "major", "minor"]),
+    affectedArtifacts: z.array(z.enum(["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"])),
+    objective: z.string(),
+    evidenceToUse: z.array(z.string()),
+    expectedOutcome: z.string(),
+    suggestedCommands: FrontierRepairCommandSchema.optional(),
+    triageReason: z.string().optional(),
+  })
+  .strict();
+
 export const FrontierSuiteReportSchema = z
   .object({
     generatedAt: z.string().datetime({ offset: true }),
@@ -39,6 +66,10 @@ export const FrontierSuiteReportSchema = z
     needsRepairCount: z.number().int().nonnegative(),
     blockedCount: z.number().int().nonnegative(),
     totalGapCount: z.number().int().nonnegative(),
+    repairQueuePath: z.string(),
+    repairQueueCount: z.number().int().nonnegative(),
+    repairReadyCount: z.number().int().nonnegative(),
+    repairNeedsTriageCount: z.number().int().nonnegative(),
     challengeReports: z.array(
       z
         .object({
@@ -69,11 +100,13 @@ export const FrontierSuiteReportSchema = z
   .strict();
 
 export type FrontierChallenge = z.infer<typeof FrontierChallengeSchema>;
+export type FrontierRepairQueueItem = z.infer<typeof FrontierRepairQueueItemSchema>;
 export type FrontierSuiteReport = z.infer<typeof FrontierSuiteReportSchema>;
 
 export type FrontierSuiteOptions = {
   challenges: FrontierChallenge[];
   outputDir: string;
+  repairOutRoot: string;
   bundleGlob?: string;
   model: string;
   reasoningEffort: z.infer<typeof ReasoningEffortSchema>;
@@ -96,6 +129,106 @@ function suiteStatus(reports: SemanticStoryReport[]): FrontierSuiteReport["statu
   if (reports.some((report) => report.status === "blocked")) return "blocked";
   if (reports.some((report) => report.status === "needs_repair")) return "needs_repair";
   return "passed";
+}
+
+function toRepoPath(path: string): string {
+  if (!isAbsolute(path)) return path;
+  const rel = relative(repoRoot, path);
+  if (!rel || rel.startsWith("..") || rel === "..") return path;
+  return rel;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function commandsForRepairTask(targetSlug: string, challengeOutputPath: string, taskId: string, repairOutRoot: string) {
+  const sourceDir = join("profiles", targetSlug, "semantic");
+  const repairRoot = toRepoPath(repairOutRoot);
+  const targetDir = join(repairRoot, targetSlug);
+  const reportPath = toRepoPath(challengeOutputPath);
+  const artifactFiles = ["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"];
+
+  return {
+    prepareWorkspace: [
+      "mkdir",
+      "-p",
+      shellQuote(repairRoot),
+      "&&",
+      "rm",
+      "-rf",
+      shellQuote(targetDir),
+      "&&",
+      "cp",
+      "-R",
+      shellQuote(sourceDir),
+      shellQuote(targetDir),
+    ].join(" "),
+    runRepair: [
+      "npm --prefix scripts/agents run semantic:repair --",
+      "--slug",
+      shellQuote(targetSlug),
+      "--out-root",
+      shellQuote(repairRoot),
+      "--review-report",
+      shellQuote(reportPath),
+      "--task-id",
+      shellQuote(taskId),
+    ].join(" "),
+    validate: ["npm --prefix scripts/codex run semantic:validate -- --root", shellQuote(repairRoot)].join(" "),
+    promoteAfterReview: [
+      "mkdir",
+      "-p",
+      shellQuote(sourceDir),
+      "&&",
+      "cp",
+      ...artifactFiles.map((fileName) => shellQuote(join(targetDir, fileName))),
+      shellQuote(sourceDir),
+      "&&",
+      "scripts/mcp/bin/validate-semantic-bundles",
+    ].join(" "),
+  };
+}
+
+export function buildFrontierRepairQueue(
+  reports: Array<{ challenge: FrontierChallenge; report: SemanticStoryReport; outputPath: string }>,
+  repairOutRoot: string
+): FrontierRepairQueueItem[] {
+  const queue = reports.flatMap(({ challenge, report, outputPath }) =>
+    report.repairTasks.map((task) => {
+      const targetSlug = task.targetSlug;
+      const status = targetSlug ? "ready" : "needs_triage";
+      return FrontierRepairQueueItemSchema.parse({
+        challengeId: challenge.id,
+        challengeOutputPath: outputPath,
+        taskId: task.id,
+        status,
+        ...(targetSlug ? { targetSlug } : {}),
+        priority: task.priority,
+        affectedArtifacts: task.affectedArtifacts,
+        objective: task.objective,
+        evidenceToUse: task.evidenceToUse,
+        expectedOutcome: task.expectedOutcome,
+        ...(targetSlug
+          ? { suggestedCommands: commandsForRepairTask(targetSlug, outputPath, task.id, repairOutRoot) }
+          : {
+              triageReason:
+                "The story repair task did not include targetSlug. Route this task to a specific endpoint bundle before running semantic:repair.",
+            }),
+      });
+    })
+  );
+
+  return queue.sort((a, b) => {
+    const priorityOrder = { blocker: 0, major: 1, minor: 2 };
+    const statusOrder = { ready: 0, needs_triage: 1 };
+    return (
+      statusOrder[a.status] - statusOrder[b.status] ||
+      priorityOrder[a.priority] - priorityOrder[b.priority] ||
+      a.challengeId.localeCompare(b.challengeId) ||
+      a.taskId.localeCompare(b.taskId)
+    );
+  });
 }
 
 function storyOptions(options: FrontierSuiteOptions, question: string): SemanticStoryAgentOptions {
@@ -137,6 +270,13 @@ export async function runFrontierSuite(options: FrontierSuiteOptions): Promise<F
         suggestedRepair: gap.suggestedRepair,
       }))
   );
+  const repairQueue = buildFrontierRepairQueue(reports, options.repairOutRoot);
+  const repairQueuePath = join(options.outputDir, "frontier-repair-queue.json");
+  writeFileSync(
+    repairQueuePath,
+    `${JSON.stringify(z.array(FrontierRepairQueueItemSchema).parse(repairQueue), null, 2)}\n`,
+    "utf-8"
+  );
 
   const suiteReport: FrontierSuiteReport = {
     generatedAt: new Date().toISOString(),
@@ -146,6 +286,10 @@ export async function runFrontierSuite(options: FrontierSuiteOptions): Promise<F
     needsRepairCount: reports.filter(({ report }) => report.status === "needs_repair").length,
     blockedCount: reports.filter(({ report }) => report.status === "blocked").length,
     totalGapCount: reports.reduce((sum, { report }) => sum + report.mcpGaps.length, 0),
+    repairQueuePath,
+    repairQueueCount: repairQueue.length,
+    repairReadyCount: repairQueue.filter((item) => item.status === "ready").length,
+    repairNeedsTriageCount: repairQueue.filter((item) => item.status === "needs_triage").length,
     challengeReports: reports.map(({ challenge, report, outputPath }) => ({
       id: challenge.id,
       question: challenge.question,

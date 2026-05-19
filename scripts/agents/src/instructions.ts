@@ -69,10 +69,15 @@ export function buildEndpointAgentInstructions({
     "- behavior.contradictions must be populated whenever request or response facts have status contradicted.",
     "- semantics.json must state businessPurpose, analyticalGrain, primaryEntities, measures, dimensions, suitableQuestions, notSuitableFor, joins/workflows where useful, and caveats.",
     "- usage.md should tell a coding agent when to use the endpoint, when not to use it, request templates, response interpretation, joins/workflows, and caveats.",
+    "- Author for downstream analysis, not just successful calls. Capture label/lookup needs for opaque codes, row ordering and ranking guarantees, whether measures are lifetime/current-period/accounting/export counts, how related measures reconcile or fail to reconcile, sampling versus full-population boundaries, async/post-download artifact boundaries, and which shared filters are observed versus merely inferred.",
+    "- If a valid request can still mislead a dashboard or analysis agent, encode that as a caveat, workflow step, or request.validationWarnings rule. Prefer example-driven guidance backed by live_probe or mcp_story_gate evidence.",
     "",
     "Validation loop:",
     `- Always call validate_semantic_bundle with outRoot \"${outRoot}\" immediately after the preliminary four-file write and again after final probe-driven edits.`,
     "- If validation fails, inspect the error, fix the artifacts, and validate again. Do not weaken the schema or validator.",
+    "- Before promotion or finalization, call run_self_story_gate with a realistic endpoint-specific analytical question that a downstream coding agent should be able to answer through the MCP using this bundle. The question should force discovery, request validation, at least one bounded live call when safe, and interpretation of the endpoint's business meaning.",
+    "- If run_self_story_gate returns owned blocker or major gaps for the current slug, repair endpoint.json, semantics.json, evidence.jsonl, or usage.md as needed, then rerun validate_semantic_bundle and run_self_story_gate. If you use story-gate observations as evidence, record them with source.kind=mcp_story_gate.",
+    "- If run_self_story_gate reports only non-owned cross-endpoint gaps or minor residual issues, mention them in the final summary rather than silently editing unrelated bundles.",
     promote
       ? `- Because this run requested promotion, call promote_semantic_bundle with outRoot \"${outRoot}\" only after validation passes.`
       : "- Do not call promote_semantic_bundle in this run.",
@@ -102,6 +107,7 @@ export function buildEndpointAgentTask({ slug, outRoot, currentDate, promote }: 
     "Use these exact repeated tool arguments when relevant:",
     `- load_endpoint_context: {"slug":"${slug}","maxCharsPerFile":16000}`,
     `- validate_semantic_bundle: {"outRoot":"${outRoot}"}`,
+    `- run_self_story_gate: {"slug":"${slug}","outRoot":"${outRoot}","question":"<your endpoint-specific downstream story question>"}`,
     `- write_artifact_file/list_output_files/promote_semantic_bundle/finalize_validated_bundle slug: "${slug}", outRoot: "${outRoot}"`,
     `- search_repo globs: ${JSON.stringify(DEFAULT_SEARCH_GLOBS)}`,
     '- probe_usaspending_api queryJson: "{}" unless GET query parameters are needed; bodyJson: a JSON object string for POST, null for GET.',

@@ -24,9 +24,10 @@ The primary semantic workflow is the Agents SDK implementation in
 - Deterministic code is not appropriate when it hard-codes endpoint-specific
   semantic answers that a general agent should discover and justify.
 - Producer completion should happen inside the agent loop. Validation alone is
-  not completion; the producer must inspect the declared output directory and
-  call `finalize_validated_bundle`, which verifies validation plus canonical
-  artifact placement before returning a success summary.
+  not completion; before promotion/finalization the producer must call
+  `run_self_story_gate`, then inspect the declared output directory and call
+  `finalize_validated_bundle`, which verifies validation, self-story readiness,
+  and canonical artifact placement before returning a success summary.
 
 The durable output is a Semantic Profile V2 bundle:
 
@@ -94,9 +95,27 @@ surface options instead of silently choosing.
 - Put generic acceptance gates behind tools the agent can call and recover from
   during the run; avoid parent-side repair that silently moves or patches
   generated endpoint artifacts after the agent has stopped.
+- Producer self-story gates should exercise the candidate bundle through the
+  MCP before finalization. If they find owned blocker/major gaps, the producer
+  should repair and rerun validation plus the story gate inside the same agent
+  loop.
+- Repair completion is also part of the agentic loop. Once a selected repair
+  task is plausibly resolved, the repairer should stop optional investigation,
+  call `repair_validate_semantic_bundle`, and return a structured repair report;
+  remaining nice-to-have work belongs in unresolved findings or next-review
+  focus, not more open-ended edits.
+- Use generic artifact-declared validation warnings for valid but risky
+  near-miss requests. Do not add endpoint-specific runtime branches when a
+  `request.validationWarnings` rule can express the guardrail in the bundle.
+- Treat analysis affordances as first-class semantic content: opaque code
+  labels or lookup paths, row-order/ranking guarantees, measure reconciliation,
+  lifetime-versus-period meaning, sample-versus-full-population boundaries,
+  async/export artifact boundaries, and observed-versus-inferred shared filters.
 - Preserve documented-but-unprobed fields with explicit statuses; do not drop
   them merely because the current MCP profile omitted them.
 - Record contradictions and MCP coverage gaps as first-class information.
+- Story/review repair tasks should include `targetSlug` when one endpoint bundle
+  owns the repair so frontier runs can produce a directly usable repair queue.
 - Update docs whenever the operating model, commands, or artifact contract
   changes.
 

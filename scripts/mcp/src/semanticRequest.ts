@@ -1,5 +1,9 @@
 import { fetch } from "undici";
-import type { EndpointArtifact, FieldFact } from "../../../src/agent/core/semanticProfileSchema.ts";
+import type {
+  EndpointArtifact,
+  FieldFact,
+  RequestValidationWarning,
+} from "../../../src/agent/core/semanticProfileSchema.ts";
 
 const DEFAULT_ALLOWED_HOSTS = ["https://api.usaspending.gov"];
 const DEFAULT_TIMEOUT_MS = 15000;
@@ -234,6 +238,46 @@ function primitiveValues(value: unknown): string[] {
   return [];
 }
 
+function semanticRequestPathValue(request: SemanticRequest, path: string): unknown {
+  if (path.startsWith("path.")) return getPathValue(request.pathParams, path.slice("path.".length));
+  if (path.startsWith("query.")) return getPathValue(request.query, path.slice("query.".length));
+  if (path.startsWith("body.")) return getPathValue(request.body, path.slice("body.".length));
+
+  const bodyValue = getPathValue(request.body, path);
+  if (isProvided(bodyValue)) return bodyValue;
+
+  const queryValue = getPathValue(request.query, path);
+  if (isProvided(queryValue)) return queryValue;
+
+  return getPathValue(request.pathParams, path);
+}
+
+function matchesValueIn(request: SemanticRequest, valueIn: RequestValidationWarning["when"]["valueIn"]): boolean {
+  for (const [path, allowedValues] of Object.entries(valueIn)) {
+    const values = primitiveValues(semanticRequestPathValue(request, path));
+    if (values.length === 0) return false;
+    const allowed = new Set(allowedValues);
+    if (!values.some((value) => allowed.has(value))) return false;
+  }
+  return true;
+}
+
+function matchesValidationWarning(request: SemanticRequest, warning: RequestValidationWarning): boolean {
+  const present = (path: string) => isProvided(semanticRequestPathValue(request, path));
+  const missingAll = warning.when.missingAll ?? [];
+  const missingAny = warning.when.missingAny ?? [];
+  const presentAll = warning.when.presentAll ?? [];
+  const presentAny = warning.when.presentAny ?? [];
+  const valueIn = warning.when.valueIn ?? {};
+
+  if (missingAll.length > 0 && !missingAll.every((path) => !present(path))) return false;
+  if (missingAny.length > 0 && !missingAny.some((path) => !present(path))) return false;
+  if (presentAll.length > 0 && !presentAll.every((path) => present(path))) return false;
+  if (presentAny.length > 0 && !presentAny.some((path) => present(path))) return false;
+  if (Object.keys(valueIn).length > 0 && !matchesValueIn(request, valueIn)) return false;
+  return true;
+}
+
 function pushIssue(
   issues: SemanticValidationIssue[],
   severity: SemanticValidationIssue["severity"],
@@ -349,6 +393,16 @@ export function validateSemanticRequest(endpoint: EndpointArtifact, request: unk
         evidenceRefs: endpoint.availability.evidenceRefs,
       });
     }
+  }
+
+  for (const warning of endpoint.request.validationWarnings ?? []) {
+    if (!matchesValidationWarning(normalizedRequest, warning)) continue;
+    warnings.push({
+      severity: "warning",
+      path: warning.path ?? warning.id,
+      message: warning.message,
+      evidenceRefs: warning.evidenceRefs,
+    });
   }
 
   return {

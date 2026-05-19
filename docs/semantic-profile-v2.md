@@ -43,6 +43,9 @@ During production the same four files are written under a run root such as
   `unknown`
 - request facts with `path`, `location`, `type`, `required`, `status`, and
   `evidenceRefs`
+- optional `request.validationWarnings` rules for evidence-backed near-miss
+  guardrails, such as warning when an optional scope field is omitted for a
+  workflow that needs explicit scope alignment
 - response facts with the same evidence model
 - pagination and template facts
 - MCP coverage gaps relative to the current promoted raw profile
@@ -96,13 +99,21 @@ A field should not be dropped just because one run did not prove it. Dropping a
 field changes MCP behavior because the runtime validator can treat absent fields
 as invalid.
 
+Optional fields can still carry semantic risk. Use `request.validationWarnings`
+when a request remains valid but another coding agent should be warned about a
+business-semantics pitfall. These warnings are generic artifact data, not
+endpoint-specific runtime code: the bundle declares conditions such as
+`missingAll`, `presentAll`, and `valueIn`, and the MCP validator emits the
+declared warning when those conditions match.
+
 ## Authoring Model
 
 The primary producer is the Agents SDK workflow in `scripts/agents`. The author
 is a general coding agent, not a deterministic extractor. The TypeScript wrapper
 provides tools, context loading, artifact writes, live API probes, validation,
-promotion, and story gates. The model owns endpoint understanding, reconciliation,
-semantic synthesis, and the final bundle content.
+in-loop self-story gates, promotion, and standalone story gates. The model owns
+endpoint understanding, reconciliation, semantic synthesis, and the final bundle
+content.
 
 Default autonomy is `yolo`. In this mode each role also receives
 `yolo_shell_command`, which can run local shell commands with the same filesystem,
@@ -124,6 +135,12 @@ Equivalent Make target:
 ```bash
 make agents-semantic SLUG=v2__search__spending_by_geography AGENTS_OUT_ROOT=runs/agents-sdk-demo
 ```
+
+During a normal producer run, `validate_semantic_bundle` is not the final gate.
+The producer must call `run_self_story_gate` with an endpoint-specific
+downstream question, repair any owned blocker/major story gaps, and only then
+proceed to promotion and `finalize_validated_bundle`. Promotion and finalization
+enforce that this self-story report exists and is ready.
 
 Review and repair:
 
@@ -186,6 +203,8 @@ A bundle can be promoted only when:
 - `scripts/mcp/bin/validate-semantic-bundles` passes after promotion
 - MCP story or smoke checks show the semantic surface can be used for real
   discovery, request construction, validation, and bounded calls
+- semantic discovery can surface the bundle even when the legacy raw profile is
+  missing or underclassified
 
 ## Non-Goals
 

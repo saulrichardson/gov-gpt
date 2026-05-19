@@ -15,7 +15,7 @@ The codebase should therefore separate three responsibilities:
 - **Agent authorship**: model-owned investigation, probing, reconciliation, and
   business-semantic writing.
 - **Generic gates**: schema validation, evidence-link checks, MCP loading,
-  request validation, smoke tests, and story gates.
+  request validation, self-story gates, smoke tests, and frontier story gates.
 - **Runtime execution**: deterministic MCP tools that expose semantic context and
   make bounded USAspending calls.
 
@@ -63,6 +63,9 @@ Validation should be strict, generic, and artifact-focused:
 - availability claims must cite live probes
 - contradictions and MCP gaps must remain visible
 - prose must not introduce claims absent from JSON artifacts
+- producer self-story gates must exercise the candidate bundle through MCP
+  before finalization, with owned blocker/major gaps repaired inside the same
+  agent run
 
 Do not weaken validators to make one generated bundle pass. Fix the bundle or
 surface the blocker.

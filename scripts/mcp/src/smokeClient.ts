@@ -71,6 +71,7 @@ async function main() {
     assert(toolNames.includes("usaspending.getEndpoint"), "missing tool: usaspending.getEndpoint");
     assert(toolNames.includes("usaspending.findConcepts"), "missing tool: usaspending.findConcepts");
     assert(toolNames.includes("usaspending.getEndpointSemantics"), "missing tool: usaspending.getEndpointSemantics");
+    assert(toolNames.includes("usaspending.getAnalysisPacket"), "missing tool: usaspending.getAnalysisPacket");
     assert(toolNames.includes("usaspending.validateRequest"), "missing tool: usaspending.validateRequest");
     assert(toolNames.includes("usaspending.callEndpoint"), "missing tool: usaspending.callEndpoint");
 
@@ -131,6 +132,25 @@ async function main() {
     );
     const semantics = (semanticRes as any)?.structuredContent as any;
     assert(semantics && semantics.slug === semanticSlug, `getEndpointSemantics returned unexpected payload for ${semanticSlug}`);
+
+    const packetRes = await withTimeout(
+      client.callTool({
+        name: "usaspending.getAnalysisPacket",
+        arguments: { slug: semanticSlug, includeUsageGuide: false },
+      }),
+      timeoutMs,
+      `timeout calling usaspending.getAnalysisPacket after ${timeoutMs}ms; stderr=${serverStderr}`
+    );
+    const packet = (packetRes as any)?.structuredContent as any;
+    assert(packet && packet.slug === semanticSlug, `getAnalysisPacket returned unexpected payload for ${semanticSlug}`);
+    assert(
+      Array.isArray(packet.requestConstruction?.templates) && packet.requestConstruction.templates.length > 0,
+      "getAnalysisPacket did not include request templates"
+    );
+    assert(
+      Array.isArray(packet.responseInterpretation?.interpretationWarnings),
+      "getAnalysisPacket did not include interpretation warnings"
+    );
 
     const validationRes = await withTimeout(
       client.callTool({

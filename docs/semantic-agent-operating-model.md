@@ -89,25 +89,61 @@ npm --prefix scripts/agents run semantic:frontier -- \
   --autonomy yolo
 ```
 
-The story agent is the current promotion-grade acceptance test: it does not edit
-files. It discovers endpoints through the MCP, reads endpoint semantics, validates
-requests, calls bounded endpoints, tells a short evidence-backed story, and
-reports any MCP usability gaps as repair tasks.
+The producer also has a self-story gate. Before promotion or finalization it
+must call `run_self_story_gate` with a realistic endpoint-specific question.
+That tool stages the candidate bundle alongside promoted semantic bundles and
+runs the MCP story agent while the producer can still repair the candidate
+artifacts. Promotion and finalization check this report, so a producer cannot
+skip the self-story gate and still report a completed bundle.
+
+The standalone story agent is the current promotion-grade acceptance test: it
+does not edit files. It discovers endpoints through the MCP, reads endpoint
+semantics, validates requests, calls bounded endpoints, tells a short
+evidence-backed story, and reports any MCP usability gaps as repair tasks.
+When discovery returns raw endpoints, the story agent must inspect
+`hasSemanticProfile` before calling semantic-only tools. A raw-only endpoint may
+be a useful fallback, but it is not a promoted semantic route and should not be
+treated as one until a bundle exists.
 
 The frontier suite is the current high-ceiling stress harness. It runs multiple
 story gates in sequence and writes each report plus
-`frontier-suite-summary.json`. The suite wrapper is deterministic orchestration;
-the actual judgments remain model-owned story runs. Use it when asking whether
-the semantic MCP can support dashboard-shaped analysis, cross-endpoint handoffs,
-async download workflows, or other higher-order tasks rather than one endpoint
-in isolation.
+`frontier-suite-summary.json` and `frontier-repair-queue.json`. The suite
+wrapper is deterministic orchestration; the actual judgments remain model-owned
+story runs. Use it when asking whether the semantic MCP can support
+dashboard-shaped analysis, cross-endpoint handoffs, async download workflows, or
+other higher-order tasks rather than one endpoint in isolation.
+
+Story gates should test both the happy path and the near-miss path. A promoted
+bundle can be story-ready when the intended request validates cleanly, while a
+semantically risky but still valid variation emits an evidence-backed warning.
+For those cases, use `request.validationWarnings` in `endpoint.json` rather than
+hard-coding endpoint-specific validator behavior.
+
+Story and review repair tasks should set `targetSlug` when one endpoint bundle
+owns the repair. The frontier repair queue preserves the model-authored repair
+task and adds routing state:
+
+- `status: "ready"` means the task has a `targetSlug` and includes suggested
+  prepare, repair, validate, and post-review promotion commands.
+- `status: "needs_triage"` means the task is cross-endpoint or missing
+  `targetSlug`; route it to an owning bundle before running `semantic:repair`.
+
+This keeps the loop agentic while removing a manual translation step between
+story-gate findings and the next repair-agent run.
 
 The repair agent is allowed to edit artifacts, but it should stay focused on the
 selected finding rather than becoming a second producer. It should load the
 bundle, execute the selected repair task, write the affected artifacts, run
 `repair_validate_semantic_bundle`, and return `status=repaired` only if
-validation passes. In YOLO mode it may use shell access to inspect, test, or
-validate when the narrow repair tools are not enough.
+validation passes. Completion discipline is part of the contract: once the
+selected task is plausibly satisfied, the repairer should stop optional
+investigation, validate, and return. Any additional opportunity it notices
+should be recorded as unresolved or recommended next-review focus. In YOLO mode
+it may use shell access to inspect, test, or validate when the narrow repair
+tools are not enough. For selected `repairTasks` with concrete `evidenceToUse`,
+the repair report is presumed to contain enough task evidence; the repairer
+should inspect the target artifacts and run extra source or live probes only
+when it can name the specific missing fact that blocks the repair.
 
 ## Agent Task
 
@@ -150,6 +186,9 @@ Ask the coding agent to do this:
      `query.page`
    - classify docs/live disagreements as `contradicted`
    - classify 404/non-JSON stale routes as `observed_unavailable`
+   - add `request.validationWarnings` for optional-field omissions or value
+     combinations that are valid transport-level requests but risky for a
+     documented workflow
 8. Write `semantics.json`:
    - business purpose
    - analytical grain
@@ -157,6 +196,10 @@ Ask the coding agent to do this:
    - suitable and unsuitable questions
    - joins and workflows
    - caveats
+   - analysis affordances: code labels or lookup requirements, sort/ranking
+     guarantees, measure reconciliation guidance, lifetime-versus-period
+     meaning, sample-versus-full-population boundaries, async/export artifact
+     boundaries, and observed-versus-inferred shared filters
 9. Write `usage.md` last. It is a caller guide, not a work log. It must be
    consistent with the final JSON artifacts; after a live probe confirms
    availability, remove stale draft language that says live availability is
@@ -165,7 +208,12 @@ Ask the coding agent to do this:
     templates, caveats, gaps, and live-probe claims must describe the same
     evidence state.
 11. Run final validation. Fix artifact failures. Do not weaken the validator.
-12. Inspect the declared output directory with `list_output_files`, then call
+12. Run `run_self_story_gate` with a realistic downstream question for this
+    endpoint. If it returns owned blocker or major gaps, repair the bundle,
+    rerun validation, and rerun the self-story gate. If it returns only
+    non-owned cross-endpoint issues or minor residual risks, carry those into
+    the final summary instead of silently editing unrelated bundles.
+13. Inspect the declared output directory with `list_output_files`, then call
     `finalize_validated_bundle`. Validation alone is not a completion signal:
     finalization is the in-loop gate that verifies the four canonical files are
     actually under `<out-root>/<slug>/`. If it reports missing files, correct
@@ -179,6 +227,10 @@ Ask the coding agent to do this:
 - Smaller validated bundle with explicit gaps beats an unfinished investigation.
 - Evidence references must resolve.
 - Current-MCP gaps must be represented as facts, not omitted.
+- Analysis affordances are part of the product. A bundle that makes a valid API
+  call but leaves a downstream agent guessing about code meanings, row ordering,
+  measure reconciliation, sampling boundaries, or filter confidence is not yet
+  story-ready.
 - Evidence copied from a reviewer report or MCP story gate must use
   `source.kind=review_report` or `source.kind=mcp_story_gate`. Reserve
   `source.kind=live_probe` for direct API probes with request/response evidence.
@@ -190,9 +242,18 @@ Ask the coding agent to do this:
 - The agent may inspect and probe freely in YOLO mode, but it must stop
   investigating once it can classify the major facts and satisfy the artifact
   contract.
+- A repairer may not keep spending turns on optional enrichments after the
+  selected task is satisfied. It must validate and return a structured report so
+  the next loop can decide whether further work is worth owning.
+- A repairer handling a story-derived task with explicit `evidenceToUse` should
+  not re-run broad endpoint research. Extra probes are for named missing facts,
+  failed validation, or a concrete contradiction in the target artifacts.
 - A producer may not declare success immediately after validation. It must
-  finalize inside the agentic loop so path and artifact-inventory mistakes are
-  repaired by the same agent run, not by a parent process after the fact.
+  run the self-story gate and finalize inside the agentic loop so story-level,
+  path, and artifact-inventory mistakes are repaired by the same agent run, not
+  by a parent process after the fact.
+- Promotion and finalization must fail loudly if the self-story report is
+  missing or still has owned blocker/major gaps.
 
 ## Status Model
 
@@ -214,6 +275,9 @@ into "not part of the MCP."
 A first-pass endpoint bundle is acceptable when:
 
 - `npm --prefix scripts/codex run semantic:validate -- --root <job-root>` passes.
+- `run_self_story_gate` has exercised the candidate bundle through the MCP, or
+  the final summary explicitly explains why the gate was blocked by external
+  conditions.
 - `endpoint.json` contains every material documented request field, with status.
 - `semantics.json` has an analytical grain and business purpose tied to evidence.
 - `usage.md` is consistent with the JSON artifacts and contains no process notes.
@@ -224,6 +288,10 @@ one realistic analytical question. The story gate should pass only when another
 coding agent can discover the endpoint, build a request from the semantic
 surface, preflight it, call it, and explain the result without relying on hidden
 knowledge of the API.
+
+Discovery acceptance includes semantic-only bundles. If a promoted semantic
+bundle exists without a legacy raw profile, `usaspending.findEndpoints` should
+still surface it from the semantic artifact metadata.
 
 ## Failure Modes Seen In The Spike
 
@@ -265,3 +333,6 @@ Later story-gate runs found additional failure modes:
   endpoint validators cannot see, such as fiscal month bucket labeling,
   geography rows for territories/uncoded buckets, and preview-vs-download
   continuity limits
+- story-gate repair tasks need machine-readable routing metadata (`targetSlug`)
+  and an emitted repair queue, otherwise a human has to translate model findings
+  into the next repair-agent invocation

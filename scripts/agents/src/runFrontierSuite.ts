@@ -45,6 +45,7 @@ function usage(): string {
     "Options:",
     "  --challenge-file <path>          Optional JSON array or { challenges } object",
     "  --output-dir <path>              Output directory, default runs/agents-sdk-frontier/latest",
+    "  --repair-out-root <path>         Working root for suggested repair commands, default <output-dir>/repair-work",
     "  --bundle-glob <glob>             Optional USASPENDING_SEMANTIC_BUNDLE_GLOB override",
     "  --model <model>                  OpenAI model, default OPENAI_AGENT_MODEL or gpt-5.4",
     "  --reasoning-effort <effort>      none|low|medium|high|xhigh, default high",
@@ -75,6 +76,7 @@ function loadChallenges(path: string): FrontierChallenge[] {
 export function parseFrontierSuiteCliArgs(argv = process.argv.slice(2)): CliArgs {
   let challenges: FrontierChallenge[] = [...DEFAULT_FRONTIER_CHALLENGES];
   let outputDir = "runs/agents-sdk-frontier/latest";
+  let repairOutRoot: string | undefined;
   let bundleGlob: string | undefined;
   let model = process.env.OPENAI_AGENT_MODEL || "gpt-5.4";
   let reasoningEffort: CliArgs["reasoningEffort"] = "high";
@@ -98,6 +100,11 @@ export function parseFrontierSuiteCliArgs(argv = process.argv.slice(2)): CliArgs
     }
     if (arg === "--bundle-glob") {
       bundleGlob = requireValue(argv, i, arg);
+      i += 1;
+      continue;
+    }
+    if (arg === "--repair-out-root") {
+      repairOutRoot = requireValue(argv, i, arg);
       i += 1;
       continue;
     }
@@ -154,9 +161,11 @@ export function parseFrontierSuiteCliArgs(argv = process.argv.slice(2)): CliArgs
     throw new Error(`Unknown argument: ${arg}\n\n${usage()}`);
   }
 
+  const resolvedOutputDir = resolvePath(outputDir);
   return {
     challenges,
-    outputDir: resolvePath(outputDir),
+    outputDir: resolvedOutputDir,
+    repairOutRoot: resolvePath(repairOutRoot ?? join(outputDir, "repair-work")),
     model,
     reasoningEffort,
     maxTurns,

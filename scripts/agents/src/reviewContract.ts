@@ -28,6 +28,7 @@ export const ReviewFindingSchema = z
 export const RepairTaskSchema = z
   .object({
     id: z.string(),
+    targetSlug: z.string().optional(),
     priority: z.enum(["blocker", "major", "minor"]),
     affectedArtifacts: z.array(
       z.enum(["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"])

@@ -425,3 +425,53 @@ This is the strongest validation of the operating model so far: the story gate
 identified a semantic usability defect that schema validation could not know,
 the repair agents updated the artifact rather than runtime special cases, and
 the MCP validator then accepted the repaired caller path without warnings.
+
+## AI Contract Story Gate
+
+A later promoted-MCP story gate asked whether the semantic surface could tell a
+real procurement story about bounded `"artificial intelligence"` contract rows.
+The MCP supported the core analysis:
+
+- `v2__search__spending_over_time` showed keyword-matched contract activity
+  rising from `274191985.63` in FY2024 to `386128239.83` in FY2025.
+- `v2__search__spending_by_award` found top AI-related contract rows, but the
+  story correctly avoided reading the bounded time filter as proof that all top
+  rows were newly signed awards.
+- `v2__awards__award_id` let the story compare award vintage and procurement
+  posture for top rows, including full-and-open older work versus a newer
+  not-competed AI/ML award.
+
+That story exposed two semantic defects that pure schema validation could not:
+
+- search rows materially returned `generated_internal_id`, while the semantic
+  bundle also used the clearer alias `canonical_award_lookup_id`
+- award detail treated `number_of_offers_received` as a useful competition
+  signal, but did not warn that edge values such as `"999"` may be coded or
+  unresolved rather than literal counts
+
+Two task-scoped repair agents updated the promoted bundles instead of adding
+runtime special cases:
+
+- `v2__search__spending_by_award` now states that
+  `canonical_award_lookup_id` is a derived semantic alias for the live
+  `generated_internal_id` field, not a second materialized response key.
+- `v2__awards__award_id` now tells callers to interpret
+  `number_of_offers_received` with companion competition labels and to treat
+  sentinel-like values such as `"999"` as ambiguous unless another source
+  decodes them.
+
+An after-repair acceptance story then used a different top row,
+`140D0421C0002` for TUKNIK GOVERNMENT SERVICES LLC. The promoted MCP found the
+row, carried `generated_internal_id`
+`CONT_AWD_140D0421C0002_1406_-NONE-_-NONE-` into award detail, and verified that
+the detail response echoed the same generated award id. The award detail
+payload supported a safe story: the contract description named AI and ML support
+for the DoD CIO JAIC, and the procurement posture was corroborated by `ONLY ONE
+SOURCE`, `NOT AVAILABLE FOR COMPETITION`, `8(A) SOLE SOURCE`, `AUTHORIZED BY
+STATUTE (FAR 6.302-5(A)(2)(I))`, and `number_of_offers_received = "1"`.
+
+The acceptance story passed with no new MCP gaps. The process lesson was that
+minor story-derived repairs still need autonomy, but they should not become a
+second producer run. When a repair task already includes concrete
+`evidenceToUse`, the repairer should inspect the target artifacts, make the
+focused semantic change, validate, and return.

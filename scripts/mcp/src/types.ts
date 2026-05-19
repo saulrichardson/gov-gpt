@@ -18,12 +18,17 @@ export type PlannerParameter = {
   required: boolean;
   description: string;
   types: string[];
+  status?: string;
+  constraints?: string[];
 };
 
 export type PlannerMetadata = {
   parameterCount: number;
   requiredParams: string[];
   optionalParams: string[];
+  safeOptionalParams?: string[];
+  uncertainOptionalParams?: string[];
+  riskyOptionalParams?: string[];
   queryParams: string[];
   bodyParams: string[];
   pathParams: string[];

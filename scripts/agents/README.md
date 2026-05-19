@@ -5,8 +5,9 @@ reviewer, repairer, and MCP story-gate workflow.
 
 The agent is intentionally responsible for the endpoint knowledge. The
 TypeScript code supplies repository tools, bounded live USAspending probe tools,
-artifact writes, validation, promotion, story gates, and optional YOLO shell
-access. It does not deterministically extract or synthesize endpoint facts.
+artifact writes, validation, in-loop self-story gates, promotion, and optional
+YOLO shell access. It does not deterministically extract or synthesize endpoint
+facts.
 
 Default autonomy mode is `yolo`. In that mode every role receives
 `yolo_shell_command`, which can run arbitrary local shell commands with the SDK
@@ -63,6 +64,22 @@ npm --prefix scripts/agents run semantic:story -- \
   --output runs/story.json
 ```
 
+To run high-ceiling story stress tests and produce a repair queue:
+
+```bash
+npm --prefix scripts/agents run semantic:frontier -- \
+  --output-dir runs/agents-sdk-frontier/latest \
+  --bundle-glob "/abs/path/to/profiles/*/semantic/endpoint.json"
+```
+
+The frontier suite writes each story report, `frontier-suite-summary.json`, and
+`frontier-repair-queue.json`. Story and review repair tasks should include
+`targetSlug` when one endpoint bundle owns the repair. Queue entries with
+`status: "ready"` include suggested prepare, repair, validate, and
+post-review promotion commands. Entries with `status: "needs_triage"` are
+usually cross-endpoint or missing `targetSlug`; route them before starting a
+repair agent.
+
 The repairer is task-scoped. It loads the existing bundle, executes the selected
 repair task, writes the affected artifacts, calls
 `repair_validate_semantic_bundle`, and returns `status: "repaired"` only after
@@ -82,12 +99,17 @@ Real runs print event milestones for agent updates, tool calls, and tool outputs
 without printing tool payloads. Use `--quiet-events` to suppress those logs.
 
 Producer completion is intentionally inside the agentic loop. A passing
-`validate_semantic_bundle` call does not stop the run. The producer must inspect
-the declared output directory with `list_output_files` and then call
-`finalize_validated_bundle`. Finalization reruns validation and refuses to
-return a success summary unless the exact four canonical files exist under
-`<out-root>/<slug>/`, so path mistakes are visible to the agent while it can
-still fix them.
+`validate_semantic_bundle` call does not stop the run. Before promotion or
+finalization, the producer must call `run_self_story_gate` with a realistic
+endpoint-specific question. That tool stages the candidate bundle alongside the
+promoted semantic bundles, runs the MCP story agent against that staged surface,
+and returns owned blocker/major gaps while the producer can still repair the
+artifacts. The producer then inspects the declared output directory with
+`list_output_files` and calls `finalize_validated_bundle`. Promotion and
+finalization both refuse to succeed unless the self-story report is ready.
+Finalization reruns validation and refuses to return a success summary unless
+the exact four canonical files exist under `<out-root>/<slug>/`, so story, path,
+and inventory mistakes are visible to the agent while it can still fix them.
 
 If the model produces a complete validator-passing bundle but the SDK does not
 return a clean structured final output before timeout, the runner can return a

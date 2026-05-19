@@ -57,6 +57,7 @@ function semanticToolNames(tools: Array<{ name: string }>): Set<string> {
     "usaspending.findWorkflows",
     "usaspending.getEndpointSchema",
     "usaspending.getEndpointSemantics",
+    "usaspending.getAnalysisPacket",
     "usaspending.getUsageGuide",
     "usaspending.getRequestTemplate",
     "usaspending.listRequestFields",

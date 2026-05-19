@@ -2,6 +2,13 @@ import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
 import { loadSemanticBundles } from "../src/loadSemanticBundles.js";
+import { loadProfiles } from "../src/loadProfiles.js";
+import { scoreSearchQuery } from "../src/search.js";
+import {
+  analysisPacketFromSemanticBundle,
+  endpointSummaryFromSemanticBundle,
+  enrichEndpointSummaryWithSemanticProfile,
+} from "../src/semanticDiscovery.js";
 import { validateSemanticRequest } from "../src/semanticRequest.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -89,6 +96,96 @@ describe("semantic bundles", () => {
     }
   });
 
+  it("enriches raw discovery metadata for promoted semantic bundles", () => {
+    const profiles = loadProfiles({ repoRoot });
+    const semantic = loadSemanticBundles({ repoRoot });
+    const rawSummary = profiles.summaries.find((summary) => summary.slug === "v2__awards__funding");
+    expect(rawSummary).toBeTruthy();
+    expect(rawSummary?.shipTier).toBe("unshipped");
+    expect(rawSummary?.tags || []).toEqual([]);
+    expect(rawSummary?.capabilities || []).toEqual([]);
+
+    const enriched = enrichEndpointSummaryWithSemanticProfile(rawSummary!, semantic.bundlesBySlug.v2__awards__funding);
+
+    expect(enriched.shipTier).toBe("representative");
+    expect(enriched.semanticReadiness).toBe("promoted_semantic_bundle");
+    expect(enriched.semanticAvailability).toBe("available");
+    expect(enriched.tags || []).toContain("semantic_profile");
+    expect(enriched.tags || []).toContain("award");
+    expect(enriched.capabilities?.length).toBeGreaterThan(0);
+  });
+
+  it("surfaces nested semantic request facts in discovery planner metadata", () => {
+    const profiles = loadProfiles({ repoRoot });
+    const semantic = loadSemanticBundles({ repoRoot });
+    const rawSummary = profiles.summaries.find((summary) => summary.slug === "v2__disaster__spending_by_geography");
+    expect(rawSummary).toBeTruthy();
+
+    const enriched = enrichEndpointSummaryWithSemanticProfile(
+      rawSummary!,
+      semantic.bundlesBySlug.v2__disaster__spending_by_geography
+    );
+    const planner = enriched.planner!;
+
+    expect(planner.requiredParams).toContain("filter.def_codes");
+    expect(planner.optionalParams).not.toContain("filter.time_period");
+    expect(planner.riskyOptionalParams).toEqual(
+      expect.arrayContaining(["filter.time_period", "filter.recipient_scope", "filter.recipient_locations"])
+    );
+    expect(planner.parameters.find((param) => param.name === "filter.def_codes")?.status).toBe(
+      "documented_and_observed"
+    );
+    expect(planner.parameters.find((param) => param.name === "filter.time_period")?.status).toBe("contradicted");
+    expect(planner.parameters.find((param) => param.name === "filter.recipient_locations")?.description).toContain(
+      "status=contradicted"
+    );
+  });
+
+  it("builds discovery summaries for promoted semantic-only bundles", () => {
+    const profiles = loadProfiles({ repoRoot });
+    const semantic = loadSemanticBundles({ repoRoot });
+    const rawSummary = profiles.summaries.find((summary) => summary.slug === "v2__search__spending_by_geography");
+    expect(rawSummary).toBeUndefined();
+
+    const semanticSummary = endpointSummaryFromSemanticBundle(
+      semantic.bundlesBySlug.v2__search__spending_by_geography
+    );
+
+    expect(semanticSummary.slug).toBe("v2__search__spending_by_geography");
+    expect(semanticSummary.path).toBe("/api/v2/search/spending_by_geography/");
+    expect(semanticSummary.shipTier).toBe("representative");
+    expect(semanticSummary.semanticReadiness).toBe("promoted_semantic_bundle");
+    expect(semanticSummary.tags || []).toContain("semantic_profile");
+    expect(semanticSummary.planner?.parameters.length).toBeGreaterThan(0);
+    expect(scoreSearchQuery("v2__search__spending_by_geography", [semanticSummary.slug])).toBeGreaterThan(1000);
+  });
+
+  it("builds consolidated analysis packets for semantic MCP consumers", () => {
+    const semantic = loadSemanticBundles({ repoRoot });
+    const packet = analysisPacketFromSemanticBundle(semantic.bundlesBySlug.v2__search__spending_over_time, {
+      includeUsageGuide: false,
+    });
+
+    expect(packet.slug).toBe("v2__search__spending_over_time");
+    expect(packet.businessPurpose).toContain("spending");
+    expect(packet.requestConstruction.templates.length).toBeGreaterThan(0);
+    expect(packet.requestConstruction.uncertainFields.map((field) => field.path)).toContain("filters.recipient_scope");
+    expect(packet.responseInterpretation.interpretationWarnings.length).toBeGreaterThan(0);
+    expect(packet.recommendedMcpCallOrder).toContain("usaspending.validateRequest");
+    expect(packet.usageGuide).toBeUndefined();
+  });
+
+  it("ranks exact slug matches ahead of semantically related partial matches", () => {
+    const query = "v2__search__spending_by_geography";
+    const exact = scoreSearchQuery(query, ["v2__search__spending_by_geography", "state map geography dashboard"]);
+    const related = scoreSearchQuery(query, [
+      "v2__search__spending_by_award",
+      "award search workflow that can drill into geography dashboards",
+    ]);
+
+    expect(exact).toBeGreaterThan(related);
+  });
+
   it("preflights canonical spending_over_time requests and rejects known bad group values", () => {
     const loaded = loadSemanticBundles({ repoRoot });
     const bundle = loaded.bundlesBySlug.v2__search__spending_over_time;
@@ -105,6 +202,65 @@ describe("semantic bundles", () => {
     });
     expect(invalid.valid).toBe(false);
     expect(invalid.errors.some((issue) => issue.path === "group")).toBe(true);
+  });
+
+  it("emits generic semantic warnings for risky optional-field omissions", () => {
+    const endpoint = endpointWithRequestFacts([
+      requestFact({
+        path: "group",
+        location: "body",
+        required: true,
+        documented: { allowedValues: ["month", "quarter"] },
+      }),
+      requestFact({
+        path: "filters.time_period",
+        location: "body.filters",
+        type: "array",
+        required: false,
+      }),
+      requestFact({
+        path: "filters.place_of_performance_scope",
+        location: "body.filters",
+        required: false,
+      }),
+      requestFact({
+        path: "filters.recipient_scope",
+        location: "body.filters",
+        required: false,
+      }),
+    ]);
+    endpoint.request.validationWarnings = [
+      {
+        id: "explicit-location-scope-for-map-comparison",
+        path: "filters.place_of_performance_scope",
+        message: "Set an explicit location scope before comparing this trend to a geography map.",
+        when: {
+          missingAll: ["filters.place_of_performance_scope", "filters.recipient_scope"],
+          presentAll: ["filters.time_period"],
+          valueIn: { group: ["month", "quarter"] },
+        },
+        evidenceRefs: ["ev-test"],
+      },
+    ];
+
+    const missingScope = validateSemanticRequest(endpoint, {
+      group: "month",
+      filters: {
+        time_period: [{ start_date: "2024-01-01", end_date: "2024-06-30" }],
+      },
+    });
+    expect(missingScope.valid).toBe(true);
+    expect(missingScope.warnings.map((issue) => issue.path)).toContain("filters.place_of_performance_scope");
+
+    const explicitScope = validateSemanticRequest(endpoint, {
+      group: "month",
+      filters: {
+        time_period: [{ start_date: "2024-01-01", end_date: "2024-06-30" }],
+        place_of_performance_scope: "domestic",
+      },
+    });
+    expect(explicitScope.valid).toBe(true);
+    expect(explicitScope.warnings).toEqual([]);
   });
 
   it("uses nested semantic fields for disaster DEFC validation", () => {
@@ -125,6 +281,16 @@ describe("semantic bundles", () => {
       spending_type: "obligation",
     });
     expect(valid.valid).toBe(true);
+
+    const lowerConfidence = validateSemanticRequest(bundle.endpoint, {
+      filter: { def_codes: ["L"] },
+      geo_layer: "county",
+      spending_type: "face_value_of_loan",
+    });
+    expect(lowerConfidence.valid).toBe(true);
+    expect(lowerConfidence.warnings.map((issue) => issue.path)).toEqual(
+      expect.arrayContaining(["geo_layer", "spending_type"])
+    );
   });
 
   it("does not require child fields inside optional nested filter arrays until the parent is present", () => {

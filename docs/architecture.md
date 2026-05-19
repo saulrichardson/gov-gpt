@@ -25,7 +25,7 @@ flowchart TD
     B --> C
     R["current raw profile\nprofiles/<slug>/profile.json"] --> C
     C --> D["runs/agents-sdk/<slug>\nendpoint.json\nsemantics.json\nevidence.jsonl\nusage.md"]
-    D --> E["generic validation\nreview\nrepair\nstory gate"]
+    D --> E["generic validation\nself-story\nreview\nrepair"]
     E --> F["profiles/<slug>/semantic"]
     F --> G["MCP semantic loader"]
     H["raw profiles\nprofiles/<slug>/profile.json"] --> G
@@ -93,7 +93,8 @@ The producer receives an endpoint slug and a final artifact contract. It can:
 - run bounded USAspending probes through narrow tools
 - run arbitrary shell commands in YOLO mode
 - write the four required artifacts
-- validate and promote only after validation succeeds
+- run a self-story MCP gate before promotion/finalization
+- validate and promote only after validation and self-story readiness succeed
 
 Reviewer, repairer, and story agents use the same contract from different
 angles:

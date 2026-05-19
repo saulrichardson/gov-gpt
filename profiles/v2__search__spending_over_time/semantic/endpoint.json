@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__search__spending_over_time",
-  "generatedAt": "2026-05-12T00:00:00.000Z",
+  "generatedAt": "2026-05-13T00:00:00.000Z",
   "endpoint": {
     "method": "POST",
     "host": "https://api.usaspending.gov",
@@ -51,6 +51,18 @@
         "kind": "review_report",
         "title": "Structured reviewer report for RT1 map-plus-trend scope alignment",
         "locator": "repair_task:RT1"
+      },
+      {
+        "id": "sot-review-repair-trend-group-validation-src",
+        "kind": "review_report",
+        "title": "Structured reviewer report for repair-trend-group-canonical-validation",
+        "locator": "repair_task:repair-trend-group-canonical-validation"
+      },
+      {
+        "id": "sot-review-location-scope-validation-warning-src",
+        "kind": "review_report",
+        "title": "Structured reviewer report for repair-sot-validation-location-scope-warning",
+        "locator": "repair_task:repair-sot-validation-location-scope-warning"
       }
     ]
   },
@@ -63,8 +75,8 @@
         "location": "body",
         "type": "string",
         "required": true,
-        "status": "contradicted",
-        "description": "Time bucket for the returned series. Documentation lists canonical names; live/source validation also accepts short aliases and normalizes them in the response.",
+        "status": "documented_and_observed",
+        "description": "Time bucket for the returned series. Canonical public values are calendar_year, fiscal_year, quarter, and month; live/source validation also accepts short aliases and normalizes them in the response.",
         "documented": {
           "type": "enum[string]",
           "required": true,
@@ -75,7 +87,7 @@
             "quarter",
             "month"
           ],
-          "notes": "The staged contract omits short aliases."
+          "notes": "The staged contract documents the canonical public values and omits short aliases."
         },
         "observed": {
           "acceptedValues": [
@@ -91,7 +103,7 @@
           "rejectedValues": [
             "bad"
           ],
-          "defaultBehavior": "Alias 'fy' is accepted and response group is canonicalized to 'fiscal_year'.",
+          "defaultBehavior": "Canonical values are accepted directly; alias 'fy' is accepted and response group is canonicalized to 'fiscal_year'.",
           "examples": [
             "fiscal_year",
             "fy",
@@ -492,6 +504,27 @@
           "sot-probe-subawards"
         ]
       }
+    ],
+    "validationWarnings": [
+      {
+        "id": "explicit-location-scope-for-geography-alignment",
+        "path": "filters",
+        "message": "If this trend will be compared with a geography map, set the matching location-scope filter explicitly: use filters.place_of_performance_scope for place-of-performance dashboards or filters.recipient_scope for recipient-location dashboards. Omitting both can create a false same-scope comparison because geography map layers may default to domestic.",
+        "when": {
+          "missingAll": [
+            "filters.place_of_performance_scope",
+            "filters.recipient_scope"
+          ],
+          "missingAny": [],
+          "presentAll": [],
+          "presentAny": [],
+          "valueIn": {}
+        },
+        "evidenceRefs": [
+          "sot-review-location-scope-validation-warning",
+          "sot-review-rt1-location-scope"
+        ]
+      }
     ]
   },
   "response": {
@@ -596,11 +629,12 @@
               "aggregated_amount": 22614104423.11
             }
           ],
-          "notes": "Transaction/award rows include Direct/Idv/Loan/Other columns; subaward rows observed only Contract and Grant columns. Reviewer-reported live monthly results for a Jan-Jun 2024 request returned fiscal_year='2024' with month values '4' through '9', so month grouping uses fiscal-month numbering within the fiscal year. Quarter results likewise use fiscal-quarter numbering within fiscal_year."
+          "notes": "Transaction/award rows include Direct/Idv/Loan/Other columns; subaward rows observed only Contract and Grant columns. Reviewer-reported live monthly results for a Jan-Jun 2024 domestic place-of-performance request returned six rows: fiscal_year 2024 month 4 amount 22614104423.11, month 5 amount 25396780437.99, month 6 amount 32341229824, month 7 amount 29006360383.1, month 8 amount 36139361374.63, and month 9 amount 48684560921.6. Those buckets render as Jan-Jun 2024 because month grouping uses fiscal-month numbering within fiscal_year. Quarter results likewise use fiscal-quarter numbering within fiscal_year."
         },
         "constraints": [
           "Do not treat results as award-level rows; the grain is one time bucket.",
           "For group=month, interpret time_period.month as a fiscal month number within time_period.fiscal_year: 1=Oct, 2=Nov, 3=Dec, 4=Jan, 5=Feb, 6=Mar, 7=Apr, 8=May, 9=Jun, 10=Jul, 11=Aug, 12=Sep.",
+          "Example: {fiscal_year:'2024', month:'4'} should be labeled Jan 2024 and {fiscal_year:'2024', month:'9'} should be labeled Jun 2024.",
           "For group=quarter, interpret time_period.quarter as a fiscal quarter within time_period.fiscal_year: Q1=Oct-Dec, Q2=Jan-Mar, Q3=Apr-Jun, Q4=Jul-Sep.",
           "When charting calendar month names, keep the API result order or sort by (fiscal_year, month) rather than month alone."
         ],
@@ -667,20 +701,19 @@
     ]
   },
   "behavior": {
-    "contradictions": [
+    "contradictions": [],
+    "quirks": [
       {
-        "statement": "The staged contract lists only canonical group values, but source and live validation also accept cy, fy, q, and m.",
-        "impact": "Agents reading only the docs may reject valid UI-style requests; agents writing new requests should still prefer canonical group names.",
-        "status": "contradicted",
+        "statement": "The live API accepts undocumented group aliases cy, fy, q, and m and canonicalizes the response group back to calendar_year, fiscal_year, quarter, or month.",
+        "impact": "Generated requests should still use canonical group names, but callers may encounter UI-style alias inputs that validate and normalize successfully.",
+        "status": "observed",
         "evidenceRefs": [
           "sot-doc-contract",
           "sot-source-view",
           "sot-probe-alias-fy",
           "sot-probe-bad-group"
         ]
-      }
-    ],
-    "quirks": [
+      },
       {
         "statement": "The live API returns a deprecation warning for the legacy subawards field and directs callers to spending_level='subawards'.",
         "impact": "New generated requests should use spending_level rather than subawards.",
@@ -699,7 +732,7 @@
         ]
       },
       {
-        "statement": "Month-grouped results encode time_period.month as a fiscal month number inside time_period.fiscal_year, not as a calendar month number; reviewer-reported Jan-Jun 2024 results came back as fiscal_year 2024 with month values 4 through 9.",
+        "statement": "Month-grouped results encode time_period.month as a fiscal month number inside time_period.fiscal_year, not as a calendar month number; reviewer-reported Jan-Jun 2024 results came back as fiscal_year 2024 with month values 4 through 9, which render as Jan-Jun 2024 on a calendar axis.",
         "impact": "Chart builders must translate month numbers to intended fiscal or calendar labels before rendering the axis.",
         "status": "observed",
         "evidenceRefs": [

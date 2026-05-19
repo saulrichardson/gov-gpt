@@ -16,6 +16,7 @@ Live availability was confirmed on 2026-05-10 with a successful `POST /api/v2/aw
 - Do not treat each row as a deduplicated award total. Results are accounting slices by reporting period and classification fields.
 - Do not expect funding rows to restate the headline `total_obligation` from award detail. Sparse results can align more closely with `total_account_obligation` instead.
 - Do not substitute the display `Award ID` from spending_by_award when `canonical_award_lookup_id` is available.
+- Do not read page 1 as an obligation leaderboard without checking for repeated same-period rows and null `transaction_obligated_amount`; the safe explicit-sort template can still surface outlay-only slice clusters.
 
 ## Request shape
 **Method:** `POST`
@@ -56,6 +57,8 @@ This same request shape is exported for MCP callers through `getRequestTemplate`
 
 Send `canonical_award_lookup_id` under `award_id`, and set `sort` and `order` explicitly when ordering matters. The contradiction is in the undocumented default behavior when `sort` is omitted, not in the explicit documented sort values. Reviewer-confirmed safe-template evidence succeeded with `page: 1`, `sort: "reporting_fiscal_date"`, and `order: "desc"`.
 
+Using the safe explicit-sort template does **not** turn the endpoint into an obligation leaderboard. Reviewer-backed Sandia funding evidence showed page 1 returning five rows all at FY2026 Q2 month 6 with `transaction_obligated_amount: null`, `gross_outlay_amount` values `4906371.73`, `2359010.76`, `630711.31`, `3398742.41`, and `1210.35`, and `hasNext: true`.
+
 ## Response shape
 The response is a JSON object with:
 - `results`: array of funding rows
@@ -77,6 +80,8 @@ Each funding row is observed/documented to include:
 ## How to interpret the data
 Treat each result row as one funding/accounting slice for the requested award, labeled by reporting period and account classification. This endpoint is best for explaining how a known award maps to federal accounts and how obligations/outlays are distributed across reporting periods.
 
+Even under the safe explicit-sort pattern, the first page can be dominated by repeated same-period outlay slices. In the reviewer-backed Sandia drilldown, page 1 contained five rows all at `reporting_fiscal_year: 2026`, `reporting_fiscal_quarter: 2`, `reporting_fiscal_month: 6`, each with `transaction_obligated_amount: null` and non-null `gross_outlay_amount` values, while `hasNext` remained `true`. When you see that pattern, describe the rows as same-period accounting or outlay slices, not as the award's top obligations or full funding total.
+
 Funding rows may be sparse and may not resemble the award-detail headline total. In the reviewer-backed HT940216C0001 drilldown, award detail reported `total_obligation: 51269205263.03` and `total_account_obligation: 321840`, while this endpoint returned one row with `transaction_obligated_amount: 321840` and `hasNext: false`. Use that pattern as a caution: funding can line up more closely with `total_account_obligation` than with `total_obligation`.
 
 ## Practical workflow
@@ -92,4 +97,5 @@ Funding rows may be sparse and may not resemble the award-detail headline total.
 - `disaster_emergency_fund_code` should be handled as a raw code/string-or-null field, not a boolean-like flag. Live and reviewer-backed evidence returned `null` and the string code `Q`.
 - `gross_outlay_amount` may be `null` on valid rows.
 - Sparse funding is not automatically a join failure. Reviewer-backed drilldown showed a 51269205263.03 award whose funding response contained one 321840 row and `hasNext: false`, matching `total_account_obligation` much more closely than `total_obligation`.
+- Safe explicit sorting does not prevent repeated same-period slices. Reviewer-backed Sandia evidence showed page 1 with five FY2026 Q2 month-6 rows, all with `transaction_obligated_amount: null`, populated `gross_outlay_amount`, and `hasNext: true`. Treat that pattern as accounting-slice or outlay detail, not as an obligation ranking.
 - Current-profile evidence suggests unknown award ids may return `200` with empty `results`, so check empty arrays carefully.

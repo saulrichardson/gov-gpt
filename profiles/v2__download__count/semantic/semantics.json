@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__download__count",
-  "generatedAt": "2026-05-12T09:35:00Z",
+  "generatedAt": "2026-05-15T00:00:00Z",
   "endpointRef": "v2__download__count",
   "summary": "Preflight endpoint for estimating how many award, transaction, or subaward rows a prospective advanced-search download would contain and whether that result exceeds current row-limited download caps.",
-  "businessPurpose": "Use this endpoint before starting a row-limited download to estimate result size, choose the correct spending grain, and decide whether you must tighten filters or switch to larger-volume download workflows.",
+  "businessPurpose": "Use this endpoint before starting a row-limited download to estimate full matching result size at the chosen spending grain, choose between production export, bounded sample export, or larger-volume workflows, and avoid misreading deprecated alias fields.",
   "analyticalGrain": "One aggregate preflight result per request body, representing the count of records at the resolved spending_level plus legacy alias fields, limit flags, and advisory messages.",
   "primaryEntities": [
     {
@@ -41,12 +41,13 @@
     },
     {
       "name": "maximum_limit and rows_gt_limit",
-      "description": "Together these tell you whether the requested count fits inside the current row-limited custom download cap.",
+      "description": "Together these compare the full matching population at the resolved spending_level against the current row-limited custom download cap; rows_gt_limit=true does not by itself forbid a deliberately smaller sample export with an explicit limit on v2__download__awards.",
       "evidenceRefs": [
         "ev-doc-contract",
         "ev-live-baseline-default",
         "ev-live-awards-same-filter",
-        "ev-live-time-period-date-signed"
+        "ev-live-time-period-date-signed",
+        "ev-review-rows-gt-limit-sample-handoff"
       ]
     },
     {
@@ -62,10 +63,11 @@
   "dimensions": [
     {
       "name": "Advanced filters",
-      "description": "The filters object supports keyword, time, agency, recipient, geography, award-type, account, and industry constraints shared with USAspending advanced search and download experiences.",
+      "description": "The filters object supports keyword, time, agency, recipient, geography, award-type, account, and industry constraints shared with USAspending advanced search and download experiences; reviewer-backed evidence specifically confirmed keywords and award_type_codes together on this endpoint.",
       "evidenceRefs": [
         "ev-doc-contract",
-        "ev-doc-search-filters"
+        "ev-doc-search-filters",
+        "ev-review-keywords-award-types-count"
       ]
     },
     {
@@ -112,6 +114,14 @@
         "ev-doc-search-filters",
         "ev-live-time-period-date-signed"
       ]
+    },
+    {
+      "name": "Can I still take a bounded validation sample when the full filtered population exceeds the cap?",
+      "description": "Yes. rows_gt_limit speaks to the full matching population versus maximum_limit. Reviewer-backed evidence showed the same over-cap filter scope still supported a limit=1 award download that finished successfully for schema and prototype work.",
+      "evidenceRefs": [
+        "ev-review-keywords-award-types-count",
+        "ev-review-rows-gt-limit-sample-handoff"
+      ]
     }
   ],
   "notSuitableFor": [
@@ -151,12 +161,14 @@
       "from": "v2__download__count",
       "to": "v2__download__awards",
       "on": [
-        "Reuse the same filters when rows_gt_limit is false and you need an award-oriented custom download job."
+        "Reuse the same filters for a production custom download when rows_gt_limit is false.",
+        "If rows_gt_limit is true, treat that as a full-population cap warning; a deliberately tiny sample export can still be useful when you send an explicit small limit to v2__download__awards."
       ],
       "confidence": "medium",
-      "description": "Use Download Count to preflight a custom award download before calling the asynchronous award download endpoint.",
+      "description": "Use Download Count to preflight a custom award download before calling the asynchronous award download endpoint, distinguishing full-population feasibility from bounded sampling.",
       "evidenceRefs": [
-        "ev-doc-contract"
+        "ev-doc-contract",
+        "ev-review-rows-gt-limit-sample-handoff"
       ]
     },
     {
@@ -176,7 +188,7 @@
   "workflows": [
     {
       "name": "Preflight a custom download",
-      "description": "Estimate size and cap risk before creating a row-limited download job.",
+      "description": "Estimate full-population size, interpret cap risk correctly, and choose the right downstream download path.",
       "steps": [
         {
           "order": 1,
@@ -184,23 +196,35 @@
           "endpointSlug": "v2__download__count",
           "evidenceRefs": [
             "ev-live-baseline-default",
-            "ev-live-awards-same-filter"
+            "ev-live-awards-same-filter",
+            "ev-review-keywords-award-types-count"
           ]
         },
         {
           "order": 2,
-          "action": "If rows_gt_limit is false, reuse the filters in the appropriate download endpoint; otherwise narrow filters or switch to a bulk workflow.",
+          "action": "Interpret rows_gt_limit against the full matching population: if false, reuse the filters in the appropriate row-limited download endpoint for a production export; if true, use bulk or narrower filters for the full population.",
           "evidenceRefs": [
             "ev-doc-contract",
             "ev-live-baseline-default",
-            "ev-live-awards-same-filter"
+            "ev-live-awards-same-filter",
+            "ev-review-rows-gt-limit-sample-handoff"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "When rows_gt_limit is true but you only need a schema check or prototype sample, you can still try v2__download__awards with the same filters and an explicit tiny limit, then confirm completion through v2__download__status.",
+          "evidenceRefs": [
+            "ev-review-keywords-award-types-count",
+            "ev-review-rows-gt-limit-sample-handoff"
           ]
         }
       ],
       "evidenceRefs": [
         "ev-doc-contract",
         "ev-live-baseline-default",
-        "ev-live-awards-same-filter"
+        "ev-live-awards-same-filter",
+        "ev-review-keywords-award-types-count",
+        "ev-review-rows-gt-limit-sample-handoff"
       ]
     }
   ],
@@ -213,6 +237,15 @@
         "ev-derived-legacy-transaction-alias",
         "ev-live-baseline-default",
         "ev-live-awards-same-filter"
+      ]
+    },
+    {
+      "statement": "rows_gt_limit reports whether the full matching population exceeds maximum_limit; it is not a blanket prohibition on every downstream download attempt.",
+      "impact": "When rows_gt_limit=true, assume the full-population row-limited export is too large. For schema checks or prototype validation, the same filters can still support a deliberately tiny v2__download__awards sample when you send an explicit limit.",
+      "status": "observed",
+      "evidenceRefs": [
+        "ev-review-keywords-award-types-count",
+        "ev-review-rows-gt-limit-sample-handoff"
       ]
     },
     {

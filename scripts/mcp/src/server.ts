@@ -11,6 +11,11 @@ import { scoreSearchQuery } from "./search.js";
 import { loadSemanticBundles } from "./loadSemanticBundles.js";
 import type { SemanticBundle } from "./loadSemanticBundles.js";
 import { callSemanticEndpoint, validateSemanticRequest } from "./semanticRequest.js";
+import {
+  analysisPacketFromSemanticBundle,
+  endpointSummaryFromSemanticBundle,
+  enrichEndpointSummaryWithSemanticProfile,
+} from "./semanticDiscovery.js";
 
 type LoadedProfiles = ReturnType<typeof loadProfiles>;
 type LoadedSemanticBundles = ReturnType<typeof loadSemanticBundles>;
@@ -26,12 +31,16 @@ function plannerStrategyHint(planner: any): string {
   const parts: string[] = [];
   const required = Array.isArray(planner.requiredParams) ? planner.requiredParams : [];
   const optional = Array.isArray(planner.optionalParams) ? planner.optionalParams : [];
+  const uncertainOptional = Array.isArray(planner.uncertainOptionalParams) ? planner.uncertainOptionalParams : [];
+  const riskyOptional = Array.isArray(planner.riskyOptionalParams) ? planner.riskyOptionalParams : [];
   const query = Array.isArray(planner.queryParams) ? planner.queryParams : [];
   const body = Array.isArray(planner.bodyParams) ? planner.bodyParams : [];
   const path = Array.isArray(planner.pathParams) ? planner.pathParams : [];
 
   parts.push(`required=[${summarizeParamNames(required, 4)}]`);
-  if (optional.length > 0) parts.push(`optional=[${summarizeParamNames(optional, 4)}]`);
+  if (optional.length > 0) parts.push(`optionalSafe=[${summarizeParamNames(optional, 4)}]`);
+  if (uncertainOptional.length > 0) parts.push(`optionalUncertain=[${summarizeParamNames(uncertainOptional, 4)}]`);
+  if (riskyOptional.length > 0) parts.push(`optionalRisky=[${summarizeParamNames(riskyOptional, 4)}]`);
   parts.push(`locations(query=${query.length}, body=${body.length}, path=${path.length})`);
 
   if (planner.supportsFiltering) parts.push("supports=filtering");
@@ -151,21 +160,34 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
     async ({ query, limit }: { query?: string; limit?: number }) => {
       try {
         const n = limit ?? 20;
-        const matches = summaries
-          .map((summary, index) => ({
-            summary,
-            index,
-            representative: summary.shipTier === "representative" ? 1 : 0,
-            score: scoreSearchQuery(query, [
-              summary.slug,
-              summary.path,
-              summary.description || "",
-              ...(summary.tags || []),
-              ...(summary.capabilities || []),
-              plannerStrategyHint((summary as any).planner),
-              ...(semanticBySlug[summary.slug] ? semanticSearchFields(semanticBySlug[summary.slug]) : []),
-            ]),
-          }))
+        const rawSlugs = new Set(summaries.map((summary) => summary.slug));
+        const discoverySummaries = [
+          ...summaries.map((summary) => {
+            const semanticBundle = semanticBySlug[summary.slug];
+            return enrichEndpointSummaryWithSemanticProfile(summary, semanticBundle);
+          }),
+          ...semanticLoaded.bundles
+            .filter((bundle) => !rawSlugs.has(bundle.slug))
+            .map((bundle) => endpointSummaryFromSemanticBundle(bundle)),
+        ];
+        const matches = discoverySummaries
+          .map((summary, index) => {
+            const semanticBundle = semanticBySlug[summary.slug];
+            return {
+              summary,
+              index,
+              representative: summary.shipTier === "representative" ? 1 : 0,
+              score: scoreSearchQuery(query, [
+                summary.slug,
+                summary.path,
+                summary.description || "",
+                ...(summary.tags || []),
+                ...(summary.capabilities || []),
+                plannerStrategyHint((summary as any).planner),
+                ...(semanticBundle ? semanticSearchFields(semanticBundle) : []),
+              ]),
+            };
+          })
           .filter((candidate) => candidate.score > 0)
           .sort((left, right) => {
             if (right.score !== left.score) return right.score - left.score;
@@ -425,6 +447,39 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
         };
       } catch (error) {
         return createToolErrorResult(error, { tool: "usaspending.getEndpointSemantics", slug });
+      }
+    }
+  );
+
+  server.registerTool(
+    "usaspending.getAnalysisPacket",
+    {
+      description:
+        "Get a consolidated semantic analysis packet for a promoted endpoint: purpose, grain, request construction, workflows, caveats, response interpretation, evidence refs, and optional usage/evidence detail.",
+      inputSchema: {
+        slug: z.string(),
+        includeUsageGuide: z.boolean().optional(),
+        includeEvidence: z.boolean().optional(),
+      },
+    },
+    async ({
+      slug,
+      includeUsageGuide,
+      includeEvidence,
+    }: {
+      slug: string;
+      includeUsageGuide?: boolean;
+      includeEvidence?: boolean;
+    }) => {
+      try {
+        const bundle = requireSemanticBundle(semanticLoaded, slug);
+        const payload = analysisPacketFromSemanticBundle(bundle, { includeUsageGuide, includeEvidence });
+        return {
+          content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+          structuredContent: payload as any,
+        };
+      } catch (error) {
+        return createToolErrorResult(error, { tool: "usaspending.getAnalysisPacket", slug });
       }
     }
   );

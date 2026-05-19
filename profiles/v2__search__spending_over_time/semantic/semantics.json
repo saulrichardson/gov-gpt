@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__search__spending_over_time",
-  "generatedAt": "2026-05-12T00:00:00.000Z",
+  "generatedAt": "2026-05-13T00:00:00.000Z",
   "endpointRef": "POST https://api.usaspending.gov/api/v2/search/spending_over_time/",
   "summary": "Aggregates a filtered USAspending search population into time buckets such as fiscal years, calendar years, quarters, or months.",
   "businessPurpose": "Use this endpoint when the analytical question is about how spending changes over time for a filtered set of awards, transactions, or subawards, not when the question needs individual award records. It is also the trend side of same-filter dashboards when you align any location-scope filters explicitly.",
@@ -56,9 +56,10 @@
   "dimensions": [
     {
       "name": "group",
-      "description": "The time grouping: fiscal_year, calendar_year, quarter, or month. Live validation also accepts aliases.",
+      "description": "The time grouping. Canonical public values are fiscal_year, calendar_year, quarter, and month; live validation also accepts short aliases.",
       "evidenceRefs": [
         "sot-doc-contract",
+        "sot-source-view",
         "sot-probe-alias-fy",
         "sot-probe-bad-group"
       ]
@@ -268,12 +269,14 @@
       ]
     },
     {
-      "statement": "Use canonical group names in generated requests even though live validation accepts aliases.",
-      "impact": "This avoids encoding undocumented UI aliases as the preferred public MCP surface.",
-      "status": "contradicted",
+      "statement": "Live validation accepts undocumented group aliases cy, fy, q, and m, but generated requests should still use canonical values calendar_year, fiscal_year, quarter, or month.",
+      "impact": "Canonical names keep the public MCP surface aligned with docs while still letting callers recognize alias inputs that the live API will canonicalize.",
+      "status": "observed",
       "evidenceRefs": [
         "sot-doc-contract",
-        "sot-probe-alias-fy"
+        "sot-source-view",
+        "sot-probe-alias-fy",
+        "sot-probe-bad-group"
       ]
     },
     {

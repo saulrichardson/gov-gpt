@@ -8,7 +8,7 @@ Use `POST /api/v2/download/count/` as a **preflight size check** before you star
 - Should I request transactions, awards, or subawards for the next step?
 - Does `time_period.date_type` change the preflight count I care about?
 
-Live availability was confirmed on 2026-05-12 with successful transaction-level, award-level, `date_signed`, and unused-filter-warning probes.
+Live availability was confirmed on 2026-05-12 with successful transaction-level, award-level, `date_signed`, and unused-filter-warning probes. Reviewer-backed 2026-05-14 story evidence also confirmed `filters.keywords` + `filters.award_type_codes` on this count endpoint and clarified how to hand off over-cap counts to bounded sample downloads.
 
 ## When not to use it
 Do **not** use this endpoint when you need:
@@ -102,11 +102,23 @@ Observed 2026-05-12 result: `calculated_count = 11507418`, `spending_level = "aw
 ```
 Observed 2026-05-12 result: `calculated_count = 259770`, `rows_gt_limit = false`.
 
+### Keyword + award-type preflight for an over-cap population
+```json
+{
+  "filters": {
+    "keywords": ["forest"],
+    "award_type_codes": ["A", "B", "C", "D"]
+  },
+  "spending_level": "awards"
+}
+```
+Reviewer-backed 2026-05-14 result: `calculated_count = 521600`, `maximum_limit = 500000`, `rows_gt_limit = true`.
+
 ## How to interpret the response
 Prefer these fields for business logic:
 - `calculated_count` — the main count for the resolved `spending_level`
 - `spending_level` — confirms whether the count is for transactions, awards, or subawards
-- `maximum_limit` and `rows_gt_limit` — tell you whether a row-limited custom download is feasible
+- `maximum_limit` and `rows_gt_limit` — compare the full matching population against the row-limited custom-download cap
 - `messages` — warnings about date limits, ignored filters, and deprecations
 
 ### Important caveat about `transaction_*` fields
@@ -117,6 +129,16 @@ Evidence from 2026-05-12:
 - same filter, `spending_level = "awards"`: `calculated_transaction_count = 11507418`
 
 Because the second value is the award-level count, use `calculated_count` + `spending_level` as the authoritative interpretation.
+
+### Important caveat about `rows_gt_limit`
+`rows_gt_limit = true` means the **full population matching your filters** is larger than `maximum_limit`. It does **not** necessarily mean every downstream download call will fail.
+
+Reviewer-backed 2026-05-14 story evidence showed this exact pattern for `keywords = ["forest"]` plus `award_type_codes = ["A", "B", "C", "D"]`:
+- `v2__download__count` returned `calculated_count = 521600`, `maximum_limit = 500000`, `rows_gt_limit = true`
+- the same filters sent to `v2__download__awards` with `limit = 1` succeeded
+- `v2__download__status` later returned `finished` with `total_rows = 1` and `total_columns = 4`
+
+Use this distinction to separate **full-population export decisions** from **bounded sample export decisions**.
 
 ## Message handling
 Successful responses always returned `messages` in live probes. Expect at least:
@@ -130,8 +152,10 @@ If you send an unknown nested filter key, the API can still return 200 and add a
 1. Build the exact filters you plan to use downstream.
 2. Call `v2__download__count` first.
 3. Check `calculated_count`, `maximum_limit`, and `rows_gt_limit`.
-4. If `rows_gt_limit` is `false`, reuse the filters in the relevant download endpoint.
-5. If `rows_gt_limit` is `true`, narrow filters or move to a bulk/larger-volume workflow.
+4. If `rows_gt_limit` is `false`, reuse the filters in the relevant download endpoint for the full row-limited export.
+5. If `rows_gt_limit` is `true`, decide which outcome you actually need:
+   - full population export: narrow filters or move to a bulk/larger-volume workflow
+   - bounded schema/prototype sample: keep the same filters but send an explicit tiny `limit` to `v2__download__awards`, then poll `v2__download__status`
 
 ## Caveats
 - Search-style time periods are limited to an earliest date of `2007-10-01`; the API itself repeats this warning in live responses.

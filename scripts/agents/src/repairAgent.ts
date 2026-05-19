@@ -49,9 +49,14 @@ function buildRepairInstructions(outRoot: string, autonomy: AutonomyMode): strin
     "- If the reviewer report includes repairTasks, execute those tasks directly. Do not reinterpret them into a broader research mission.",
     "- If the report has findings but no repairTasks, repair only blocker and major findings from the report.",
     "- Make the smallest complete repair that resolves the named repair tasks or blocker/major findings.",
+    "- Completion is part of the repair. Once the selected tasks are plausibly resolved in the artifacts, stop researching, call repair_validate_semantic_bundle, and return the structured repair report.",
+    "- Do not spend turns on optional enrichments after the task objective is satisfied. Record remaining nice-to-have work in unresolvedFindings or recommendedNextReviewFocus.",
+    "- For selected repairTasks with concrete evidenceToUse, treat the report as sufficient task evidence. Inspect the target artifacts, then run extra source or live probes only if you can state the specific missing fact that blocks the repair.",
     "- Preserve good existing content. Do not delete documented but unprobed fields just because you did not re-probe them.",
     "- Update all affected artifacts together. If endpoint.json changes, align semantics.json and usage.md with it. If you add live probe evidence, record it in evidence.jsonl.",
     "- If you encode evidence from a reviewer report or MCP story gate rather than a live probe you personally executed, use source.kind review_report or mcp_story_gate. Reserve live_probe for actual API probes represented by request/response evidence.",
+    "- Repair toward richer analysis guidance, not just fewer warnings. When a finding exposes opaque codes, row-order assumptions, measure reconciliation, sampling/full-population boundaries, async artifact boundaries, or inferred shared filters, make that business meaning visible through endpoint facts, caveats, workflows, usage guidance, or validationWarnings.",
+    "- Leave only endpoint.json, semantics.json, evidence.jsonl, and usage.md in the repaired bundle directory. Remove scratch files before validation.",
     ...boundedRules,
     ...(autonomy === "yolo" ? yoloInstructionBlock("repair agent") : []),
     "- Avoid process narration in usage.md. It must read as final caller guidance.",
@@ -85,7 +90,7 @@ function buildRepairTask(slug: string, outRoot: string, reviewReportJson: string
     "```",
     "",
     repairTaskId
-      ? "Repair the existing bundle in place. Execute only the selected repairTasks entry. Use other findings only as context. Do not promote."
+      ? "Repair the existing bundle in place. Execute only the selected repairTasks entry. Use other findings only as context. Do not promote. If the bundle already appears to satisfy this selected task, make only the minimal confirming edits needed, then call repair_validate_semantic_bundle and return the structured report."
       : "Repair the existing bundle in place. Focus on blocker and major findings first. Do not promote.",
   ].join("\n");
 }

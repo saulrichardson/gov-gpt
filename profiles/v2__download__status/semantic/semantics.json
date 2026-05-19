@@ -1,133 +1,264 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__download__status",
-  "generatedAt": "2026-05-12T14:10:00+00:00",
+  "generatedAt": "2026-05-14T03:26:20Z",
   "endpointRef": "GET https://api.usaspending.gov/api/v2/download/status",
-  "summary": "Polls one USAspending asynchronous download job and reports whether the export archive is ready, still processing, or failed.",
-  "businessPurpose": "Use this endpoint after starting a USAspending download job when the caller needs readiness, failure, elapsed time, row and column counts, and the final archive URL before attempting to fetch the file.",
+  "summary": "Polls one USAspending asynchronous download job and tells a workflow whether to keep waiting, fail, or hand off to raw archive retrieval once the generated export is actually ready.",
+  "businessPurpose": "Use this endpoint after starting a USAspending download job when the caller needs readiness, failure, elapsed time, provisional row and column counts, and the eventual archive URL before switching from MCP polling to raw file retrieval and ZIP inspection.",
   "analyticalGrain": "One response per download job status check, keyed by file_name. This is operational workflow metadata, not award-, transaction-, or account-level spending data.",
   "primaryEntities": [
     {
       "name": "Download job",
       "description": "An asynchronous backend export job identified by file_name and represented by a backend status string plus optional failure message.",
-      "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-source-lookups", "dst-probe-create-award-job", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-view",
+        "dst-source-lookups",
+        "dst-probe-create-award-job",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "Generated archive",
-      "description": "The ZIP artifact referenced by file_url whose size, row count, and column count become available as the job progresses or finishes.",
-      "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+      "description": "The ZIP artifact referenced by file_url; while status remains nonterminal, file_url can identify the eventual storage location before the archive is actually retrievable.",
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-current-profile",
+        "dst-source-view",
+        "dst-probe-create-award-job",
+        "dst-probe-valid-status",
+        "dst-review-rt3-handoff"
+      ]
     }
   ],
   "measures": [
     {
       "name": "Elapsed processing time",
       "description": "seconds_elapsed indicates how long the job has been running or how long it took before finishing or failing.",
-      "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-lookups", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-current-profile",
+        "dst-source-lookups",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "Archive size",
       "description": "total_size reports the generated file size in kilobytes when known.",
-      "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-current-profile",
+        "dst-source-view",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "Export row and column counts",
-      "description": "total_rows and total_columns summarize the generated CSV content, but they can appear before the job is fully finished.",
-      "evidenceRefs": ["dst-current-profile", "dst-source-lookups", "dst-probe-valid-status"]
+      "description": "total_rows and total_columns summarize generated CSV content, but nonterminal responses can report provisional zeros or changing counts before the archive is actually ready for ingestion.",
+      "evidenceRefs": [
+        "dst-current-profile",
+        "dst-source-lookups",
+        "dst-probe-valid-status",
+        "dst-review-rt3-handoff"
+      ]
     }
   ],
   "dimensions": [
     {
       "name": "file_name",
       "description": "The job identifier carried forward from the initiating download endpoint response.",
-      "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-view",
+        "dst-probe-create-award-job",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "Backend job status",
       "description": "status is a backend state label; docs list ready, running, finished, and failed, while source code shows additional possible labels such as queued, resumed, created, and uploading.",
-      "evidenceRefs": ["dst-doc-contract", "dst-source-lookups", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-lookups",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "Failure message",
       "description": "message provides human-readable failure context when a job fails; it is otherwise null in observed running and finished responses.",
-      "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-current-profile",
+        "dst-source-view",
+        "dst-probe-valid-status"
+      ]
     }
   ],
   "suitableQuestions": [
     {
       "name": "Has my export finished yet?",
       "description": "Use this endpoint to poll a known file_name until the download reaches a terminal state.",
-      "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-view",
+        "dst-probe-create-award-job",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "What URL should I download once the archive is ready?",
       "description": "The response provides file_url for the generated ZIP archive.",
-      "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-current-profile",
+        "dst-source-view",
+        "dst-probe-create-award-job",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "How big was the export and how many rows or columns did it contain?",
       "description": "Use total_size, total_rows, and total_columns after the job reaches a stable or terminal state.",
-      "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-current-profile",
+        "dst-probe-valid-status"
+      ]
+    },
+    {
+      "name": "When do I stop polling and start archive ingestion?",
+      "description": "Use status plus the provisional-count caveat to keep waiting through nonterminal states; once the job reaches a successful archive-ready state, switch from MCP polling to raw HTTP retrieval of file_url and inspect the ZIP outside the semantic MCP surface.",
+      "evidenceRefs": [
+        "dst-probe-valid-status",
+        "dst-review-rt3-handoff"
+      ]
     }
   ],
   "notSuitableFor": [
     {
       "name": "Exploring spending records directly",
       "description": "This endpoint does not return award, transaction, or account rows; it only returns job metadata.",
-      "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-view",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "name": "Starting a new download job",
       "description": "You must call an initiating endpoint such as a download awards, transactions, or accounts route first to obtain file_name.",
-      "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-create-award-job"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-view",
+        "dst-probe-create-award-job"
+      ]
     },
     {
       "name": "Cataloging all available downloads",
       "description": "The endpoint looks up one exact file_name and returns 404 for unknown values rather than listing jobs.",
-      "evidenceRefs": ["dst-current-profile", "dst-source-view"]
+      "evidenceRefs": [
+        "dst-current-profile",
+        "dst-source-view"
+      ]
+    },
+    {
+      "name": "Inspecting ZIP members or CSV headers inside the MCP surface",
+      "description": "This endpoint stops at job metadata. After completion you must fetch file_url with ordinary HTTP tooling and inspect the returned archive yourself or with endpoint-specific downstream logic.",
+      "evidenceRefs": [
+        "dst-source-view",
+        "dst-review-rt3-handoff"
+      ]
     }
   ],
   "joins": [
     {
       "from": "v2__download__awards",
       "to": "v2__download__status",
-      "on": ["file_name"],
+      "on": [
+        "file_name"
+      ],
       "confidence": "high",
       "description": "Award download responses return file_name and status_url that feed directly into this polling endpoint.",
-      "evidenceRefs": ["dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-source-view",
+        "dst-probe-create-award-job",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "from": "v2__bulk_download__awards",
       "to": "v2__download__status",
-      "on": ["file_name"],
+      "on": [
+        "file_name"
+      ],
       "confidence": "medium",
       "description": "The same backend view is also mounted at /api/v2/bulk_download/status, so bulk download workflows share the same status semantics.",
-      "evidenceRefs": ["dst-source-view"]
+      "evidenceRefs": [
+        "dst-source-view"
+      ]
     }
   ],
   "workflows": [
     {
       "name": "Start then poll a download job",
-      "description": "Initiate a bounded download, capture its file_name, then poll this endpoint until the archive is ready or failed.",
+      "description": "Initiate a bounded download, capture its file_name, poll this endpoint until the job reaches a decisive state, then explicitly leave MCP polling for raw archive retrieval and ZIP inspection.",
       "steps": [
         {
           "order": 1,
-          "action": "Call a download initiation endpoint and retain the returned file_name or status_url.",
+          "action": "Call a download initiation endpoint and retain the returned file_name, status_url, initiating endpoint type, and requested export columns or other output-shaping context.",
           "endpointSlug": "v2__download__awards",
-          "evidenceRefs": ["dst-source-view", "dst-probe-create-award-job"]
+          "evidenceRefs": [
+            "dst-source-view",
+            "dst-probe-create-award-job"
+          ]
         },
         {
           "order": 2,
           "action": "Call v2__download__status with that exact file_name.",
           "endpointSlug": "v2__download__status",
-          "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-valid-status"]
+          "evidenceRefs": [
+            "dst-doc-contract",
+            "dst-source-view",
+            "dst-probe-valid-status"
+          ]
         },
         {
           "order": 3,
-          "action": "If status is terminal and successful, use file_url to fetch the archive; if failed, inspect message or retry the initiating endpoint.",
-          "evidenceRefs": ["dst-doc-contract", "dst-current-profile", "dst-source-view", "dst-probe-valid-status"]
+          "action": "If status is nonterminal, keep polling and treat file_url, total_rows, total_columns, and total_size as provisional workflow metadata only; do not start dashboard ingestion from those values yet.",
+          "evidenceRefs": [
+            "dst-current-profile",
+            "dst-source-lookups",
+            "dst-probe-valid-status",
+            "dst-review-rt3-handoff"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Once the job reaches a successful archive-ready state, stop relying on MCP polling for content inspection and switch to raw HTTP retrieval of file_url. Open the ZIP with ordinary archive tooling, choose the expected member(s) for the initiating endpoint, and validate CSV headers before loading a pipeline.",
+          "evidenceRefs": [
+            "dst-source-view",
+            "dst-probe-valid-status",
+            "dst-review-rt3-handoff"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "If the job fails, inspect message when present and rerun or repair the initiating request rather than trying to parse file_url output.",
+          "evidenceRefs": [
+            "dst-doc-contract",
+            "dst-current-profile",
+            "dst-source-view",
+            "dst-probe-valid-status"
+          ]
         }
       ],
-      "evidenceRefs": ["dst-doc-contract", "dst-source-view", "dst-probe-create-award-job", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-view",
+        "dst-probe-create-award-job",
+        "dst-probe-valid-status",
+        "dst-review-rt3-handoff"
+      ]
     }
   ],
   "caveats": [
@@ -135,19 +266,48 @@
       "statement": "status should be treated as an open-ended backend state string, not a guaranteed four-value enum.",
       "impact": "Do not hard-fail if queued, resumed, created, or uploading appears.",
       "status": "contradicted",
-      "evidenceRefs": ["dst-doc-contract", "dst-source-lookups", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-doc-contract",
+        "dst-source-lookups",
+        "dst-probe-valid-status"
+      ]
     },
     {
       "statement": "Error responses can contain only detail and omit the normal status payload.",
       "impact": "Branch response handling by HTTP status or by the presence of detail.",
       "status": "observed",
-      "evidenceRefs": ["dst-current-profile", "dst-source-view"]
+      "evidenceRefs": [
+        "dst-current-profile",
+        "dst-source-view"
+      ]
     },
     {
       "statement": "Row and column counts can be provisional before the job reaches a terminal state.",
-      "impact": "Do not treat nonterminal total_rows or total_columns as final analytic counts.",
+      "impact": "Do not treat nonterminal total_rows or total_columns as final analytic counts or as proof that the archive is ready for ingestion.",
       "status": "contradicted",
-      "evidenceRefs": ["dst-current-profile", "dst-source-lookups", "dst-probe-valid-status"]
+      "evidenceRefs": [
+        "dst-current-profile",
+        "dst-source-lookups",
+        "dst-probe-valid-status",
+        "dst-review-rt3-handoff"
+      ]
+    },
+    {
+      "statement": "file_url can be present before the archive is fetchable. Reviewer polling saw running responses with an absolute file_url while total_rows and total_columns were still 0, and supplemental raw fetch attempts returned 403 until the job left the nonterminal state.",
+      "impact": "Treat nonterminal file_url as the future retrieval location, not as proof that a parser can download the ZIP yet.",
+      "status": "observed",
+      "evidenceRefs": [
+        "dst-probe-valid-status",
+        "dst-review-rt3-handoff"
+      ]
+    },
+    {
+      "statement": "The semantic MCP surface stops at job metadata for this workflow; it does not provide a semantic archive-inspection tool after status polling.",
+      "impact": "After successful completion, switch from MCP polling to raw HTTP plus ZIP/CSV tooling and validate archive members and emitted headers against the initiating endpoint's export contract before analysis.",
+      "status": "observed",
+      "evidenceRefs": [
+        "dst-review-rt3-handoff"
+      ]
     }
   ]
 }

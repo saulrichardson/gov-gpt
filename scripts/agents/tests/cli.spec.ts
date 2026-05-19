@@ -150,6 +150,8 @@ describe("runEndpointAgent CLI", () => {
       parseFrontierSuiteCliArgs([
         "--output-dir",
         "runs/frontier-demo",
+        "--repair-out-root",
+        "runs/frontier-repairs",
         "--bundle-glob",
         "/repo/profiles/*/semantic/endpoint.json",
         "--model",
@@ -168,6 +170,7 @@ describe("runEndpointAgent CLI", () => {
       ])
     ).toMatchObject({
       outputDir: expect.stringContaining("runs/frontier-demo"),
+      repairOutRoot: expect.stringContaining("runs/frontier-repairs"),
       bundleGlob: "/repo/profiles/*/semantic/endpoint.json",
       model: "gpt-5.4",
       reasoningEffort: "xhigh",

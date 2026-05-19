@@ -97,6 +97,7 @@ Observed:
     "probe_usaspending_api",
     "write_artifact_file",
     "validate_semantic_bundle",
+    "run_self_story_gate",
     "promote_semantic_bundle",
     "finalize_validated_bundle",
     "list_output_files",

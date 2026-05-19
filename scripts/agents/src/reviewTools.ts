@@ -1,5 +1,5 @@
 import { execFile } from "child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { promisify } from "util";
 import { tool } from "@openai/agents";
@@ -10,6 +10,7 @@ import { ArtifactFileNameSchema } from "./artifactContract.js";
 const execFileAsync = promisify(execFile);
 const USA_SPENDING_HOST = "https://api.usaspending.gov";
 const ARTIFACT_FILES = ["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"] as const;
+const ARTIFACT_FILE_SET = new Set<string>(ARTIFACT_FILES);
 
 function truncateText(text: string, maxChars: number): string {
   if (text.length <= maxChars) return text;
@@ -29,6 +30,27 @@ function docPathForSlug(slug: string): string {
 
 function bundleDir(outRoot: string, slug: string): string {
   return join(resolveInsideRepo(outRoot), slug);
+}
+
+export function unexpectedRepairArtifactFiles(outRoot: string): string[] {
+  const root = resolveInsideRepo(outRoot);
+  if (!existsSync(root)) return [];
+  const unexpected: string[] = [];
+  for (const rootEntry of readdirSync(root, { withFileTypes: true })) {
+    if (rootEntry.name.startsWith("_")) continue;
+    const rootEntryPath = join(root, rootEntry.name);
+    if (!rootEntry.isDirectory()) {
+      unexpected.push(repoRelative(rootEntryPath));
+      continue;
+    }
+    for (const bundleEntry of readdirSync(rootEntryPath, { withFileTypes: true })) {
+      const bundleEntryPath = join(rootEntryPath, bundleEntry.name);
+      if (!bundleEntry.isFile() || !ARTIFACT_FILE_SET.has(bundleEntry.name)) {
+        unexpected.push(repoRelative(bundleEntryPath));
+      }
+    }
+  }
+  return unexpected.sort((a, b) => a.localeCompare(b));
 }
 
 function parseJsonObject(raw: string, fieldName: string): Record<string, unknown> {
@@ -284,11 +306,16 @@ export function createSemanticRepairTools(defaultOutRoot: string) {
         ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relRoot],
         60_000
       );
+      const unexpectedFiles = unexpectedRepairArtifactFiles(root);
+      const clean = unexpectedFiles.length === 0;
       return {
-        ok: result.ok,
+        ok: result.ok && clean,
         outRoot: relRoot,
         stdout: result.stdout,
-        stderr: result.stderr,
+        stderr: clean
+          ? result.stderr
+          : `${result.stderr}\nUnexpected non-canonical files in repair output: ${unexpectedFiles.join(", ")}`.trim(),
+        unexpectedFiles,
       };
     },
   });

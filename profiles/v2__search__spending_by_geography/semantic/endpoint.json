@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__search__spending_by_geography",
-  "generatedAt": "2026-05-12T00:00:00.000Z",
+  "generatedAt": "2026-05-13T00:00:00.000Z",
   "endpoint": {
     "method": "POST",
     "host": "https://api.usaspending.gov",
@@ -53,6 +53,12 @@
         "kind": "review_report",
         "title": "Structured reviewer report for repair-2 state-layer geography caveats",
         "locator": "repair_task:repair-2"
+      },
+      {
+        "id": "src-review-dashboard-filters-20260513",
+        "kind": "review_report",
+        "title": "Structured reviewer report for repair-v2-search-spending-by-geography-live-prove-dashboard-filters",
+        "locator": "repair_task:repair-v2-search-spending-by-geography-live-prove-dashboard-filters"
       }
     ]
   },
@@ -323,8 +329,8 @@
         "location": "body.filters",
         "type": "string",
         "required": false,
-        "status": "documented_unverified",
-        "description": "Domestic or foreign place-of-performance scope filter.",
+        "status": "documented_and_observed",
+        "description": "Domestic or foreign place-of-performance scope filter. For same-scope trend-plus-geography dashboards, set this explicitly when scope=place_of_performance so the map request matches the paired trend request.",
         "documented": {
           "type": "enum[string]",
           "required": false,
@@ -335,10 +341,23 @@
           ],
           "notes": "The documented default applies only when geo_layer is county, district, or state."
         },
-        "constraints": [],
+        "constraints": [
+          "For same-scope dashboards, pair filters.place_of_performance_scope with top-level scope=place_of_performance.",
+          "The documented domestic default is only described for state, county, and district geo_layer values; set the field explicitly when exact scope alignment matters."
+        ],
         "evidenceRefs": [
-          "ev-doc-filter-surface"
-        ]
+          "ev-doc-filter-surface",
+          "ev-review-2026-05-13-dashboard-filters"
+        ],
+        "observed": {
+          "acceptedValues": [
+            "domestic"
+          ],
+          "examples": [
+            "domestic"
+          ],
+          "notes": "Reviewer-reported validation and live execution accepted domestic in a bounded Jan-Jun 2024 place_of_performance state-map request paired to a trend dashboard."
+        }
       },
       {
         "path": "filters.place_of_performance_locations",
@@ -534,17 +553,30 @@
         "location": "body.filters",
         "type": "array[string]",
         "required": false,
-        "status": "documented_unverified",
-        "description": "Award type code filter list.",
+        "status": "documented_and_observed",
+        "description": "Award type code filter list. Reviewer-observed same-scope dashboard requests successfully used contract codes A, B, and C.",
         "documented": {
           "type": "FilterObjectAwardTypes",
           "required": false,
           "default": "02,03,04,05,06,07,08,09,10,11,A,B,C,D,IDV_A,IDV_B,IDV_B_A,IDV_B_B,IDV_B_C,IDV_C,IDV_D,IDV_E"
         },
-        "constraints": [],
+        "constraints": [
+          "Use USAspending award type codes rather than business labels."
+        ],
         "evidenceRefs": [
-          "ev-doc-filter-surface"
-        ]
+          "ev-doc-filter-surface",
+          "ev-review-2026-05-13-dashboard-filters"
+        ],
+        "observed": {
+          "examples": [
+            [
+              "A",
+              "B",
+              "C"
+            ]
+          ],
+          "notes": "Reviewer-reported validation and live execution accepted award_type_codes A, B, and C in a bounded Jan-Jun 2024 domestic place_of_performance state-map request."
+        }
       },
       {
         "path": "filters.award_ids",
@@ -1063,6 +1095,36 @@
           "ev-doc-endpoint-surface",
           "ev-doc-filter-surface"
         ]
+      },
+      {
+        "name": "domestic_contract_state_map_for_same_scope_dashboard",
+        "description": "Reviewer-observed state map request for a same-scope dashboard: domestic place of performance, contract award types, and a bounded Jan-Jun 2024 time period.",
+        "request": {
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_geography/",
+          "query": {},
+          "body": {
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2024-01-01",
+                  "end_date": "2024-06-30"
+                }
+              ],
+              "place_of_performance_scope": "domestic",
+              "award_type_codes": [
+                "A",
+                "B",
+                "C"
+              ]
+            },
+            "scope": "place_of_performance",
+            "geo_layer": "state"
+          }
+        },
+        "evidenceRefs": [
+          "ev-review-2026-05-13-dashboard-filters"
+        ]
       }
     ]
   },
@@ -1467,6 +1529,14 @@
         "status": "observed",
         "evidenceRefs": [
           "ev-review-repair-2-state-layer-caveat"
+        ]
+      },
+      {
+        "statement": "When matching this endpoint to a bounded contract trend, set filters.place_of_performance_scope and filters.award_type_codes explicitly instead of relying on geography defaults or broader award coverage.",
+        "impact": "The reviewer-observed same-scope dashboard request used place_of_performance_scope=domestic and award_type_codes=[\"A\",\"B\",\"C\"] and returned HTTP 200, so callers can reuse that explicit request shape for cleaner map-plus-trend alignment.",
+        "status": "documented_and_observed",
+        "evidenceRefs": [
+          "ev-review-2026-05-13-dashboard-filters"
         ]
       }
     ]

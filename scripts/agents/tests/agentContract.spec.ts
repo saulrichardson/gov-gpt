@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { AgentRunSummarySchema } from "../src/artifactContract.js";
 import { createSemanticEndpointAgent, missingAgentRunArtifacts } from "../src/endpointAgent.js";
+import { buildFrontierRepairQueue } from "../src/frontierSuite.js";
 import { DEFAULT_SEARCH_GLOBS, buildEndpointAgentInstructions, buildEndpointAgentTask } from "../src/instructions.js";
 import { repoRoot } from "../src/paths.js";
 import { SemanticRepairReportSchema } from "../src/repairContract.js";
 import { createSemanticRepairAgent, filterReviewReportToRepairTask } from "../src/repairAgent.js";
 import { SemanticReviewReportSchema } from "../src/reviewContract.js";
 import { createSemanticReviewAgent } from "../src/reviewAgent.js";
+import { unexpectedRepairArtifactFiles } from "../src/reviewTools.js";
 import { SemanticStoryReportSchema } from "../src/storyContract.js";
 import { createSemanticStoryAgent } from "../src/storyAgent.js";
 import { createEndpointAgentTools } from "../src/tools.js";
@@ -52,6 +54,7 @@ describe("Agents SDK semantic endpoint producer", () => {
       "probe_usaspending_api",
       "write_artifact_file",
       "validate_semantic_bundle",
+      "run_self_story_gate",
       "promote_semantic_bundle",
       "finalize_validated_bundle",
       "list_output_files",
@@ -76,6 +79,8 @@ describe("Agents SDK semantic endpoint producer", () => {
     expect(instructions).toContain("perform one consistency audit");
     expect(instructions).toContain("Request fact paths must be relative");
     expect(instructions).toContain("Always call validate_semantic_bundle");
+    expect(instructions).toContain("Before promotion or finalization, call run_self_story_gate");
+    expect(instructions).toContain("source.kind=mcp_story_gate");
     expect(instructions).toContain("A successful validate_semantic_bundle call is not completion");
     expect(instructions).toContain("call list_output_files");
     expect(instructions).toContain("call finalize_validated_bundle");
@@ -96,6 +101,7 @@ describe("Agents SDK semantic endpoint producer", () => {
     expect(task).toContain('"maxCharsPerFile":16000');
     expect(task).toContain(JSON.stringify(DEFAULT_SEARCH_GLOBS));
     expect(task).toContain('queryJson: "{}"');
+    expect(task).toContain("run_self_story_gate");
   });
 
   it("keeps the agent running after validation so it can inspect and finalize artifacts", async () => {
@@ -169,6 +175,31 @@ describe("Agents SDK semantic endpoint producer", () => {
     }
   });
 
+  it("refuses producer finalization before the self-story gate runs", async () => {
+    const outRoot = `runs/agents-self-story-required-${Date.now()}`;
+    const slug = "v2__search__spending_over_time";
+    cpSync(join(repoRoot, "profiles", slug, "semantic"), join(repoRoot, outRoot, slug), { recursive: true });
+
+    try {
+      const finalizeTool = createEndpointAgentTools(outRoot).find((tool) => tool.name === "finalize_validated_bundle") as any;
+      const result = await finalizeTool.invoke(
+        {},
+        JSON.stringify({
+          slug,
+          outRoot,
+          promoted: false,
+          summary: "Should not finalize without a self-story report.",
+        }),
+        {}
+      );
+
+      expect(String(result)).toContain("self-story gate is required before promotion/finalization");
+      expect(String(result)).toContain("Call run_self_story_gate before promotion or finalization");
+    } finally {
+      rmSync(join(repoRoot, outRoot), { recursive: true, force: true });
+    }
+  });
+
   it("detects completed producer summaries whose artifact files are not on disk", () => {
     const root = join(tmpdir(), `gov-gpt-agent-artifacts-${Date.now()}`);
     const artifactDir = join(root, "runs", "demo", "v2__recipient");
@@ -231,7 +262,30 @@ describe("Agents SDK semantic endpoint producer", () => {
     ]);
     expect(String(agent.instructions)).toContain("call repair_validate_semantic_bundle");
     expect(String(agent.instructions)).toContain("source.kind review_report or mcp_story_gate");
+    expect(String(agent.instructions)).toContain("concrete evidenceToUse");
+    expect(String(agent.instructions)).toContain("Leave only endpoint.json, semantics.json, evidence.jsonl, and usage.md");
     expect(String(agent.instructions)).toContain("YOLO autonomy mode");
+  });
+
+  it("detects scratch files left in a repair artifact directory", () => {
+    const outRoot = `runs/agents-repair-scratch-${Date.now()}`;
+    const slug = "v2__recipient";
+    const dir = join(repoRoot, outRoot, slug);
+    mkdirSync(dir, { recursive: true });
+    for (const name of ["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"]) {
+      writeFileSync(join(dir, name), "{}\n", "utf-8");
+    }
+    writeFileSync(join(dir, "usage.repaired.md"), "scratch\n", "utf-8");
+    mkdirSync(join(dir, "scratch"), { recursive: true });
+
+    try {
+      expect(unexpectedRepairArtifactFiles(outRoot)).toEqual([
+        `${outRoot}/${slug}/scratch`,
+        `${outRoot}/${slug}/usage.repaired.md`,
+      ]);
+    } finally {
+      rmSync(join(repoRoot, outRoot), { recursive: true, force: true });
+    }
   });
 
   it("narrows a reviewer report to one repair task without changing the task content", () => {
@@ -246,6 +300,7 @@ describe("Agents SDK semantic endpoint producer", () => {
       repairTasks: [
         {
           id: "repair-order-case-sensitivity",
+          targetSlug: "v2__recipient",
           priority: "major",
           affectedArtifacts: ["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"],
           objective: "Preserve lowercase-only order behavior.",
@@ -288,6 +343,7 @@ describe("Agents SDK semantic endpoint producer", () => {
       repairTasks: [
         {
           id: "repair-story-gap",
+          targetSlug: "v2__search__spending_by_award",
           priority: "major",
           affectedArtifacts: ["endpoint.json", "semantics.json", "usage.md"],
           objective: "Promote a missing nested request field.",
@@ -302,7 +358,91 @@ describe("Agents SDK semantic endpoint producer", () => {
 
     expect(narrowed.repairTasks).toHaveLength(1);
     expect(narrowed.repairTasks[0].id).toBe("repair-story-gap");
+    expect(narrowed.repairTasks[0].targetSlug).toBe("v2__search__spending_by_award");
     expect(narrowed.recommendedNextAgentInstruction).toContain("Repair only 'repair-story-gap'");
+  });
+
+  it("turns frontier story repair tasks into a runnable repair queue when target slugs are present", () => {
+    const reports = [
+      {
+        challenge: {
+          id: "contract-outlier-dashboard",
+          question: "Can the MCP support a contract outlier dashboard?",
+        },
+        outputPath: join(repoRoot, "runs", "frontier", "contract-outlier-dashboard.json"),
+        report: SemanticStoryReportSchema.parse({
+          question: "Can the MCP support a contract outlier dashboard?",
+          status: "needs_repair",
+          confidence: "high",
+          summary: "Useful, but one endpoint needs repair.",
+          endpointsUsed: [],
+          mcpCalls: [],
+          story: "The story exposed a dashboard gap.",
+          keyFindings: [],
+          mcpGaps: [],
+          repairTasks: [
+            {
+              id: "repair-dashboard-fields",
+              targetSlug: "v2__search__spending_by_award",
+              priority: "major",
+              affectedArtifacts: ["endpoint.json", "semantics.json", "usage.md"],
+              objective: "Add dashboard field guidance.",
+              evidenceToUse: ["story_call_mcp_tool getEndpointSemantics showed no field bundle."],
+              expectedOutcome: "Agents can discover dashboard fields without guessing.",
+            },
+          ],
+          recommendedNextStep: "Repair and rerun the story gate.",
+        }),
+      },
+      {
+        challenge: {
+          id: "cross-endpoint-handoff",
+          question: "Can the MCP support a cross-endpoint handoff?",
+        },
+        outputPath: join(repoRoot, "runs", "frontier", "cross-endpoint-handoff.json"),
+        report: SemanticStoryReportSchema.parse({
+          question: "Can the MCP support a cross-endpoint handoff?",
+          status: "needs_repair",
+          confidence: "medium",
+          summary: "Needs routing.",
+          endpointsUsed: [],
+          mcpCalls: [],
+          story: "The story exposed a cross-endpoint gap.",
+          keyFindings: [],
+          mcpGaps: [],
+          repairTasks: [
+            {
+              id: "repair-cross-endpoint",
+              priority: "major",
+              affectedArtifacts: ["semantics.json", "usage.md"],
+              objective: "Clarify a cross-endpoint workflow.",
+              evidenceToUse: ["story gate could not route the workflow."],
+              expectedOutcome: "A human or planner can choose the owning endpoint.",
+            },
+          ],
+          recommendedNextStep: "Route and repair.",
+        }),
+      },
+    ];
+
+    const queue = buildFrontierRepairQueue(reports, join(repoRoot, "runs", "frontier", "repair-work"));
+
+    expect(queue).toHaveLength(2);
+    expect(queue[0]).toMatchObject({
+      challengeId: "contract-outlier-dashboard",
+      taskId: "repair-dashboard-fields",
+      status: "ready",
+      targetSlug: "v2__search__spending_by_award",
+      priority: "major",
+    });
+    expect(queue[0].suggestedCommands?.runRepair).toContain("--slug 'v2__search__spending_by_award'");
+    expect(queue[0].suggestedCommands?.runRepair).toContain("--task-id 'repair-dashboard-fields'");
+    expect(queue[1]).toMatchObject({
+      challengeId: "cross-endpoint-handoff",
+      taskId: "repair-cross-endpoint",
+      status: "needs_triage",
+      triageReason: expect.stringContaining("targetSlug"),
+    });
   });
 
   it("creates a model-owned story gate agent with only MCP story tools", async () => {
@@ -322,6 +462,7 @@ describe("Agents SDK semantic endpoint producer", () => {
       ]);
       expect(String(agent.instructions)).toContain("agentic MCP acceptance test");
       expect(String(agent.instructions)).toContain("Use validateRequest before callEndpoint");
+      expect(String(agent.instructions)).toContain("inspect hasSemanticProfile");
       expect(String(agent.instructions)).toContain("usually 8-12 MCP calls are enough");
       expect(String(agent.instructions)).toContain("include evidence.jsonl in affectedArtifacts");
       expect(String(agent.instructions)).toContain("YOLO autonomy mode");

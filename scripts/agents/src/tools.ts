@@ -1,11 +1,12 @@
 import { execFile } from "child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, cpSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, cpSync } from "fs";
 import { join, relative } from "path";
 import { promisify } from "util";
 import { tool } from "@openai/agents";
 import { z } from "zod";
 import { AgentRunSummarySchema, ARTIFACT_FILE_NAMES, ArtifactFileNameSchema } from "./artifactContract.js";
 import { assertSafeOutputRoot, assertSafeReadablePath, repoRelative, repoRoot } from "./paths.js";
+import { SemanticStoryReportSchema, type SemanticStoryReport } from "./storyContract.js";
 
 const execFileAsync = promisify(execFile);
 const USA_SPENDING_HOST = "https://api.usaspending.gov";
@@ -83,6 +84,121 @@ function requiredArtifactInventory(slug: string, outRoot: string) {
   };
 }
 
+function canonicalBundleIsComplete(dir: string): boolean {
+  return ARTIFACT_FILE_NAMES.every((fileName) => existsSync(join(dir, fileName)));
+}
+
+function copyCanonicalBundle(fromDir: string, toDir: string) {
+  for (const fileName of ARTIFACT_FILE_NAMES) {
+    const source = join(fromDir, fileName);
+    if (!existsSync(source)) throw new Error(`missing source artifact: ${repoRelative(source)}`);
+  }
+  mkdirSync(toDir, { recursive: true });
+  for (const fileName of ARTIFACT_FILE_NAMES) {
+    cpSync(join(fromDir, fileName), join(toDir, fileName));
+  }
+}
+
+function storyGateDir(outRoot: string, slug: string): string {
+  return join(assertSafeOutputRoot(outRoot), "_story-gates", slug);
+}
+
+function selfStoryReportPath(outRoot: string, slug: string): string {
+  return join(storyGateDir(outRoot, slug), "self-story-report.json");
+}
+
+function analyzeSelfStoryReport(slug: string, report: SemanticStoryReport) {
+  const ownedGaps = report.mcpGaps.filter((gap) => !gap.affectedSlug || gap.affectedSlug === slug);
+  const ownedRepairTasks = report.repairTasks.filter((task) => !task.targetSlug || task.targetSlug === slug);
+  const blockingOwnedGaps = ownedGaps.filter((gap) => gap.severity === "blocker" || gap.severity === "major");
+  const blockingOwnedRepairTasks = ownedRepairTasks.filter(
+    (task) => task.priority === "blocker" || task.priority === "major"
+  );
+  const readyForFinalize =
+    report.status !== "blocked" && blockingOwnedGaps.length === 0 && blockingOwnedRepairTasks.length === 0;
+
+  return {
+    readyForFinalize,
+    report,
+    ownedGaps,
+    ownedRepairTasks,
+    blockingOwnedGaps,
+    blockingOwnedRepairTasks,
+  };
+}
+
+function readSelfStoryReadiness(slug: string, outRoot: string) {
+  const reportPath = selfStoryReportPath(outRoot, slug);
+  const relReportPath = repoRelative(reportPath);
+  if (!existsSync(reportPath)) {
+    return {
+      exists: false,
+      readyForFinalize: false,
+      reportPath: relReportPath,
+      recommendation: "Call run_self_story_gate before promotion or finalization.",
+    };
+  }
+
+  const report = SemanticStoryReportSchema.parse(JSON.parse(readFileSync(reportPath, "utf-8")));
+  return {
+    exists: true,
+    reportPath: relReportPath,
+    ...analyzeSelfStoryReport(slug, report),
+  };
+}
+
+function requireSelfStoryReady(slug: string, outRoot: string) {
+  const readiness = readSelfStoryReadiness(slug, outRoot);
+  if (readiness.readyForFinalize) return readiness;
+
+  const blockingGaps = "blockingOwnedGaps" in readiness ? readiness.blockingOwnedGaps : [];
+  const blockingTasks = "blockingOwnedRepairTasks" in readiness ? readiness.blockingOwnedRepairTasks : [];
+  throw new Error(
+    [
+      `self-story gate is required before promotion/finalization for ${slug}`,
+      `report: ${readiness.reportPath}`,
+      `blocking owned gaps: ${blockingGaps.map((gap) => gap.title).join(", ") || "none"}`,
+      `blocking owned repair tasks: ${blockingTasks.map((task) => task.id).join(", ") || "none"}`,
+      readiness.recommendation ?? "Repair the owned story gaps, rerun validation, and rerun run_self_story_gate.",
+    ].join("\n")
+  );
+}
+
+function stageSelfStoryBundles(slug: string, outRoot: string) {
+  const gateDir = storyGateDir(outRoot, slug);
+  const bundlesDir = join(gateDir, "bundles");
+  rmSync(bundlesDir, { recursive: true, force: true });
+  mkdirSync(bundlesDir, { recursive: true });
+
+  const stagedSlugs: string[] = [];
+  const skippedPromotedSlugs: string[] = [];
+  const profilesRoot = join(repoRoot, "profiles");
+  if (existsSync(profilesRoot)) {
+    for (const entry of readdirSync(profilesRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name === slug) continue;
+      const semanticDir = join(profilesRoot, entry.name, "semantic");
+      if (!existsSync(join(semanticDir, "endpoint.json"))) continue;
+      if (!canonicalBundleIsComplete(semanticDir)) {
+        skippedPromotedSlugs.push(entry.name);
+        continue;
+      }
+      copyCanonicalBundle(semanticDir, join(bundlesDir, entry.name));
+      stagedSlugs.push(entry.name);
+    }
+  }
+
+  copyCanonicalBundle(outputDir(outRoot, slug), join(bundlesDir, slug));
+  stagedSlugs.push(slug);
+
+  return {
+    gateDir,
+    bundlesDir,
+    bundleGlob: join(bundlesDir, "*", "endpoint.json"),
+    stagedSlugs: stagedSlugs.sort(),
+    skippedPromotedSlugs: skippedPromotedSlugs.sort(),
+  };
+}
+
 async function runCommand(command: string, args: string[], timeoutMs: number) {
   try {
     const result = await execFileAsync(command, args, {
@@ -140,6 +256,8 @@ async function validateAndSummarize(slug: string, outRoot: string, promoted: boo
     );
   }
   const artifacts = inventory.requiredFiles.map((file) => file.path);
+  const storyReadiness = requireSelfStoryReady(slug, outRoot);
+  const storyReport = "report" in storyReadiness ? storyReadiness.report : null;
 
   return AgentRunSummarySchema.parse({
     slug,
@@ -153,6 +271,7 @@ async function validateAndSummarize(slug: string, outRoot: string, promoted: boo
       `Availability is ${result.availability}.`,
       `Evidence records: ${result.evidenceRecords}.`,
       `Missing current MCP fields captured: ${(result.missingMcpFields ?? []).join(", ") || "none"}.`,
+      `Self-story gate ${storyReport?.status ?? "unknown"}: ${storyReport?.summary ?? "ready"}`,
     ],
     artifacts,
     nextSteps: promoted
@@ -364,6 +483,115 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
     },
   });
 
+  const runSelfStoryGate = tool({
+    name: "run_self_story_gate",
+    description:
+      "Run an in-loop MCP story gate against the generated bundle plus promoted semantic bundles. Use this before promotion/finalization so the producer can repair story-level MCP usability gaps it owns.",
+    parameters: z.object({
+      slug: z.string(),
+      outRoot: z.string(),
+      question: z.string().min(20),
+      maxTurns: z.number().int().min(4).max(40).default(18),
+      timeoutMs: z.number().int().min(60_000).max(900_000).default(360_000),
+      requestTimeoutMs: z.number().int().min(1_000).max(60_000).default(30_000),
+    }),
+    execute: async ({ slug, outRoot, question, maxTurns, timeoutMs, requestTimeoutMs }) => {
+      const inventory = requiredArtifactInventory(slug, outRoot);
+      if (!inventory.complete) {
+        return {
+          ok: false,
+          phase: "artifact_inventory",
+          readyForFinalize: false,
+          inventory,
+          recommendation:
+            "Write endpoint.json, semantics.json, evidence.jsonl, and usage.md under the declared output directory, then validate and rerun the self-story gate.",
+        };
+      }
+
+      const resolvedOutRoot = assertSafeOutputRoot(outRoot);
+      const relOutRoot = relative(repoRoot, resolvedOutRoot);
+      const validation = await runCommand(
+        "npm",
+        ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relOutRoot],
+        60_000
+      );
+      if (!validation.ok) {
+        return {
+          ok: false,
+          phase: "semantic_validation",
+          readyForFinalize: false,
+          validation,
+          recommendation: "Fix validation errors before running the MCP story gate.",
+        };
+      }
+
+      const staged = stageSelfStoryBundles(slug, outRoot);
+      const reportPath = selfStoryReportPath(outRoot, slug);
+      const relReportPath = relative(repoRoot, reportPath);
+      const storyRun = await runCommand(
+        "npm",
+        [
+          "--prefix",
+          "scripts/agents",
+          "run",
+          "semantic:story",
+          "--",
+          "--question",
+          question,
+          "--bundle-glob",
+          staged.bundleGlob,
+          "--output",
+          relReportPath,
+          "--quiet-events",
+          "--max-turns",
+          String(maxTurns),
+          "--timeout-ms",
+          String(timeoutMs),
+          "--request-timeout-ms",
+          String(requestTimeoutMs),
+          "--autonomy",
+          "yolo",
+        ],
+        timeoutMs + 15_000
+      );
+
+      if (!storyRun.ok || !existsSync(reportPath)) {
+        return {
+          ok: false,
+          phase: "mcp_story_gate",
+          readyForFinalize: false,
+          reportPath: relReportPath,
+          bundleGlob: staged.bundleGlob,
+          stagedSlugs: staged.stagedSlugs,
+          skippedPromotedSlugs: staged.skippedPromotedSlugs,
+          command: storyRun,
+          recommendation: "Inspect the story-gate failure, fix setup or artifacts, then rerun the self-story gate.",
+        };
+      }
+
+      const report = SemanticStoryReportSchema.parse(JSON.parse(readFileSync(reportPath, "utf-8")));
+      const readiness = analyzeSelfStoryReport(slug, report);
+
+      return {
+        ok: true,
+        phase: "mcp_story_gate",
+        readyForFinalize: readiness.readyForFinalize,
+        reportPath: relReportPath,
+        bundleGlob: staged.bundleGlob,
+        stagedSlugs: staged.stagedSlugs,
+        skippedPromotedSlugs: staged.skippedPromotedSlugs,
+        report: readiness.report,
+        ownedGaps: readiness.ownedGaps,
+        ownedRepairTasks: readiness.ownedRepairTasks,
+        blockingOwnedGaps: readiness.blockingOwnedGaps,
+        blockingOwnedRepairTasks: readiness.blockingOwnedRepairTasks,
+        recommendation: readiness.readyForFinalize
+          ? "No blocker or major self-story gaps were assigned to this slug. You may proceed to promotion/finalization after any final validation required by the instructions."
+          : "Repair the owned blocker/major story gaps in the bundle, rerun validation, then rerun run_self_story_gate before finalization.",
+      };
+    },
+  });
+
   const promoteSemanticBundle = tool({
     name: "promote_semantic_bundle",
     description:
@@ -375,7 +603,15 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
     execute: async ({ slug, outRoot }) => {
       const validation = await runCommand(
         "npm",
-        ["--prefix", "scripts/codex", "run", "semantic:validate", "--", "--root", relative(repoRoot, assertSafeOutputRoot(outRoot))],
+        [
+          "--prefix",
+          "scripts/codex",
+          "run",
+          "semantic:validate",
+          "--",
+          "--root",
+          relative(repoRoot, assertSafeOutputRoot(outRoot)),
+        ],
         60_000
       );
       if (!validation.ok) {
@@ -383,6 +619,17 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
           ok: false,
           promoted: false,
           validation,
+        };
+      }
+
+      const storyReadiness = readSelfStoryReadiness(slug, outRoot);
+      if (!storyReadiness.readyForFinalize) {
+        return {
+          ok: false,
+          promoted: false,
+          validation,
+          storyGate: storyReadiness,
+          recommendation: "Call run_self_story_gate, repair any owned blocker/major gaps, then rerun promotion.",
         };
       }
 
@@ -408,7 +655,7 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
   const finalizeValidatedBundle = tool({
     name: "finalize_validated_bundle",
     description:
-      "Validate the semantic bundle and return the final AgentRunSummary. Call this only after final artifact edits are complete; the run stops when this succeeds.",
+      "Validate the semantic bundle, require self-story readiness, and return the final AgentRunSummary. Call this only after final artifact edits are complete; the run stops when this succeeds.",
     parameters: z.object({
       slug: z.string(),
       outRoot: z.string(),
@@ -457,6 +704,7 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
     probeUsaspendingApi,
     writeArtifactFile,
     validateSemanticBundle,
+    runSelfStoryGate,
     promoteSemanticBundle,
     finalizeValidatedBundle,
     listOutputFiles,

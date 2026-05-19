@@ -79,6 +79,10 @@ export function scoreSearchQuery(query: string | undefined, fields: string[]): n
   let score = 0;
 
   const normalizedQuery = normalizeText(rawQuery).trim();
+  if (normalizedQuery && normalizedFields.some((field) => field.trim() === normalizedQuery)) {
+    score += 1000;
+  }
+
   if (normalizedQuery && haystack.includes(normalizedQuery)) {
     score += 100;
   }

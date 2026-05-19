@@ -4,7 +4,7 @@ Use `v2__search__spending_over_time` for aggregate trend questions over a filter
 
 ## Important request fields
 
-- `group` — use canonical values `calendar_year`, `fiscal_year`, `quarter`, or `month`
+- `group` — use canonical public values `calendar_year`, `fiscal_year`, `quarter`, or `month`; the live API also accepts aliases `cy`, `fy`, `q`, and `m`
 - `filters.time_period` — bound the analysis window
 - `filters.place_of_performance_scope` — set `domestic` or `foreign` when the trend should match place-of-performance geography
 - `filters.recipient_scope` — set `domestic` or `foreign` when the trend should match recipient-location geography
@@ -40,7 +40,18 @@ Reviewer-reported live example for a bounded monthly request:
 }
 ```
 
-Returned `time_period` buckets included `{"fiscal_year":"2024","month":"4"}` through `{"fiscal_year":"2024","month":"9"}` with six monthly rows. Render those as Jan-Jun 2024 on a calendar-month chart, not Apr-Sep 2024. Keep API result order or sort by `(fiscal_year, month)` rather than by `month` alone.
+Returned buckets and chart labels from that live example:
+
+| Returned `time_period` | Render as | `aggregated_amount` |
+| --- | --- | ---: |
+| `{"fiscal_year":"2024","month":"4"}` | Jan 2024 | 22614104423.11 |
+| `{"fiscal_year":"2024","month":"5"}` | Feb 2024 | 25396780437.99 |
+| `{"fiscal_year":"2024","month":"6"}` | Mar 2024 | 32341229824 |
+| `{"fiscal_year":"2024","month":"7"}` | Apr 2024 | 29006360383.1 |
+| `{"fiscal_year":"2024","month":"8"}` | May 2024 | 36139361374.63 |
+| `{"fiscal_year":"2024","month":"9"}` | Jun 2024 | 48684560921.6 |
+
+Render those as Jan-Jun 2024 on a calendar-month chart, not Apr-Sep 2024. Keep API result order or sort by `(fiscal_year, month)` rather than by `month` alone.
 
 ## Same-scope map + trend alignment
 
@@ -69,7 +80,7 @@ Example: monthly domestic place-of-performance trend aligned to a state map.
 }
 ```
 
-The live API also accepts `cy`, `fy`, `q`, and `m`, but generated requests should use `calendar_year`, `fiscal_year`, `quarter`, or `month`. Invalid group values return a 400 with the live enum list.
+Use canonical `group` values in generated requests: `calendar_year`, `fiscal_year`, `quarter`, or `month`. The live API also accepts undocumented aliases `cy`, `fy`, `q`, and `m` and normalizes them back to canonical response group names; invalid group values still return a 400 with the live enum list.
 
 For subaward trends, use `spending_level: "subawards"`:
 

@@ -171,6 +171,39 @@ export const RequestTemplateSchema = z
   })
   .strict();
 
+export const RequestValidationWarningSchema = z
+  .object({
+    id: z.string().min(1),
+    path: z.string().min(1).optional(),
+    message: z.string().min(1),
+    when: z
+      .object({
+        missingAll: z.array(z.string().min(1)).default([]),
+        missingAny: z.array(z.string().min(1)).default([]),
+        presentAll: z.array(z.string().min(1)).default([]),
+        presentAny: z.array(z.string().min(1)).default([]),
+        valueIn: z.record(z.array(z.string().min(1))).default({}),
+      })
+      .strict(),
+    evidenceRefs: z.array(EvidenceRefSchema).min(1),
+  })
+  .strict()
+  .superRefine((rule, ctx) => {
+    const hasCondition =
+      rule.when.missingAll.length > 0 ||
+      rule.when.missingAny.length > 0 ||
+      rule.when.presentAll.length > 0 ||
+      rule.when.presentAny.length > 0 ||
+      Object.keys(rule.when.valueIn).length > 0;
+    if (!hasCondition) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["when"],
+        message: "Validation warning rules must declare at least one condition.",
+      });
+    }
+  });
+
 export const BehaviorNoteSchema = z
   .object({
     statement: z.string().min(1),
@@ -205,6 +238,7 @@ export const EndpointArtifactSchema = z
         contentType: z.string().optional(),
         parameters: z.array(FieldFactSchema),
         templates: z.array(RequestTemplateSchema),
+        validationWarnings: z.array(RequestValidationWarningSchema).default([]),
       })
       .strict(),
     response: z
@@ -307,6 +341,7 @@ export type EvidenceRecord = z.infer<typeof EvidenceRecordSchema>;
 export type EndpointArtifact = z.infer<typeof EndpointArtifactSchema>;
 export type SemanticArtifact = z.infer<typeof SemanticArtifactSchema>;
 export type FieldFact = z.infer<typeof FieldFactSchema>;
+export type RequestValidationWarning = z.infer<typeof RequestValidationWarningSchema>;
 
 export function validateEvidenceRecord(data: unknown) {
   return EvidenceRecordSchema.parse(data);
