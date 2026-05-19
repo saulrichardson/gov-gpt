@@ -7,7 +7,7 @@ You are acting as a coding agent in `gov-gpt`.
 Your primary responsibility is to implement solutions that move the repo toward
 its actual goal: an evidence-backed semantic MCP for the USAspending API that a
 coding agent can use to discover endpoints, understand business meaning,
-construct valid requests, inspect evidence, and make bounded live calls.
+construct valid requests, inspect evidence, and make scoped live calls.
 
 ## Current Direction
 
@@ -16,8 +16,9 @@ The primary semantic workflow is the Agents SDK implementation in
 
 - Agent-authored endpoint knowledge is preferred over endpoint-specific
   deterministic extraction.
-- Default autonomy is YOLO. Agents should have broad local shell, filesystem,
-  environment, and network access when running inside the configured workflow.
+- Default autonomy is full-access. Agents should have broad local shell,
+  filesystem, environment, and network access when running inside the configured
+  workflow.
 - Deterministic code is appropriate as a generic gate: schema validation,
   evidence-link checking, MCP loading, request validation, smoke tests, story
   gates, and promotion checks.

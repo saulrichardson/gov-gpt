@@ -18,9 +18,9 @@ function resolveCwd(cwd?: string | null): string {
   return isAbsolute(cwd) ? cwd : join(repoRoot, cwd);
 }
 
-export function createYoloTools() {
+export function createFullAccessTools() {
   const shellCommand = tool({
-    name: "yolo_shell_command",
+    name: "full_access_shell_command",
     description:
       "Run an arbitrary local shell command with the same broad filesystem and network access as this Agents SDK process. Use for repo inspection, scripts, tests, live API calls, and workflow orchestration.",
     parameters: z.object({

@@ -2,7 +2,7 @@
 
 This repo is organized around one product claim: a coding agent should be able to
 query USAspending through MCP with enough semantic context to build correct,
-bounded, evidence-aware requests.
+scoped, evidence-aware requests.
 
 ## Design Posture
 
@@ -17,7 +17,7 @@ The codebase should therefore separate three responsibilities:
 - **Generic gates**: schema validation, evidence-link checks, MCP loading,
   request validation, self-story gates, smoke tests, and frontier story gates.
 - **Runtime execution**: deterministic MCP tools that expose semantic context and
-  make bounded USAspending calls.
+  make scoped USAspending calls.
 
 This distinction matters. Deterministic checks are useful when they enforce a
 general contract. They are misaligned when they encode endpoint-specific
@@ -42,15 +42,19 @@ artifacts are produced or tested, not bypass them.
 
 The primary runner is `scripts/agents`, using the OpenAI Agents SDK.
 
-Default mode is `yolo`:
+Default mode is `full_access`:
 
-- producer, reviewer, repairer, and story agents receive `yolo_shell_command`
+- producer, reviewer, repairer, and story agents receive `full_access_shell_command`
 - they can inspect source, run scripts, call live APIs, run MCP checks, and debug
   validation failures through shell when narrow tools are insufficient
 - the contract stays strict: autonomy does not lower evidence or validation
   standards
 
-`bounded` remains available only for deliberate constrained experiments.
+No approval-gated or restricted autonomy mode is part of the active
+architecture. The only practical boundaries are host/process boundaries:
+filesystem and network access available to the SDK process, non-interactive
+command execution, timeout limits, and output limits. Quality gates are not
+access controls; they are the artifact acceptance contract.
 
 ## Validation Philosophy
 
@@ -92,7 +96,7 @@ questions:
 - Does validation catch a real class of artifact or MCP failures without
   encoding endpoint-specific answers?
 - Does the runtime expose the semantic context needed to construct valid,
-  bounded API calls?
+  scoped API calls?
 
 If the answer is no, the code is likely scaffolding, dead weight, or a legacy
 raw-profile concern that should be isolated from the semantic path.

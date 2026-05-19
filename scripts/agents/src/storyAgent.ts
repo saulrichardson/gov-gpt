@@ -1,10 +1,10 @@
 import { Agent, Runner } from "@openai/agents";
-import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, yoloInstructionBlock } from "./autonomy.js";
+import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, fullAccessInstructionBlock } from "./autonomy.js";
 import { requireOpenAIApiKey } from "./env.js";
 import { ReasoningEffortSchema, type ReasoningEffort } from "./endpointAgent.js";
 import { SemanticStoryReportSchema, type SemanticStoryReport } from "./storyContract.js";
 import { createSemanticStoryTools } from "./storyTools.js";
-import { createYoloTools } from "./yoloTools.js";
+import { createFullAccessTools } from "./fullAccessTools.js";
 
 export type SemanticStoryAgentOptions = {
   question: string;
@@ -26,11 +26,11 @@ function buildStoryInstructions(autonomy: AutonomyMode): string {
     "",
     "Story-test philosophy:",
     "- This is an agentic MCP acceptance test, not a deterministic fixture replay.",
-    "- Use the MCP the way a capable coding agent would: discover endpoints, inspect semantics, get templates/fields, validate requests, call bounded endpoints, and interpret results.",
+    "- Use the MCP the way a capable coding agent would: discover endpoints, inspect semantics, get templates/fields, validate requests, call scoped endpoints, and interpret results.",
     "- Prefer semantic tools over raw endpoint tools. Raw endpoint tools are allowed only as a fallback or comparison when a semantic gap is itself part of the finding.",
     "- The story must include at least one live usaspending.callEndpoint result unless the MCP blocks before a defensible live call can be made.",
     "- For cross-endpoint questions, carry the same analytical scope across endpoints and state whether the semantic layer made that easy or fragile.",
-    "- Keep live calls small: use low limits, bounded date ranges, and no large downloads.",
+    "- Keep live calls small: use low limits, scoped date ranges, and no large downloads.",
     "- Budget the run: usually 8-12 MCP calls are enough. Once you have one defensible story, one validation result, one live result, and the main gaps, stop and return the report.",
     "- If the question asks you to verify a prior repair, answer that acceptance check first and do not re-run a full exploratory review unless the check fails.",
     "- Treat MCP validation failures, missing semantics, misleading caveats, unusable request templates, or path/location mismatches as product findings.",
@@ -39,9 +39,9 @@ function buildStoryInstructions(autonomy: AutonomyMode): string {
     "- For each repair task, set targetSlug to the endpoint bundle the next repair agent should edit. Omit targetSlug only for truly cross-endpoint tasks that need human routing.",
     "- If a repair task asks the next agent to add or change live-observed endpoint facts, include evidence.jsonl in affectedArtifacts so the repair can preserve the audit trail.",
     "- If the MCP supports a useful story, still report residual risks or follow-up probes.",
-    ...(autonomy === "yolo" ? yoloInstructionBlock("story agent") : []),
-    autonomy === "yolo"
-      ? "- Even in YOLO mode, MCP story acceptance evidence should come from MCP calls. Use shell access for setup, diagnostics, log inspection, or supplemental verification, and clearly label it when it is not MCP evidence."
+    ...(autonomy === "full_access" ? fullAccessInstructionBlock("story agent") : []),
+    autonomy === "full_access"
+      ? "- Even in full-access mode, MCP story acceptance evidence should come from MCP calls. Use shell access for setup, diagnostics, log inspection, or supplemental verification, and clearly label it when it is not MCP evidence."
       : "",
     "",
     "Required MCP call pattern:",
@@ -83,7 +83,7 @@ export function createSemanticStoryAgent(
     instructions: buildStoryInstructions(autonomy),
     model: options.model,
     modelSettings: {
-      parallelToolCalls: autonomy === "yolo",
+      parallelToolCalls: autonomy === "full_access",
       reasoning: {
         effort: options.reasoningEffort,
         summary: "concise",
@@ -93,7 +93,7 @@ export function createSemanticStoryAgent(
       },
       truncation: "auto",
     },
-    tools: [...storyTools.tools, ...(autonomy === "yolo" ? createYoloTools() : [])],
+    tools: [...storyTools.tools, ...(autonomy === "full_access" ? createFullAccessTools() : [])],
     outputType: SemanticStoryReportSchema,
   });
   return { agent, close: storyTools.close };

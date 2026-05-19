@@ -10,7 +10,7 @@ import { requireOpenAIApiKey } from "./env.js";
 import { buildEndpointAgentInstructions, buildEndpointAgentTask } from "./instructions.js";
 import { assertSafeOutputRoot, repoRelative, repoRoot } from "./paths.js";
 import { createEndpointAgentTools } from "./tools.js";
-import { createYoloTools } from "./yoloTools.js";
+import { createFullAccessTools } from "./fullAccessTools.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -53,7 +53,7 @@ export function createSemanticEndpointAgent(options: SemanticEndpointAgentOption
     }),
     model: options.model,
     modelSettings: {
-      parallelToolCalls: autonomy === "yolo",
+      parallelToolCalls: autonomy === "full_access",
       reasoning: {
         effort: options.reasoningEffort,
         summary: "concise",
@@ -63,7 +63,7 @@ export function createSemanticEndpointAgent(options: SemanticEndpointAgentOption
       },
       truncation: "auto",
     },
-    tools: [...createEndpointAgentTools(options.outRoot), ...(autonomy === "yolo" ? createYoloTools() : [])],
+    tools: [...createEndpointAgentTools(options.outRoot), ...(autonomy === "full_access" ? createFullAccessTools() : [])],
     toolUseBehavior: stopAfterFinalizedBundle(),
     outputType: AgentRunSummarySchema,
   });

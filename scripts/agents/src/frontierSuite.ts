@@ -10,17 +10,17 @@ export const DEFAULT_FRONTIER_CHALLENGES = [
   {
     id: "contract-outlier-dashboard",
     question:
-      "Use the promoted USAspending semantic MCP as if you were building a compact contract outlier dashboard. Start from semantic discovery, use bounded high-value contract search, validate every request, inspect at least two candidate awards if possible, drill into detail and funding for the more interesting one, and tell the most evidence-backed outlier story you can. Prefer surprising interpretation over merely picking the biggest number. Report gaps that prevent a richer dashboard.",
+      "Use the promoted USAspending semantic MCP as if you were building a compact contract outlier dashboard. Start from semantic discovery, use scoped high-value contract search, validate every request, inspect at least two candidate awards if possible, drill into detail and funding for the more interesting one, and tell the most evidence-backed outlier story you can. Prefer surprising interpretation over merely picking the biggest number. Report gaps that prevent a richer dashboard.",
   },
   {
     id: "geography-time-contrast",
     question:
-      "Use the promoted USAspending semantic MCP to build a small geographic/time contrast story. Start from semantic discovery. Try to compare a bounded spending_over_time trend with spending_by_geography or disaster geography for the same scope. Validate requests before live calls, keep limits small, and explain whether the MCP can support a coherent map-plus-trend dashboard or where the semantic contract breaks.",
+      "Use the promoted USAspending semantic MCP to build a small geographic/time contrast story. Start from semantic discovery. Try to compare a scoped spending_over_time trend with spending_by_geography or disaster geography for the same scope. Validate requests before live calls, keep limits small, and explain whether the MCP can support a coherent map-plus-trend dashboard or where the semantic contract breaks.",
   },
   {
     id: "download-to-analysis-handoff",
     question:
-      "Use the promoted USAspending semantic MCP to test whether an agent could move from semantic discovery into a bounded export/download workflow and then into analysis. Do not run a huge export. Use templates and validation, make only bounded live calls, and judge whether the MCP explains enough business semantics for a future dashboard pipeline. Report any fragile or underspecified handoffs.",
+      "Use the promoted USAspending semantic MCP to test whether an agent could move from semantic discovery into a scoped export/download workflow and then into analysis. Do not run a huge export. Use templates and validation, make only scoped live calls, and judge whether the MCP explains enough business semantics for a future dashboard pipeline. Report any fragile or underspecified handoffs.",
   },
 ] as const;
 

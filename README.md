@@ -5,7 +5,7 @@
 The project is not trying to make a bigger REST wrapper. It is trying to give a
 coding or analysis agent the context it needs to work with USAspending
 correctly: discover the right endpoint, understand the business meaning, build a
-valid request, inspect the evidence, and make bounded live calls.
+valid request, inspect the evidence, and make scoped live calls.
 
 ## The Problem
 
@@ -32,7 +32,7 @@ flowchart LR
     C["Semantic profile<br/>callable shape, business meaning,<br/>evidence, usage guidance"]
     D{"Quality gates<br/>schema checks, evidence checks,<br/>MCP story tests"}
     E["Semantic MCP runtime<br/>discovery, understanding,<br/>request help, execution"]
-    F["Downstream agents<br/>answer spending questions<br/>with bounded calls and receipts"]
+    F["Downstream agents<br/>answer spending questions<br/>with scoped calls and receipts"]
 
     A --> B
     B --> C
@@ -60,7 +60,7 @@ flowchart LR
    whether another agent can use the MCP surface to complete a realistic story.
 5. Once the profile is ready, the MCP runtime exposes it as a semantic interface:
    search for the right capability, inspect meaning and evidence, construct and
-   validate requests, and make bounded live calls.
+   validate requests, and make scoped live calls.
 
 The Agents SDK is the production loop, not the product. The product is the
 validated semantic knowledge that the MCP can serve to another agent.
@@ -76,7 +76,7 @@ question in a grounded way:
 - distinguish documented facts from observed facts and known contradictions
 - build a valid request before calling the live API
 - inspect evidence for material claims
-- execute bounded calls and interpret the response in context
+- execute scoped calls and interpret the response in context
 
 That is the core difference from a generated client. A generated client says
 "this field exists." The semantic MCP should say "this field exists, here is

@@ -4,17 +4,18 @@ This package is the Agents SDK implementation of the semantic endpoint producer,
 reviewer, repairer, and MCP story-gate workflow.
 
 The agent is intentionally responsible for the endpoint knowledge. The
-TypeScript code supplies repository tools, bounded live USAspending probe tools,
-artifact writes, validation, in-loop self-story gates, promotion, and optional
-YOLO shell access. It does not deterministically extract or synthesize endpoint
-facts.
+TypeScript code supplies repository tools, scoped live USAspending probe tools,
+artifact writes, validation, in-loop self-story gates, promotion, and
+full-access shell access. It does not deterministically extract or synthesize
+endpoint facts.
 
-Default autonomy mode is `yolo`. In that mode every role receives
-`yolo_shell_command`, which can run arbitrary local shell commands with the SDK
-process filesystem and network access. Use `--autonomy bounded` only when you
-want a deliberately constrained run.
+Default autonomy mode is `full_access`. In that mode every role receives
+`full_access_shell_command`, which can run arbitrary local shell commands with
+the SDK process filesystem and network access. There is no approval-gated or
+restricted autonomy mode in the active architecture; `full_access` is the
+execution posture.
 
-YOLO mode is contract-first: give the coding agent the semantic artifact
+Full-access mode is contract-first: give the coding agent the semantic artifact
 contract and acceptance gates, then let it run whatever local commands, scripts,
 tests, live probes, or MCP workflows it needs to satisfy that contract.
 
@@ -26,8 +27,7 @@ npm --prefix scripts/agents run semantic:agent -- \
   --slug v2__search__spending_by_geography \
   --out-root runs/agents-sdk-demo \
   --reasoning-effort high \
-  --timeout-ms 600000 \
-  --autonomy yolo
+  --timeout-ms 600000
 ```
 
 The runner loads `.env.local` and `.env`. If `OPENAI_API_KEY` is absent and
@@ -83,8 +83,8 @@ repair agent.
 The repairer is task-scoped. It loads the existing bundle, executes the selected
 repair task, writes the affected artifacts, calls
 `repair_validate_semantic_bundle`, and returns `status: "repaired"` only after
-validation passes. In YOLO mode it also has shell access for inspection, tests,
-and supplemental verification.
+validation passes. In full-access mode it also has shell access for inspection,
+tests, and supplemental verification.
 
 ## Verification
 

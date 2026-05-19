@@ -42,20 +42,19 @@ Agents SDK package in `scripts/agents`:
 npm --prefix scripts/agents run semantic:agent -- \
   --slug v2__search__spending_by_geography \
   --out-root runs/agents-sdk-demo \
-  --reasoning-effort high \
-  --autonomy yolo
+  --reasoning-effort high
 ```
 
 Use `--promote` only when the generated bundle should be copied into
 `profiles/<slug>/semantic/` after validation.
 
-Agents SDK runs default to `--autonomy yolo`. YOLO mode gives each role a
-`yolo_shell_command` tool with broad local shell and network access, plus
-parallel tool calls. Use `--autonomy bounded` only when intentionally testing a
-restricted role surface.
+Agents SDK runs default to full-access execution. Each role receives a
+`full_access_shell_command` tool with broad local shell and network access, plus
+parallel tool calls. There is no approval-gated or restricted autonomy mode in
+the active architecture; `full_access` is the execution posture.
 
-The contract is the artifact and acceptance bar, not the agent's path. In YOLO
-mode the coding agent should use whatever commands, scripts, API probes, source
+The contract is the artifact and acceptance bar, not the agent's path. In
+full-access mode the coding agent should use whatever commands, scripts, API probes, source
 inspection, generated helper artifacts, or MCP/story workflows are needed to
 produce a correct semantic MCP bundle. The workflow should constrain outputs and
 validation, not pre-decide the investigation strategy.
@@ -85,8 +84,7 @@ make agents-story \
 npm --prefix scripts/agents run semantic:frontier -- \
   --output-dir runs/agents-sdk-frontier/<name> \
   --bundle-glob '/abs/profiles/*/semantic/endpoint.json' \
-  --reasoning-effort high \
-  --autonomy yolo
+  --reasoning-effort high
 ```
 
 The producer also has a self-story gate. Before promotion or finalization it
@@ -98,7 +96,7 @@ skip the self-story gate and still report a completed bundle.
 
 The standalone story agent is the current promotion-grade acceptance test: it
 does not edit files. It discovers endpoints through the MCP, reads endpoint
-semantics, validates requests, calls bounded endpoints, tells a short
+semantics, validates requests, calls scoped endpoints, tells a short
 evidence-backed story, and reports any MCP usability gaps as repair tasks.
 When discovery returns raw endpoints, the story agent must inspect
 `hasSemanticProfile` before calling semantic-only tools. A raw-only endpoint may
@@ -138,7 +136,7 @@ bundle, execute the selected repair task, write the affected artifacts, run
 validation passes. Completion discipline is part of the contract: once the
 selected task is plausibly satisfied, the repairer should stop optional
 investigation, validate, and return. Any additional opportunity it notices
-should be recorded as unresolved or recommended next-review focus. In YOLO mode
+should be recorded as unresolved or recommended next-review focus. In full-access mode
 it may use shell access to inspect, test, or validate when the narrow repair
 tools are not enough. For selected `repairTasks` with concrete `evidenceToUse`,
 the repair report is presumed to contain enough task evidence; the repairer
@@ -174,7 +172,7 @@ Ask the coding agent to do this:
    - one negative/error probe for an important enum, nested key, or missing field
    - one availability or join probe when it materially improves semantics
    - for workflows that require a transient identifier from another endpoint,
-     one bounded prerequisite setup call may be necessary before the target
+     one scoped prerequisite setup call may be necessary before the target
      endpoint can be live-probed
    Record why any extra probes were necessary.
 7. Reconcile the coverage ledger into `endpoint.json`:
@@ -223,7 +221,7 @@ Ask the coding agent to do this:
 
 - The bundle is the deliverable, not a pile of probes.
 - The known contract is non-negotiable; the means are intentionally open-ended
-  in YOLO mode.
+  in full-access mode.
 - Smaller validated bundle with explicit gaps beats an unfinished investigation.
 - Evidence references must resolve.
 - Current-MCP gaps must be represented as facts, not omitted.
@@ -239,7 +237,7 @@ Ask the coding agent to do this:
 - User-facing artifacts must not contradict the JSON state. If
   `endpoint.availability.status` is `available` or `partially_available`,
   `usage.md` must not say live availability is unconfirmed.
-- The agent may inspect and probe freely in YOLO mode, but it must stop
+- The agent may inspect and probe freely in full-access mode, but it must stop
   investigating once it can classify the major facts and satisfy the artifact
   contract.
 - A repairer may not keep spending turns on optional enrichments after the
@@ -321,7 +319,7 @@ Later story-gate runs found additional failure modes:
 - broad repair can write correct artifacts but fail to return a final report;
   single-task repair with explicit validation is more reliable
 - story and review reports need to be allowable evidence sources when they carry
-  bounded MCP/live-call observations into a repair task
+  scoped MCP/live-call observations into a repair task
 - async endpoints can require a prerequisite workflow to create a fresh
   `file_name` or similar identifier before the target endpoint can be probed
   honestly

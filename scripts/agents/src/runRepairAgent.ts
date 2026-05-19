@@ -18,7 +18,7 @@ function usage(): string {
     "  --max-turns <n>                  Agents SDK turn limit, default 28",
     "  --timeout-ms <n>                 Outer run timeout, default 360000",
     "  --task-id <id>                   Optional reviewer repairTasks id to execute alone",
-    "  --autonomy <mode>                 yolo|bounded, default yolo",
+    "  --autonomy <mode>                 full_access only, default full_access",
     "  --quiet-events                   Do not print SDK tool/event milestones",
   ].join("\n");
 }

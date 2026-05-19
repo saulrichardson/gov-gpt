@@ -58,7 +58,7 @@ describe("Agents SDK semantic endpoint producer", () => {
       "promote_semantic_bundle",
       "finalize_validated_bundle",
       "list_output_files",
-      "yolo_shell_command",
+      "full_access_shell_command",
     ]);
   });
 
@@ -85,8 +85,8 @@ describe("Agents SDK semantic endpoint producer", () => {
     expect(instructions).toContain("call list_output_files");
     expect(instructions).toContain("call finalize_validated_bundle");
     expect(instructions).toContain("call promote_semantic_bundle");
-    expect(instructions).toContain("YOLO autonomy mode");
-    expect(instructions).toContain("yolo_shell_command");
+    expect(instructions).toContain("Full-access autonomous mode");
+    expect(instructions).toContain("full_access_shell_command");
   });
 
   it("builds a concrete endpoint task with explicit tool arguments", () => {
@@ -242,11 +242,11 @@ describe("Agents SDK semantic endpoint producer", () => {
       "review_read_repo_file",
       "review_search_repo",
       "review_probe_usaspending_api",
-      "yolo_shell_command",
+      "full_access_shell_command",
     ]);
   });
 
-  it("creates a model-owned repair agent with artifact writes and bounded validation", () => {
+  it("creates a model-owned repair agent with artifact writes and validation", () => {
     const agent = createSemanticRepairAgent({
       outRoot: "runs/agents-sdk-stress",
       model: "gpt-5.4",
@@ -258,13 +258,13 @@ describe("Agents SDK semantic endpoint producer", () => {
       "load_semantic_repair_context",
       "repair_write_artifact_file",
       "repair_validate_semantic_bundle",
-      "yolo_shell_command",
+      "full_access_shell_command",
     ]);
     expect(String(agent.instructions)).toContain("call repair_validate_semantic_bundle");
     expect(String(agent.instructions)).toContain("source.kind review_report or mcp_story_gate");
     expect(String(agent.instructions)).toContain("concrete evidenceToUse");
     expect(String(agent.instructions)).toContain("Leave only endpoint.json, semantics.json, evidence.jsonl, and usage.md");
-    expect(String(agent.instructions)).toContain("YOLO autonomy mode");
+    expect(String(agent.instructions)).toContain("Full-access autonomous mode");
   });
 
   it("detects scratch files left in a repair artifact directory", () => {
@@ -458,14 +458,14 @@ describe("Agents SDK semantic endpoint producer", () => {
       expect(agent.tools.map((tool) => tool.name)).toEqual([
         "story_list_mcp_tools",
         "story_call_mcp_tool",
-        "yolo_shell_command",
+        "full_access_shell_command",
       ]);
       expect(String(agent.instructions)).toContain("agentic MCP acceptance test");
       expect(String(agent.instructions)).toContain("Use validateRequest before callEndpoint");
       expect(String(agent.instructions)).toContain("inspect hasSemanticProfile");
       expect(String(agent.instructions)).toContain("usually 8-12 MCP calls are enough");
       expect(String(agent.instructions)).toContain("include evidence.jsonl in affectedArtifacts");
-      expect(String(agent.instructions)).toContain("YOLO autonomy mode");
+      expect(String(agent.instructions)).toContain("Full-access autonomous mode");
     } finally {
       await close();
     }

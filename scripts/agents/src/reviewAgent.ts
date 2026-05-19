@@ -1,11 +1,11 @@
 import { Agent, Runner } from "@openai/agents";
 import { z } from "zod";
-import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, yoloInstructionBlock } from "./autonomy.js";
+import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, fullAccessInstructionBlock } from "./autonomy.js";
 import { requireOpenAIApiKey } from "./env.js";
 import { ReasoningEffortSchema, type ReasoningEffort } from "./endpointAgent.js";
 import { SemanticReviewReportSchema, type SemanticReviewReport } from "./reviewContract.js";
 import { createSemanticReviewTools } from "./reviewTools.js";
-import { createYoloTools } from "./yoloTools.js";
+import { createFullAccessTools } from "./fullAccessTools.js";
 
 export const ReviewReadinessSchema = z.enum(["promote_now", "repair_first", "rerun_producer", "needs_human_decision"]);
 
@@ -38,7 +38,7 @@ function buildReviewInstructions(outRoot: string, autonomy: AutonomyMode): strin
     "- For every blocker or major finding, include at least one repairTasks entry. A repair task should be narrow enough that a repair agent can execute it without open-ended investigation.",
     "- Set repairTasks.targetSlug to the reviewed endpoint slug unless the task is truly cross-endpoint and needs human routing.",
     "- repairTasks must name affected artifacts, cite the evidence or source facts to use, and define the expected semantic outcome. Do not use vague tasks like 'improve the bundle'.",
-    ...(autonomy === "yolo" ? yoloInstructionBlock("reviewer agent") : []),
+    ...(autonomy === "full_access" ? fullAccessInstructionBlock("reviewer agent") : []),
     "",
     "What to look for:",
     "- Cross-artifact disagreement between endpoint.json, semantics.json, evidence.jsonl, and usage.md.",
@@ -47,7 +47,7 @@ function buildReviewInstructions(outRoot: string, autonomy: AutonomyMode): strin
     "- Important documented fields, filters, pagination controls, modes, or response fields that were dropped or hidden.",
     "- Request field path/location mismatches that would make MCP preflight reject valid calls, especially body paths incorrectly written as body.filters or body.fields instead of filters or fields.",
     "- Probe strategy gaps that matter to endpoint understanding, especially negative/error behavior, dynamic response shape, async/download behavior, pagination, and mode switches.",
-    "- Missing analysis affordances: opaque codes without labels or lookup guidance, response row order mistaken for ranking, unclear measure reconciliation, lifetime amounts confused with period activity, full-population counts confused with bounded samples, or shared filters presented as reliable without observed evidence.",
+    "- Missing analysis affordances: opaque codes without labels or lookup guidance, response row order mistaken for ranking, unclear measure reconciliation, lifetime amounts confused with period activity, full-population counts confused with scoped samples, or shared filters presented as reliable without observed evidence.",
     "- MCP usefulness: whether this bundle would let a coding agent query the API successfully and understand the result beyond raw HTTP.",
     "- Generalization: whether the artifact relies on endpoint-specific luck rather than reusable semantic reasoning.",
     "",
@@ -80,7 +80,7 @@ export function createSemanticReviewAgent(
     instructions: buildReviewInstructions(options.outRoot, autonomy),
     model: options.model,
     modelSettings: {
-      parallelToolCalls: autonomy === "yolo",
+      parallelToolCalls: autonomy === "full_access",
       reasoning: {
         effort: options.reasoningEffort,
         summary: "concise",
@@ -90,7 +90,7 @@ export function createSemanticReviewAgent(
       },
       truncation: "auto",
     },
-    tools: [...createSemanticReviewTools(options.outRoot), ...(autonomy === "yolo" ? createYoloTools() : [])],
+    tools: [...createSemanticReviewTools(options.outRoot), ...(autonomy === "full_access" ? createFullAccessTools() : [])],
     outputType: SemanticReviewReportSchema,
   });
 }

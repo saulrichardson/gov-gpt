@@ -1,4 +1,4 @@
-import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, yoloInstructionBlock } from "./autonomy.js";
+import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, fullAccessInstructionBlock } from "./autonomy.js";
 
 export const DEFAULT_SEARCH_GLOBS = [
   "usaspending-api/**",
@@ -38,7 +38,7 @@ export function buildEndpointAgentInstructions({
     "- Prefer a complete validated first pass over exhaustive exploration. Stop once the major documented fields, live availability, response grain, business semantics, and current MCP gaps are classified.",
     "- Work artifact-first. A draft bundle with explicit unknowns is the anchor; additional probes refine it.",
     "- If you call probe_usaspending_api, the result must be recorded in evidence.jsonl before final validation. If availability.status is available or partially_available, endpoint.availability.evidenceRefs must include at least one live_probe evidence id from this bundle.",
-    ...(autonomy === "yolo" ? yoloInstructionBlock("producer agent") : []),
+    ...(autonomy === "full_access" ? fullAccessInstructionBlock("producer agent") : []),
     "",
     "Required output bundle:",
     `- Write exactly these four files under ${outRoot}/<slug>/: endpoint.json, semantics.json, evidence.jsonl, usage.md.`,
@@ -54,7 +54,7 @@ export function buildEndpointAgentInstructions({
     "- Fix preliminary validation failures before doing optional live probes. If the validator reports a schema typo, missing evidence id, or policy failure, repair that immediately.",
     "- After each live probe that changes your understanding, update evidence.jsonl and revise the affected JSON artifact, then validate again before running another batch of probes.",
     "- After your final live probe or source clarification, perform one consistency audit across endpoint.json, semantics.json, evidence.jsonl, and usage.md: availability, caveats, gaps, and request templates must describe the same state of evidence.",
-    "- For async or download endpoints, a bounded POST that starts a small job is valid live evidence. Do not download large files, but do record the job-start response or a deliberately bounded status/error probe.",
+    "- For async or download endpoints, a scoped POST that starts a small job is valid live evidence. Do not download large files, but do record the job-start response or a deliberately scoped status/error probe.",
     "- Inspect source or nearby examples when staged docs are ambiguous. Use search_repo with the full default globs when you need discovery, but do not repeatedly search when a targeted read would answer the question.",
     "- Build a coverage ledger in your own working memory from docs and current profile: top-level request fields, nested filter fields, sort/page controls, documented response fields, current MCP exposed fields, and missing important fields.",
     "- Run a purposeful live probe set after the draft bundle has been validated at least once. Start with the smallest useful set, usually baseline happy path, option/enum variation, one negative/error probe, and one semantic edge case. Expand only when the endpoint's semantics or workflow genuinely require more evidence, and record why the extra evidence was necessary.",
@@ -75,7 +75,7 @@ export function buildEndpointAgentInstructions({
     "Validation loop:",
     `- Always call validate_semantic_bundle with outRoot \"${outRoot}\" immediately after the preliminary four-file write and again after final probe-driven edits.`,
     "- If validation fails, inspect the error, fix the artifacts, and validate again. Do not weaken the schema or validator.",
-    "- Before promotion or finalization, call run_self_story_gate with a realistic endpoint-specific analytical question that a downstream coding agent should be able to answer through the MCP using this bundle. The question should force discovery, request validation, at least one bounded live call when safe, and interpretation of the endpoint's business meaning.",
+    "- Before promotion or finalization, call run_self_story_gate with a realistic endpoint-specific analytical question that a downstream coding agent should be able to answer through the MCP using this bundle. The question should force discovery, request validation, at least one scoped live call when safe, and interpretation of the endpoint's business meaning.",
     "- If run_self_story_gate returns owned blocker or major gaps for the current slug, repair endpoint.json, semantics.json, evidence.jsonl, or usage.md as needed, then rerun validate_semantic_bundle and run_self_story_gate. If you use story-gate observations as evidence, record them with source.kind=mcp_story_gate.",
     "- If run_self_story_gate reports only non-owned cross-endpoint gaps or minor residual issues, mention them in the final summary rather than silently editing unrelated bundles.",
     promote

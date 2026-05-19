@@ -52,7 +52,7 @@ function usage(): string {
     "  --max-turns <n>                  Agents SDK turn limit per challenge, default 48",
     "  --timeout-ms <n>                 Outer timeout per challenge, default 600000",
     "  --request-timeout-ms <n>         MCP live request timeout, default 30000",
-    "  --autonomy <mode>                yolo|bounded, default yolo",
+    "  --autonomy <mode>                full_access only, default full_access",
     "  --quiet-events                   Do not print SDK tool/event milestones",
   ].join("\n");
 }

@@ -17,20 +17,19 @@ The experiment now uses a model-owned quality loop in `scripts/agents`:
   source context, and optional live probes; returns a structured critique.
 - repair agent: takes a reviewer or story report and edits one bundle in place.
   It is intentionally task-scoped: load context, write artifacts, validate,
-  return. In YOLO mode it can still use shell access when narrow tools are
+  return. In Full-access mode it can still use shell access when narrow tools are
   insufficient.
 - story agent: uses only the MCP-facing tools to test whether another coding
-  agent can discover endpoints, validate requests, make bounded live calls, and
+  agent can discover endpoints, validate requests, make scoped live calls, and
   explain the result.
 
 None of these roles encode endpoint-specific USAspending facts. Deterministic
 code provides generic tools and validation gates; the model owns endpoint
 understanding, semantic prose, workflow interpretation, and repair choices.
 
-As of the YOLO access audit, all four roles default to `--autonomy yolo`, which
-adds broad shell/network access through `yolo_shell_command` and enables
-parallel tool calls. `--autonomy bounded` remains available for intentionally
-constrained acceptance tests.
+As of the full-access audit, all four roles default to full-access execution, which
+adds broad shell/network access through `full_access_shell_command` and enables
+parallel tool calls. The active architecture intentionally does not include an approval-gated agent mode.
 
 ## Commands Used
 
@@ -123,12 +122,12 @@ The next iteration changed repair orchestration rather than endpoint logic:
 This improved behavior: the repairer wrote the intended `order`
 case-sensitivity changes for `v2__recipient`. It still timed out before
 returning a structured final report, so the workflow changed again: repair now
-has a bounded validation tool and the repair instructions require
+has a artifact validation tool and the repair instructions require
 `repair_validate_semantic_bundle` before returning `status=repaired`.
 
 The current evidence suggests repair should be atomic and task-scoped: one task
 or small task group, validation before completion, then a story/reviewer gate for
-semantic usefulness. YOLO shell access is useful for debugging and evidence
+semantic usefulness. full-access shell access is useful for debugging and evidence
 checks, but it should not turn repair into a second producer run.
 
 ### MCP Story Test Found Issues Validators Missed
@@ -174,7 +173,7 @@ The live results told a coherent story:
 - `v2__search__spending_over_time` showed Caltech contract obligations by
   fiscal year: FY2021 about $2.295B, FY2022 about $2.617B, FY2023 about
   $2.794B, FY2024 about $2.231B, FY2025 about $2.369B, and FY2026 about
-  $1.221B for the bounded request.
+  $1.221B for the scoped request.
 - `v2__search__spending_by_award` then surfaced the largest rows behind that
   pattern, including NASA awards for Europa Clipper, Mars Science Laboratory,
   Mars Sample Return, and the Deep Space Network.
@@ -242,7 +241,7 @@ An after-repair story gate then passed. It verified that
 
 - exposes `filters.recipient_search_text` through `listRequestFields`
 - includes it in `validateRequest.matchedFacts`
-- supports a bounded live recipient-scoped fiscal-year call returning HTTP 200
+- supports a scoped live recipient-scoped fiscal-year call returning HTTP 200
 
 The remaining story-agent findings were minor: clarify group alias handling and
 expand broader nested `AdvancedFilterObject` inventory over time.
@@ -253,7 +252,7 @@ The next stress test used an asynchronous workflow rather than a single
 analytical call. The story question asked the MCP to:
 
 1. discover the download workflow
-2. start exactly one bounded awards download job
+2. start exactly one scoped awards download job
 3. poll status exactly once with the returned `file_name`
 4. avoid downloading the ZIP
 5. judge whether the MCP explained job descriptors, `status_url`, `file_name`,
@@ -261,7 +260,7 @@ analytical call. The story question asked the MCP to:
 
 The first run exposed a structural semantic gap:
 
-- `v2__download__awards` could create a bounded job and explain the returned job
+- `v2__download__awards` could create a scoped job and explain the returned job
   descriptor.
 - The returned `download_request` showed injected defaults, including a large
   default `award_type_codes` set.
@@ -293,7 +292,7 @@ Two task-scoped repair agents then updated `v2__download__awards` and
 `v2__download__status` using the story evidence. The repaired story gate passed:
 
 - workflow discovery connected create-job and status-polling semantics
-- semantic validation accepted the bounded create request and the status poll
+- semantic validation accepted the scoped create request and the status poll
 - one live create call returned `download_types` of `elasticsearch_awards` and
   `elasticsearch_sub_awards`
 - one live status poll returned `status=finished`, `total_rows=2`, and
@@ -347,7 +346,7 @@ Keep the broad producer and reviewer, but make repair and promotion stricter:
   - evidence ids or source/probe snippets to use
   - expected semantic outcome
 - repairer processes one task group at a time
-- repairer has artifact-write and validation tools, and can use YOLO shell
+- repairer has artifact-write and validation tools, and can use full-access shell
   access for focused inspection or verification
 - reviewer re-checks the repaired bundle
 - MCP story gate runs before promotion and must include one cross-endpoint
@@ -358,12 +357,12 @@ that made the repair run sprawl.
 
 The async download run suggests one additional scale rule: when an endpoint
 depends on a transient identifier from another endpoint, the producer should run
-a bounded prerequisite workflow to generate that identifier instead of settling
+a scoped prerequisite workflow to generate that identifier instead of settling
 for docs-only availability. That is still agentic; it is not endpoint-specific
 deterministic logic.
 
-The follow-up YOLO dig is documented in
-`docs/agents-sdk-yolo-access-audit.md`. It verified the SDK access model and
+The follow-up full-access dig is documented in
+`docs/agents-sdk-full-access-audit.md`. It verified the SDK access model and
 stress-tested two complicated endpoints:
 
 - `v2__awards__funding`
@@ -375,7 +374,7 @@ paired with generic validators and story acceptance.
 
 ## Promoted Six-Bundle Story Gate
 
-After the YOLO dig, the validated `v2__awards__funding` and richer
+After the full-access dig, the validated `v2__awards__funding` and richer
 `v2__disaster__spending_by_geography` bundles were promoted into
 `profiles/<slug>/semantic/`, bringing the promoted semantic MCP set to six
 bundles.
@@ -387,7 +386,7 @@ A promoted-bundle story gate then used the MCP itself to connect
 - `findWorkflows` surfaced the "Map first, drill down second" disaster geography
   workflow.
 - `v2__disaster__spending_by_geography` returned DEFC `L` state-level
-  obligations where Virginia was the largest named state in the bounded response
+  obligations where Virginia was the largest named state in the scoped response
   at `613386357.04` with `412` awards.
 - `v2__search__spending_by_award_count` then returned a live Virginia DEFC `L`
   award mix of `365` contracts and `47` grants.
@@ -429,13 +428,13 @@ the MCP validator then accepted the repaired caller path without warnings.
 ## AI Contract Story Gate
 
 A later promoted-MCP story gate asked whether the semantic surface could tell a
-real procurement story about bounded `"artificial intelligence"` contract rows.
+real procurement story about scoped `"artificial intelligence"` contract rows.
 The MCP supported the core analysis:
 
 - `v2__search__spending_over_time` showed keyword-matched contract activity
   rising from `274191985.63` in FY2024 to `386128239.83` in FY2025.
 - `v2__search__spending_by_award` found top AI-related contract rows, but the
-  story correctly avoided reading the bounded time filter as proof that all top
+  story correctly avoided reading the scoped time filter as proof that all top
   rows were newly signed awards.
 - `v2__awards__award_id` let the story compare award vintage and procurement
   posture for top rows, including full-and-open older work versus a newer

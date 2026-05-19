@@ -115,8 +115,8 @@ in-loop self-story gates, promotion, and standalone story gates. The model owns
 endpoint understanding, reconciliation, semantic synthesis, and the final bundle
 content.
 
-Default autonomy is `yolo`. In this mode each role also receives
-`yolo_shell_command`, which can run local shell commands with the same filesystem,
+Default autonomy is `full_access`. In this mode each role also receives
+`full_access_shell_command`, which can run local shell commands with the same filesystem,
 environment, and network access available to the SDK process. The contract is the
 bundle and the gates, not a fixed investigation path.
 
@@ -126,8 +126,7 @@ Run a producer:
 npm --prefix scripts/agents run semantic:agent -- \
   --slug v2__search__spending_by_geography \
   --out-root runs/agents-sdk-demo \
-  --reasoning-effort high \
-  --autonomy yolo
+  --reasoning-effort high
 ```
 
 Equivalent Make target:
@@ -202,7 +201,7 @@ A bundle can be promoted only when:
 - `npm --prefix scripts/codex run semantic:validate -- --root <run-root>` passes
 - `scripts/mcp/bin/validate-semantic-bundles` passes after promotion
 - MCP story or smoke checks show the semantic surface can be used for real
-  discovery, request construction, validation, and bounded calls
+  discovery, request construction, validation, and scoped calls
 - semantic discovery can surface the bundle even when the legacy raw profile is
   missing or underclassified
 

@@ -26,7 +26,7 @@ function usage(): string {
     "  --timeout-ms <n>                 Outer run timeout, default 360000",
     "  --request-timeout-ms <n>         MCP live request timeout, default 30000",
     "  --output <path>                  Optional path to write the structured story report JSON",
-    "  --autonomy <mode>                 yolo|bounded, default yolo",
+    "  --autonomy <mode>                 full_access only, default full_access",
     "  --quiet-events                   Do not print SDK tool/event milestones",
   ].join("\n");
 }

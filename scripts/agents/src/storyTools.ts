@@ -121,7 +121,7 @@ export function createSemanticStoryTools(options: SemanticStoryToolsOptions) {
   const callMcpTool = tool({
     name: "story_call_mcp_tool",
     description:
-      "Call one USAspending MCP tool by name. Use semantic tools first, then callEndpoint for bounded live evidence.",
+      "Call one USAspending MCP tool by name. Use semantic tools first, then callEndpoint for scoped live evidence.",
     parameters: z.object({
       name: z.string(),
       argumentsJson: z.string(),

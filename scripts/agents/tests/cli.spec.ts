@@ -26,7 +26,7 @@ describe("runEndpointAgent CLI", () => {
         "--current-date",
         "2026-05-09",
         "--autonomy",
-        "bounded",
+        "full_access",
       ])
     ).toEqual({
       slug: "v2__search__spending_by_geography",
@@ -38,8 +38,21 @@ describe("runEndpointAgent CLI", () => {
       streamEvents: false,
       promote: true,
       currentDate: "2026-05-09",
-      autonomy: "bounded",
+      autonomy: "full_access",
     });
+  });
+
+  it("accepts the legacy yolo autonomy alias as full access", () => {
+    expect(parseCliArgs(["--slug", "v2__recipient", "--autonomy", "yolo"])).toMatchObject({
+      slug: "v2__recipient",
+      autonomy: "full_access",
+    });
+  });
+
+  it("rejects restricted autonomy modes", () => {
+    expect(() => parseCliArgs(["--slug", "v2__recipient", "--autonomy", "bounded"])).toThrow(
+      "Invalid autonomy mode"
+    );
   });
 
   it("fails loudly when the slug is missing", () => {
@@ -71,7 +84,7 @@ describe("runEndpointAgent CLI", () => {
       maxTurns: 18,
       timeoutMs: 240000,
       streamEvents: false,
-      autonomy: "yolo",
+      autonomy: "full_access",
     });
   });
 
@@ -106,7 +119,7 @@ describe("runEndpointAgent CLI", () => {
       timeoutMs: 300000,
       streamEvents: false,
       repairTaskId: "repair-order-case-sensitivity",
-      autonomy: "yolo",
+      autonomy: "full_access",
     });
   });
 
@@ -141,7 +154,7 @@ describe("runEndpointAgent CLI", () => {
       requestTimeoutMs: 25000,
       outputPath: "runs/story.json",
       streamEvents: false,
-      autonomy: "yolo",
+      autonomy: "full_access",
     });
   });
 
@@ -165,7 +178,7 @@ describe("runEndpointAgent CLI", () => {
         "--request-timeout-ms",
         "20000",
         "--autonomy",
-        "bounded",
+        "full_access",
         "--quiet-events",
       ])
     ).toMatchObject({
@@ -178,7 +191,7 @@ describe("runEndpointAgent CLI", () => {
       timeoutMs: 480000,
       requestTimeoutMs: 20000,
       streamEvents: false,
-      autonomy: "bounded",
+      autonomy: "full_access",
     });
   });
 });

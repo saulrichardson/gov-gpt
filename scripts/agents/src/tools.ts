@@ -386,7 +386,7 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
   const probeUsaspendingApi = tool({
     name: "probe_usaspending_api",
     description:
-      "Call the live USAspending API with a bounded probe. Use this to test documented behavior, contradictions, validation errors, defaults, pagination, and response grain.",
+      "Call the live USAspending API with a scoped probe. Use this to test documented behavior, contradictions, validation errors, defaults, pagination, and response grain.",
     parameters: z.object({
       method: z.enum(["GET", "POST"]),
       path: z.string().startsWith("/api/"),
@@ -550,7 +550,7 @@ export function createEndpointAgentTools(defaultOutRoot: string) {
           "--request-timeout-ms",
           String(requestTimeoutMs),
           "--autonomy",
-          "yolo",
+          "full_access",
         ],
         timeoutMs + 15_000
       );

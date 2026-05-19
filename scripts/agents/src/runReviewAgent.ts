@@ -16,7 +16,7 @@ function usage(): string {
     "  --reasoning-effort <effort>      none|low|medium|high|xhigh, default high",
     "  --max-turns <n>                  Agents SDK turn limit, default 24",
     "  --timeout-ms <n>                 Outer run timeout, default 300000",
-    "  --autonomy <mode>                 yolo|bounded, default yolo",
+    "  --autonomy <mode>                 full_access only, default full_access",
     "  --quiet-events                   Do not print SDK tool/event milestones",
   ].join("\n");
 }

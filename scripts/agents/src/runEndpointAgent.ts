@@ -30,7 +30,7 @@ function usage(): string {
     "  --quiet-events                   Do not print SDK tool/event milestones",
     "  --promote                        Copy validated bundle into profiles/<slug>/semantic",
     "  --current-date <YYYY-MM-DD>       Override artifact lastVerified date",
-    "  --autonomy <mode>                 yolo|bounded, default yolo",
+    "  --autonomy <mode>                 full_access only, default full_access",
   ].join("\n");
 }
 

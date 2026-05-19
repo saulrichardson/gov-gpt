@@ -16,7 +16,6 @@ AGENTS_REASONING_EFFORT ?= high
 AGENTS_MAX_TURNS ?= 48
 AGENTS_TIMEOUT_MS ?= 600000
 AGENTS_PROMOTE ?= 0
-AGENTS_AUTONOMY ?= yolo
 AGENTS_REVIEW_REPORT ?=
 AGENTS_REPAIR_TASK_ID ?=
 AGENTS_STORY_QUESTION ?= Use the USAspending semantic MCP to find an interesting cross-endpoint story and report any semantic gaps.
@@ -137,17 +136,17 @@ agents-smoke: agents-install
 	@npm --prefix scripts/agents run smoke
 
 agents-semantic: agents-install
-	@npm --prefix scripts/agents run semantic:agent -- --slug $(SLUG) --out-root $(AGENTS_OUT_ROOT) --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS) --autonomy $(AGENTS_AUTONOMY) $(if $(filter 1,$(AGENTS_PROMOTE)),--promote,)
+	@npm --prefix scripts/agents run semantic:agent -- --slug $(SLUG) --out-root $(AGENTS_OUT_ROOT) --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS) $(if $(filter 1,$(AGENTS_PROMOTE)),--promote,)
 
 agents-review: agents-install
-	@npm --prefix scripts/agents run semantic:review -- --slug $(SLUG) --out-root $(AGENTS_OUT_ROOT) --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS) --autonomy $(AGENTS_AUTONOMY)
+	@npm --prefix scripts/agents run semantic:review -- --slug $(SLUG) --out-root $(AGENTS_OUT_ROOT) --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS)
 
 agents-repair: agents-install
 	@test -n "$(AGENTS_REVIEW_REPORT)" || (echo "AGENTS_REVIEW_REPORT is required, e.g. make agents-repair SLUG=v2__recipient AGENTS_REVIEW_REPORT=runs/review.json"; exit 1)
-	@npm --prefix scripts/agents run semantic:repair -- --slug $(SLUG) --out-root $(AGENTS_OUT_ROOT) --review-report $(AGENTS_REVIEW_REPORT) --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS) --autonomy $(AGENTS_AUTONOMY) $(if $(AGENTS_REPAIR_TASK_ID),--task-id $(AGENTS_REPAIR_TASK_ID),)
+	@npm --prefix scripts/agents run semantic:repair -- --slug $(SLUG) --out-root $(AGENTS_OUT_ROOT) --review-report $(AGENTS_REVIEW_REPORT) --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS) $(if $(AGENTS_REPAIR_TASK_ID),--task-id $(AGENTS_REPAIR_TASK_ID),)
 
 agents-story: agents-install
-	@npm --prefix scripts/agents run semantic:story -- --question "$(AGENTS_STORY_QUESTION)" --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS) --autonomy $(AGENTS_AUTONOMY) $(if $(AGENTS_BUNDLE_GLOB),--bundle-glob "$(AGENTS_BUNDLE_GLOB)",) $(if $(AGENTS_STORY_OUTPUT),--output $(AGENTS_STORY_OUTPUT),)
+	@npm --prefix scripts/agents run semantic:story -- --question "$(AGENTS_STORY_QUESTION)" --model $(AGENTS_MODEL) --reasoning-effort $(AGENTS_REASONING_EFFORT) --max-turns $(AGENTS_MAX_TURNS) --timeout-ms $(AGENTS_TIMEOUT_MS) $(if $(AGENTS_BUNDLE_GLOB),--bundle-glob "$(AGENTS_BUNDLE_GLOB)",) $(if $(AGENTS_STORY_OUTPUT),--output $(AGENTS_STORY_OUTPUT),)
 
 mcp-semantic-validate:
 	@npm --prefix scripts/mcp install --silent

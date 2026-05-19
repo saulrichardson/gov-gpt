@@ -189,7 +189,7 @@ export function createSemanticReviewTools(defaultOutRoot: string) {
   const probeUsaspendingApi = tool({
     name: "review_probe_usaspending_api",
     description:
-      "Run a bounded live USAspending probe when the reviewer needs to adjudicate an important uncertainty or suspected artifact defect.",
+      "Run a scoped live USAspending probe when the reviewer needs to adjudicate an important uncertainty or suspected artifact defect.",
     parameters: z.object({
       method: z.enum(["GET", "POST"]),
       path: z.string().startsWith("/api/"),

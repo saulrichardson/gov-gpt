@@ -1,14 +1,14 @@
 import { Agent, Runner } from "@openai/agents";
 import { readFileSync } from "fs";
 import { z } from "zod";
-import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, yoloInstructionBlock } from "./autonomy.js";
+import { DEFAULT_AUTONOMY_MODE, type AutonomyMode, fullAccessInstructionBlock } from "./autonomy.js";
 import { requireOpenAIApiKey } from "./env.js";
 import { ReasoningEffortSchema, type ReasoningEffort } from "./endpointAgent.js";
 import { SemanticRepairReportSchema, type SemanticRepairReport } from "./repairContract.js";
 import { RepairTaskSchema, SemanticReviewReportSchema } from "./reviewContract.js";
 import { createSemanticRepairTools } from "./reviewTools.js";
 import { assertSafeReadablePath } from "./paths.js";
-import { createYoloTools } from "./yoloTools.js";
+import { createFullAccessTools } from "./fullAccessTools.js";
 
 export type SemanticRepairAgentOptions = {
   slug: string;
@@ -24,19 +24,6 @@ export type SemanticRepairAgentOptions = {
 };
 
 function buildRepairInstructions(outRoot: string, autonomy: AutonomyMode): string {
-  const boundedRules =
-    autonomy === "bounded"
-      ? [
-          "- Plan your complete repair before the first write. After your first repair_write_artifact_file call, do not call search/read/probe tools again; finish the remaining planned writes, validate, and return the repair report.",
-          "- Once all affected artifacts are written and validation has passed, stop. Do not continue investigating for optional improvements.",
-          "You do not have open-ended repo search or live probe tools in this bounded repair mode. If the review report lacks enough evidence to repair a finding, leave it unresolved and say exactly what evidence is missing.",
-        ]
-      : [
-          "- Plan your repair before writing, but use yolo_shell_command whenever the narrow repair tools are not enough to inspect, test, or ground the change.",
-          "- You may continue investigating after a write if validation or a live/story check shows the repair is incomplete.",
-          "- Keep edits focused on the selected repair task unless the shell evidence reveals a directly blocking inconsistency.",
-        ];
-
   return [
     "You are a semantic MCP repair agent.",
     "",
@@ -57,8 +44,10 @@ function buildRepairInstructions(outRoot: string, autonomy: AutonomyMode): strin
     "- If you encode evidence from a reviewer report or MCP story gate rather than a live probe you personally executed, use source.kind review_report or mcp_story_gate. Reserve live_probe for actual API probes represented by request/response evidence.",
     "- Repair toward richer analysis guidance, not just fewer warnings. When a finding exposes opaque codes, row-order assumptions, measure reconciliation, sampling/full-population boundaries, async artifact boundaries, or inferred shared filters, make that business meaning visible through endpoint facts, caveats, workflows, usage guidance, or validationWarnings.",
     "- Leave only endpoint.json, semantics.json, evidence.jsonl, and usage.md in the repaired bundle directory. Remove scratch files before validation.",
-    ...boundedRules,
-    ...(autonomy === "yolo" ? yoloInstructionBlock("repair agent") : []),
+    "- Plan your repair before writing, but use full_access_shell_command whenever the narrow repair tools are not enough to inspect, test, or ground the change.",
+    "- You may continue investigating after a write if validation or a live/story check shows the repair is incomplete.",
+    "- Keep edits focused on the selected repair task unless the shell evidence reveals a directly blocking inconsistency.",
+    ...(autonomy === "full_access" ? fullAccessInstructionBlock("repair agent") : []),
     "- Avoid process narration in usage.md. It must read as final caller guidance.",
     "- Use at most two live probes unless a reviewer finding cannot be repaired without one more.",
     "",
@@ -129,7 +118,7 @@ export function createSemanticRepairAgent(
     instructions: buildRepairInstructions(options.outRoot, autonomy),
     model: options.model,
     modelSettings: {
-      parallelToolCalls: autonomy === "yolo",
+      parallelToolCalls: autonomy === "full_access",
       reasoning: {
         effort: options.reasoningEffort,
         summary: "concise",
@@ -139,7 +128,7 @@ export function createSemanticRepairAgent(
       },
       truncation: "auto",
     },
-    tools: [...createSemanticRepairTools(options.outRoot), ...(autonomy === "yolo" ? createYoloTools() : [])],
+    tools: [...createSemanticRepairTools(options.outRoot), ...(autonomy === "full_access" ? createFullAccessTools() : [])],
     outputType: SemanticRepairReportSchema,
   });
 }

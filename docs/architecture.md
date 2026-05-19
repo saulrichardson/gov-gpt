@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`gov-gpt` converts scattered USAspending documentation, source behavior, live API
+`gov-gpt` converts USAspending documentation, source behavior, live API
 observations, and agent-authored semantic analysis into an MCP surface that a
 coding agent can use reliably.
 
@@ -41,8 +41,10 @@ not.
 - `scripts/agents/`
   - Primary Semantic Profile V2 producer, reviewer, repairer, and story-gate
     implementation using the OpenAI Agents SDK.
-  - Default autonomy is `yolo`, which grants each role shell access through
-    `yolo_shell_command`.
+  - Default autonomy is `full_access`, which grants each role shell access through
+    `full_access_shell_command`.
+  - There is no approval-gated or restricted autonomy mode in the active
+    architecture.
   - The TypeScript code supplies tools and gates. The model owns endpoint
     understanding and artifact content.
 - `src/agent/core/semanticProfileSchema.ts`
@@ -90,11 +92,22 @@ The producer receives an endpoint slug and a final artifact contract. It can:
 - load staged docs and current raw/semantic profiles
 - read repository files
 - search source and tests
-- run bounded USAspending probes through narrow tools
-- run arbitrary shell commands in YOLO mode
+- run scoped USAspending probes through narrow tools
+- run arbitrary shell commands in full-access mode
 - write the four required artifacts
 - run a self-story MCP gate before promotion/finalization
 - validate and promote only after validation and self-story readiness succeed
+
+`full_access_shell_command` is intentionally a broad, one-shot local shell tool.
+It inherits the SDK process environment, can use absolute working directories,
+and can run repository commands, scripts, API probes, MCP checks, and generated
+helpers without an approval loop. It is still limited by the host OS, process
+permissions, non-interactive command execution, and operational timeout/output
+caps. Those are runtime mechanics, not semantic restrictions.
+
+The remaining gates are artifact acceptance gates. They decide whether the
+bundle is valid, evidenced, useful through MCP, and safe to promote. They do not
+decide how the agent is allowed to investigate.
 
 Reviewer, repairer, and story agents use the same contract from different
 angles:
