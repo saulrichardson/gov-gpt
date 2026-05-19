@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-export const AutonomyModeSchema = z.preprocess(
-  (value) => (value === "yolo" ? "full_access" : value),
-  z.literal("full_access")
-);
+export const AutonomyModeSchema = z.literal("full_access");
 export type AutonomyMode = z.infer<typeof AutonomyModeSchema>;
 
 export const DEFAULT_AUTONOMY_MODE: AutonomyMode = "full_access";

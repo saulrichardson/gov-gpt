@@ -288,7 +288,7 @@ surface, preflight it, call it, and explain the result without relying on hidden
 knowledge of the API.
 
 Discovery acceptance includes semantic-only bundles. If a promoted semantic
-bundle exists without a legacy raw profile, `usaspending.findEndpoints` should
+bundle exists without a raw profile, `usaspending.findEndpoints` should
 still surface it from the semantic artifact metadata.
 
 ## Failure Modes Seen In The Spike

@@ -32,9 +32,7 @@ Out of scope:
 - authoring endpoint semantics
 - hidden endpoint-specific heuristics
 - server-side trend analysis or anomaly scoring
-- black-box evaluation benches
-
-Those higher-level checks live outside the core MCP package in [`scripts/evals/README.md`](/Users/saulrichardson/projects/gov-gpt/scripts/evals/README.md).
+- benchmark code that is not part of the semantic MCP runtime
 
 ## Main Files
 
@@ -52,7 +50,7 @@ Those higher-level checks live outside the core MCP package in [`scripts/evals/R
 - `src/zodFromProfile.ts`
   Converts profile input schema into MCP input schemas.
 - `src/search.ts`
-  Scores free-text discovery queries for `findEndpoints` and `findCapabilities`.
+  Scores free-text discovery queries for semantic endpoint discovery.
 - `src/shipping.ts`
   Loads `profiles/shipping.json` and derives endpoint health from checked-in artifacts.
 - `src/promoteProfile.ts`
@@ -67,7 +65,6 @@ Support tools:
 - `usaspending.findConcepts`
 - `usaspending.findEndpoints`
 - `usaspending.findWorkflows`
-- `usaspending.findCapabilities`
 - `usaspending.getEndpoint`
 - `usaspending.getEndpointSchema`
 - `usaspending.getEndpointSemantics`
@@ -80,7 +77,6 @@ Support tools:
 - `usaspending.listRequestFields`
 - `usaspending.callEndpoint`
 - `usaspending.getDoc`
-- `usaspending.getEndpointHealth`
 
 Raw endpoint tools:
 
@@ -136,7 +132,7 @@ If profile loading fails, or if zero profiles load, the server exits immediately
 - indexes bundles by slug for semantic tools and search
 
 Semantic bundles are first-class discovery candidates. If a promoted semantic
-bundle exists without a corresponding legacy raw profile, `findEndpoints` still
+bundle exists without a corresponding raw profile, `findEndpoints` still
 surfaces it from the semantic artifact metadata. Exact slug matches receive a
 strong ranking boost so slug-first coding agents do not get routed to a related
 but different endpoint. Promoted semantic bundles also replace raw planner
@@ -159,7 +155,7 @@ Current guardrails:
   warnings without endpoint-specific runtime branches
 - request validation uses AJV with `additionalProperties: false`
 - outbound host access is restricted to the allowed USAspending host
-- requests are bounded by `USASPENDING_REQUEST_TIMEOUT_MS`
+- requests are limited by `USASPENDING_REQUEST_TIMEOUT_MS`
 - responses are returned as raw `status`, `headers`, `body`, and normalized request metadata
 - failures are normalized into structured MCP error payloads such as `INVALID_INPUT`, `REQUEST_TIMEOUT`, `NETWORK_ERROR`, and `UNKNOWN_ENDPOINT`
 

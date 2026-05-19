@@ -113,7 +113,7 @@ verify:
 	@$(REPO_ROOT)/scripts/mcp/bin/validate-semantic-bundles
 	@$(REPO_ROOT)/scripts/mcp/bin/smoke-server
 
-# Full ship verification for the raw-only MCP surface.
+# Full ship verification for the semantic MCP surface.
 ship-verify: verify
 
 # Probe Codex auth + model config before launching bulk jobs.

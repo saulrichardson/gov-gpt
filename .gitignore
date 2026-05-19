@@ -16,6 +16,7 @@ venv/
 # VSCode / editors
 .vscode/
 .idea/
+.cursor/
 
 # macOS
 .DS_Store

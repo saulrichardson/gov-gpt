@@ -102,14 +102,13 @@ function rankedTemplates(bundle: SemanticBundle, useCase?: string) {
 function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: LoadedSemanticBundles) {
   const { profiles, summaries, profilePaths, promptPaths, docPaths } = loaded;
   const profilesBySlug = Object.fromEntries(profiles.map((p) => [p.slug, p]));
-  const representativeProfiles = profiles.filter((profile) => profile.shipTier === "representative");
   const semanticBySlug = semanticLoaded.bundlesBySlug;
 
   server.registerPrompt(
     "usaspending.endpointUsage",
     {
       title: "USAspending Endpoint Usage",
-      description: "Return the semantic usage guide (prompt.md) for a given endpoint slug.",
+      description: "Return the raw usage guide (prompt.md) for a given endpoint slug.",
       argsSchema: {
         slug: z.string().describe("Endpoint slug like v2__agency__toptier_code"),
       },
@@ -214,92 +213,6 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
         };
       } catch (error) {
         return createToolErrorResult(error, { tool: "usaspending.findEndpoints", query, limit });
-      }
-    }
-  );
-
-  server.registerTool(
-    "usaspending.findCapabilities",
-    {
-      description:
-        "Search endpoint capability metadata and return raw endpoint tool names only. Set representativeOnly=true to restrict results to the curated shipped subset.",
-      inputSchema: {
-        query: z.string().optional(),
-        capability: z.string().optional(),
-        limit: z.number().int().positive().optional(),
-        representativeOnly: z.boolean().optional(),
-      },
-    },
-    async ({
-      query,
-      capability,
-      limit,
-      representativeOnly,
-    }: {
-      query?: string;
-      capability?: string;
-      limit?: number;
-      representativeOnly?: boolean;
-    }) => {
-      try {
-        const requiredCapability = (capability || "").trim().toLowerCase();
-        const useRepresentativeOnly = representativeOnly === true;
-        const filtered = (useRepresentativeOnly ? representativeProfiles : profiles).filter((profile) => {
-          const profileCapabilities = profile.capabilities || [];
-          if (requiredCapability && !profileCapabilities.some((item) => item.toLowerCase() === requiredCapability)) {
-            return false;
-          }
-          return true;
-        });
-        const candidates = filtered
-          .map((profile, index) => {
-            const score = scoreSearchQuery(query, [
-              profile.slug,
-              `usaspending.${profile.slug}`,
-              profile.endpoint.path,
-              profile.description || "",
-              ...(profile.tags || []),
-              ...(profile.capabilities || []),
-              plannerStrategyHint(profile.planner),
-            ]);
-            return {
-              profile,
-              index,
-              score,
-              representative: profile.shipTier === "representative" ? 1 : 0,
-            };
-          })
-          .filter((candidate) => candidate.score > 0)
-          .sort((left, right) => {
-            if (right.score !== left.score) return right.score - left.score;
-            if (right.representative !== left.representative) return right.representative - left.representative;
-            return left.index - right.index;
-          })
-          .map((candidate) => candidate.profile);
-
-        const results = candidates.slice(0, limit ?? 20).map((profile) => {
-          const toolName = `usaspending.${profile.slug}`;
-          return {
-            slug: profile.slug,
-            description: profile.description,
-            shipTier: profile.shipTier || "unshipped",
-            tags: profile.tags || [],
-            capabilities: profile.capabilities || [],
-            preferredToolName: toolName,
-            toolName,
-            endpointToolName: toolName,
-            promptUri: `usaspending://prompts/${profile.slug}`,
-            evidenceUri: `usaspending://evidence/${profile.slug}`,
-            healthUri: `usaspending://health/${profile.slug}`,
-          };
-        });
-
-        return {
-          content: [{ type: "text", text: JSON.stringify({ results }, null, 2) }],
-          structuredContent: { results },
-        };
-      } catch (error) {
-        return createToolErrorResult(error, { tool: "usaspending.findCapabilities", query, capability, limit });
       }
     }
   );
@@ -652,7 +565,7 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
     "usaspending.getEvidence",
     {
       description:
-        "Get evidence for an endpoint. Promoted semantic endpoints return evidence.jsonl records; older profiles return probe/mismatch/gap summaries.",
+        "Get evidence for an endpoint. Promoted semantic endpoints return evidence.jsonl records; raw profiles return probe/mismatch/gap summaries.",
       inputSchema: {
         slug: z.string(),
         refs: z.array(z.string()).optional(),
@@ -728,7 +641,7 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
           docPath,
           promptPath,
           contractDoc: readFileSync(docPath, "utf-8"),
-          semanticGuide: readFileSync(promptPath, "utf-8"),
+          rawUsageGuide: readFileSync(promptPath, "utf-8"),
         };
         return {
           content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
@@ -736,31 +649,6 @@ function registerEndpoints(server: any, loaded: LoadedProfiles, semanticLoaded: 
         };
       } catch (error) {
         return createToolErrorResult(error, { tool: "usaspending.getDoc", slug });
-      }
-    }
-  );
-
-  server.registerTool(
-    "usaspending.getEndpointHealth",
-    {
-      description: "Summarize freshness, ship tier, and recorded profile issues for a profile.",
-      inputSchema: {
-        slug: z.string(),
-      },
-    },
-    async ({ slug }: { slug: string }) => {
-      try {
-        const profile = profilesBySlug[slug];
-        if (!profile) {
-          throw new Error(`unknown slug: ${slug}`);
-        }
-        const health = buildEndpointHealth(profile);
-        return {
-          content: [{ type: "text", text: JSON.stringify(health, null, 2) }],
-          structuredContent: health as any,
-        };
-      } catch (error) {
-        return createToolErrorResult(error, { tool: "usaspending.getEndpointHealth", slug });
       }
     }
   );

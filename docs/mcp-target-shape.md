@@ -43,14 +43,12 @@ Tools:
 - `usaspending.findConcepts(query)`
 - `usaspending.findEndpoints(query, filters?)`
 - `usaspending.findWorkflows(query)`
-- `usaspending.findCapabilities(query, capability?)`
 
 Implemented status:
 
 - `usaspending.findConcepts`
 - semantic-enriched `usaspending.findEndpoints`
 - `usaspending.findWorkflows`
-- legacy `usaspending.findCapabilities`
 
 Purpose:
 
@@ -65,7 +63,6 @@ Tools/resources:
 - `usaspending.getEndpointSemantics(slug)`
 - `usaspending.getEvidence(slug, refs?)`
 - `usaspending.getUsageGuide(slug)`
-- `usaspending.getEndpointHealth(slug)`
 
 Implemented status:
 
@@ -73,7 +70,6 @@ Implemented status:
 - `usaspending.getEndpointSemantics`
 - semantic-aware `usaspending.getEvidence`
 - `usaspending.getUsageGuide`
-- legacy `usaspending.getEndpointHealth`
 
 Purpose:
 
@@ -151,8 +147,8 @@ An endpoint can be promoted to semantic MCP only when:
 
 ## Promoted Semantic Bundles
 
-The current promoted semantic MCP includes six deliberately complicated
-endpoints:
+The current promoted semantic MCP includes deliberately complicated endpoints
+that exercise the surface area the project needs to scale:
 
 - `v2__search__spending_over_time`: temporal aggregation, large nested search
   filters, group aliases, subaward deprecation warning.
@@ -167,6 +163,10 @@ endpoints:
   geography grain, scope, and spending type.
 - `v2__awards__funding`: award funding/accounting slices, pagination, sort
   contradictions, federal-account references, and obligation/outlay caveats.
+- award detail and funding rollup endpoints: cross-endpoint award identifier
+  normalization, procurement branch interpretation, and account rollups.
+- download count/status endpoints: asynchronous workflow preflight, row-limit
+  meaning, status polling, and export boundary guidance.
 
 ## Orchestration Boundary
 

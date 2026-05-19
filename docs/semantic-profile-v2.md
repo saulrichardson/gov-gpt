@@ -202,7 +202,7 @@ A bundle can be promoted only when:
 - `scripts/mcp/bin/validate-semantic-bundles` passes after promotion
 - MCP story or smoke checks show the semantic surface can be used for real
   discovery, request construction, validation, and scoped calls
-- semantic discovery can surface the bundle even when the legacy raw profile is
+- semantic discovery can surface the bundle even when the raw profile is
   missing or underclassified
 
 ## Non-Goals

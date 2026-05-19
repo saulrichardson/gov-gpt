@@ -42,13 +42,6 @@ describe("runEndpointAgent CLI", () => {
     });
   });
 
-  it("accepts the legacy yolo autonomy alias as full access", () => {
-    expect(parseCliArgs(["--slug", "v2__recipient", "--autonomy", "yolo"])).toMatchObject({
-      slug: "v2__recipient",
-      autonomy: "full_access",
-    });
-  });
-
   it("rejects restricted autonomy modes", () => {
     expect(() => parseCliArgs(["--slug", "v2__recipient", "--autonomy", "bounded"])).toThrow(
       "Invalid autonomy mode"

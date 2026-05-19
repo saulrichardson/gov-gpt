@@ -62,7 +62,9 @@ It is where endpoint-specific usage details live, such as:
 - safe follow-up identifiers or join guidance when that has been observed
 
 The MCP exposes these guides directly through `usaspending.endpointUsage`,
-`usaspending.getDoc`, and `usaspending://prompts/<slug>`.
+`usaspending.getDoc`, and `usaspending://prompts/<slug>` for raw-profile
+inspection. New semantic workflows should prefer `usaspending.getUsageGuide` and
+`usaspending://semantic/usage/<slug>` when a semantic bundle is available.
 
 ## What `semantic/` Is For
 

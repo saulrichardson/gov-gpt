@@ -26,7 +26,17 @@ Claude Code (.mcp.json)
 ---
 Cursor (.cursor/mcp.json)
 
-- This repo already includes .cursor/mcp.json configured for this server.
+- This repo does not check in editor-specific Cursor config. To use Cursor,
+  create a local .cursor/mcp.json with:
+
+{
+  "mcpServers": {
+    "usaspending": {
+      "command": "$stdio_server",
+      "args": []
+    }
+  }
+}
 
 ---
 Claude Desktop (macOS)
