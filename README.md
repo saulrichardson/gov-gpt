@@ -120,11 +120,9 @@ Deterministic code owns the contract. It should validate structure, check
 evidence, enforce request safety, load the MCP surface, and fail loudly when the
 profile is not good enough.
 
-Retired raw-profile artifacts are not part of the forward product or a
-compatibility target. If an older promoted semantic bundle still cites them,
-refresh that bundle through the agentic loop rather than preserving the old
-artifact path. The orchestration framework can change; the evidence-backed
-semantic contract is what needs to survive.
+Retired raw-profile artifacts are not part of the forward product, accepted
+evidence model, or compatibility target. The orchestration framework can change;
+the evidence-backed semantic contract is what needs to survive.
 
 ## Design Principles
 

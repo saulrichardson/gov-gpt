@@ -5,7 +5,6 @@ export const SEMANTIC_PROFILE_SCHEMA_VERSION = "2.0.0" as const;
 export const SemanticHttpMethodSchema = z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 export const SourceKindSchema = z.enum([
   "documentation",
-  "retired_artifact",
   "live_probe",
   "source_code",
   "derived_check",

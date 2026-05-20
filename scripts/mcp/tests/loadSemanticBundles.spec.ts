@@ -78,45 +78,52 @@ describe("semantic bundles", () => {
     const loaded = loadSemanticBundles({ repoRoot });
     expect(loaded.bundles.map((bundle) => bundle.slug)).toEqual(
       expect.arrayContaining([
-        "v2__search__spending_over_time",
-        "v2__download__awards",
-        "v2__disaster__spending_by_geography",
+        "v2__search__spending_by_transaction",
       ])
     );
     for (const bundle of loaded.bundles) {
       expect(bundle.evidence.length).toBeGreaterThan(0);
       expect(bundle.endpoint.request.templates.length).toBeGreaterThan(0);
       expect(bundle.usage).not.toContain("I am treating your instructions");
+      expect(
+        bundle.evidence.every((record) =>
+          ["documentation", "live_probe", "source_code", "derived_check", "review_report", "mcp_story_gate"].includes(
+            record.source.kind
+          )
+        )
+      ).toBe(true);
     }
   });
 
   it("builds discovery metadata directly from promoted semantic bundles", () => {
     const semantic = loadSemanticBundles({ repoRoot });
-    const summary = endpointSummaryFromSemanticBundle(semantic.bundlesBySlug.v2__awards__funding);
+    const summary = endpointSummaryFromSemanticBundle(semantic.bundlesBySlug.v2__search__spending_by_transaction);
 
     expect(summary.shipTier).toBe("representative");
     expect(summary.semanticReadiness).toBe("promoted_semantic_bundle");
     expect(summary.semanticAvailability).toBe("available");
     expect(summary.tags || []).toContain("semantic_profile");
-    expect(summary.tags || []).toContain("award");
+    expect(summary.tags || []).toContain("transaction_row");
     expect(summary.capabilities?.length).toBeGreaterThan(0);
   });
 
   it("surfaces nested semantic request facts in discovery planner metadata", () => {
     const semantic = loadSemanticBundles({ repoRoot });
-    const summary = endpointSummaryFromSemanticBundle(semantic.bundlesBySlug.v2__disaster__spending_by_geography);
+    const summary = endpointSummaryFromSemanticBundle(semantic.bundlesBySlug.v2__search__spending_by_transaction);
     const planner = summary.planner!;
 
-    expect(planner.requiredParams).toContain("filter.def_codes");
-    expect(planner.optionalParams).not.toContain("filter.time_period");
-    expect(planner.riskyOptionalParams).toEqual(
-      expect.arrayContaining(["filter.time_period", "filter.recipient_scope", "filter.recipient_locations"])
+    expect(planner.requiredParams).toEqual(
+      expect.arrayContaining(["filters", "fields", "sort", "filters.award_type_codes"])
     );
-    expect(planner.parameters.find((param) => param.name === "filter.def_codes")?.status).toBe(
+    expect(planner.optionalParams).not.toContain("filters.program_activity");
+    expect(planner.riskyOptionalParams).toEqual(
+      expect.arrayContaining(["filters.program_activity"])
+    );
+    expect(planner.parameters.find((param) => param.name === "filters.award_type_codes")?.status).toBe(
       "documented_and_observed"
     );
-    expect(planner.parameters.find((param) => param.name === "filter.time_period")?.status).toBe("contradicted");
-    expect(planner.parameters.find((param) => param.name === "filter.recipient_locations")?.description).toContain(
+    expect(planner.parameters.find((param) => param.name === "filters.program_activity")?.status).toBe("contradicted");
+    expect(planner.parameters.find((param) => param.name === "filters.program_activity")?.description).toContain(
       "status=contradicted"
     );
   });
@@ -124,48 +131,50 @@ describe("semantic bundles", () => {
   it("builds discovery summaries for promoted semantic-only bundles", () => {
     const semantic = loadSemanticBundles({ repoRoot });
     const semanticSummary = endpointSummaryFromSemanticBundle(
-      semantic.bundlesBySlug.v2__search__spending_by_geography
+      semantic.bundlesBySlug.v2__search__spending_by_transaction
     );
 
-    expect(semanticSummary.slug).toBe("v2__search__spending_by_geography");
-    expect(semanticSummary.path).toBe("/api/v2/search/spending_by_geography/");
+    expect(semanticSummary.slug).toBe("v2__search__spending_by_transaction");
+    expect(semanticSummary.path).toBe("/api/v2/search/spending_by_transaction/");
     expect(semanticSummary.shipTier).toBe("representative");
     expect(semanticSummary.semanticReadiness).toBe("promoted_semantic_bundle");
     expect(semanticSummary.tags || []).toContain("semantic_profile");
     expect(semanticSummary.planner?.parameters.length).toBeGreaterThan(0);
-    expect(scoreSearchQuery("v2__search__spending_by_geography", [semanticSummary.slug])).toBeGreaterThan(1000);
+    expect(scoreSearchQuery("v2__search__spending_by_transaction", [semanticSummary.slug])).toBeGreaterThan(1000);
   });
 
   it("builds consolidated analysis packets for semantic MCP consumers", () => {
     const semantic = loadSemanticBundles({ repoRoot });
-    const packet = analysisPacketFromSemanticBundle(semantic.bundlesBySlug.v2__search__spending_over_time, {
+    const packet = analysisPacketFromSemanticBundle(semantic.bundlesBySlug.v2__search__spending_by_transaction, {
       includeUsageGuide: false,
     });
 
-    expect(packet.slug).toBe("v2__search__spending_over_time");
-    expect(packet.businessPurpose).toContain("spending");
+    expect(packet.slug).toBe("v2__search__spending_by_transaction");
+    expect(packet.businessPurpose).toContain("transaction");
     expect(packet.requestConstruction.templates.length).toBeGreaterThan(0);
-    expect(packet.requestConstruction.uncertainFields.map((field) => field.path)).toContain("filters.recipient_scope");
+    expect(packet.requestConstruction.uncertainFields.map((field) => field.path)).toContain(
+      "filters.time_period[].date_type"
+    );
     expect(packet.responseInterpretation.interpretationWarnings.length).toBeGreaterThan(0);
     expect(packet.recommendedMcpCallOrder).toContain("usaspending.validateRequest");
     expect(packet.usageGuide).toBeUndefined();
   });
 
   it("ranks exact slug matches ahead of semantically related partial matches", () => {
-    const query = "v2__search__spending_by_geography";
-    const exact = scoreSearchQuery(query, ["v2__search__spending_by_geography", "state map geography dashboard"]);
+    const query = "v2__search__spending_by_transaction";
+    const exact = scoreSearchQuery(query, ["v2__search__spending_by_transaction", "transaction row dashboard"]);
     const related = scoreSearchQuery(query, [
-      "v2__search__spending_by_award",
-      "award search workflow that can drill into geography dashboards",
+      "v2__search__spending_by_transaction_count",
+      "transaction count workflow for dashboard summaries",
     ]);
 
     expect(exact).toBeGreaterThan(related);
   });
 
-  it("preflights canonical spending_over_time requests and rejects known bad group values", () => {
+  it("preflights canonical transaction requests and rejects missing required fields", () => {
     const loaded = loadSemanticBundles({ repoRoot });
-    const bundle = loaded.bundlesBySlug.v2__search__spending_over_time;
-    const template = bundle.endpoint.request.templates.find((item) => item.name === "contract_obligations_by_fiscal_year");
+    const bundle = loaded.bundlesBySlug.v2__search__spending_by_transaction;
+    const template = bundle.endpoint.request.templates.find((item) => item.name === "bounded_contract_transaction_screen");
     expect(template).toBeTruthy();
 
     const valid = validateSemanticRequest(bundle.endpoint, template?.request.body);
@@ -173,11 +182,11 @@ describe("semantic bundles", () => {
     expect(valid.errors).toEqual([]);
 
     const invalid = validateSemanticRequest(bundle.endpoint, {
-      group: "bad",
-      filters: { keywords: ["infrastructure"] },
+      filters: { award_type_codes: ["A", "B", "C", "D"] },
+      fields: ["Award ID"],
     });
     expect(invalid.valid).toBe(false);
-    expect(invalid.errors.some((issue) => issue.path === "group")).toBe(true);
+    expect(invalid.errors.some((issue) => issue.path === "sort")).toBe(true);
   });
 
   it("emits generic semantic warnings for risky optional-field omissions", () => {
@@ -239,34 +248,36 @@ describe("semantic bundles", () => {
     expect(explicitScope.warnings).toEqual([]);
   });
 
-  it("uses nested semantic fields for disaster DEFC validation", () => {
+  it("uses nested semantic fields for transaction request validation", () => {
     const loaded = loadSemanticBundles({ repoRoot });
-    const bundle = loaded.bundlesBySlug.v2__disaster__spending_by_geography;
+    const bundle = loaded.bundlesBySlug.v2__search__spending_by_transaction;
 
     const invalid = validateSemanticRequest(bundle.endpoint, {
-      filter: { def_codes: ["l"] },
-      geo_layer: "state",
-      spending_type: "obligation",
+      filters: {},
+      fields: ["Award ID"],
+      sort: "Award ID",
     });
     expect(invalid.valid).toBe(false);
-    expect(invalid.errors.map((issue) => issue.path)).toContain("filter.def_codes");
+    expect(invalid.errors.map((issue) => issue.path)).toContain("filters.award_type_codes");
 
     const valid = validateSemanticRequest(bundle.endpoint, {
-      filter: { def_codes: ["L"] },
-      geo_layer: "state",
-      spending_type: "obligation",
+      filters: {
+        time_period: [{ start_date: "2024-01-01", end_date: "2024-12-31" }],
+        award_type_codes: ["A", "B", "C", "D"],
+      },
+      fields: ["Award ID", "Transaction Amount"],
+      sort: "Transaction Amount",
+      limit: 5,
     });
     expect(valid.valid).toBe(true);
 
-    const lowerConfidence = validateSemanticRequest(bundle.endpoint, {
-      filter: { def_codes: ["L"] },
-      geo_layer: "county",
-      spending_type: "face_value_of_loan",
+    const broadButValid = validateSemanticRequest(bundle.endpoint, {
+      filters: { award_type_codes: ["A"] },
+      fields: ["Award ID"],
+      sort: "Award ID",
     });
-    expect(lowerConfidence.valid).toBe(true);
-    expect(lowerConfidence.warnings.map((issue) => issue.path)).toEqual(
-      expect.arrayContaining(["geo_layer", "spending_type"])
-    );
+    expect(broadButValid.valid).toBe(true);
+    expect(broadButValid.warnings.map((issue) => issue.path)).toContain("filters.time_period");
   });
 
   it("does not require child fields inside optional nested filter arrays until the parent is present", () => {
@@ -404,7 +415,7 @@ describe("semantic bundles", () => {
           name: "canonical_award_lookup_id",
           sourcePath: "results[].generated_internal_id",
           description: "Use this generated id for downstream award calls.",
-          targetEndpoints: [{ slug: "v2__awards__award_id", requestPath: "pathParams.award_id" }],
+          targetEndpoints: [{ slug: "v2__example_detail", requestPath: "pathParams.id" }],
           evidenceRefs: ["ev-test"],
         },
       ],
@@ -420,7 +431,7 @@ describe("semantic bundles", () => {
       recommendedFollowups: [
         {
           trigger: "Use detail before current-period claims.",
-          nextSlug: "v2__awards__award_id",
+          nextSlug: "v2__example_detail",
           reason: "Confirm award vintage.",
           requestMapping: { "pathParams.award_id": "canonical_award_lookup_id" },
           evidenceRefs: ["ev-test"],
@@ -457,6 +468,6 @@ describe("semantic bundles", () => {
       name: "Award Amount",
       observedValues: [{ sourcePath: "results[0].Award Amount", value: 42 }],
     });
-    expect(result.semanticReceipt.recommendedFollowups[0].nextSlug).toBe("v2__awards__award_id");
+    expect(result.semanticReceipt.recommendedFollowups[0].nextSlug).toBe("v2__example_detail");
   });
 });

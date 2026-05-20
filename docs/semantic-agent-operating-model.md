@@ -105,7 +105,7 @@ Produce a bundle:
 
 ```bash
 npm --prefix scripts/agents run semantic:agent -- \
-  --slug v2__search__spending_by_geography \
+  --slug v2__search__spending_by_transaction \
   --out-root runs/agents-sdk \
   --reasoning-effort high
 ```
@@ -120,7 +120,7 @@ Review:
 
 ```bash
 npm --prefix scripts/agents run semantic:review -- \
-  --slug v2__search__spending_by_geography \
+  --slug v2__search__spending_by_transaction \
   --out-root runs/agents-sdk
 ```
 
@@ -128,7 +128,7 @@ Repair:
 
 ```bash
 npm --prefix scripts/agents run semantic:repair -- \
-  --slug v2__search__spending_by_geography \
+  --slug v2__search__spending_by_transaction \
   --out-root runs/agents-sdk \
   --review-report runs/review.json \
   --task-id <repair-task-id>

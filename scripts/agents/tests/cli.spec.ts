@@ -10,7 +10,7 @@ describe("runEndpointAgent CLI", () => {
     expect(
       parseCliArgs([
         "--slug",
-        "v2__search__spending_by_geography",
+        "v2__search__spending_by_transaction",
         "--out-root",
         "runs/demo",
         "--model",
@@ -29,7 +29,7 @@ describe("runEndpointAgent CLI", () => {
         "full_access",
       ])
     ).toEqual({
-      slug: "v2__search__spending_by_geography",
+      slug: "v2__search__spending_by_transaction",
       outRoot: "runs/demo",
       model: "gpt-5.4",
       reasoningEffort: "xhigh",

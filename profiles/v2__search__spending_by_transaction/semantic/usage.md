@@ -9,7 +9,6 @@ This endpoint is the right choice when you need:
 - one row per matching transaction
 - transaction-level obligation screening
 - modification-level or action-date-level inspection
-- a first-pass list of candidate transactions before award drilldown
 - projection-driven row output where you choose which columns appear
 
 ## When not to use it
@@ -21,7 +20,7 @@ Do **not** use this endpoint when you need:
 - a bulk export of very large result sets
 - award-level totals inferred from transaction rows alone
 
-If the question is award-centric, use an award-level endpoint after you identify the interesting parent award from a transaction row.
+If the question is award-centric, this clean-slate MCP surface is not sufficient yet. Preserve `generated_internal_id` from interesting rows so a future promoted parent-award bundle can pick up the analysis without relying on display `Award ID`.
 
 ## Core request shape
 
@@ -192,18 +191,18 @@ Important fields include:
 - `Transaction Amount` — transaction-level obligation amount
 - `Action Date` — transaction action date when requested
 - `Award ID` — display identifier for humans
-- `generated_internal_id` — best parent-award handoff key for downstream drilldown
+- `generated_internal_id` — best parent-award identity handle to preserve as row context
 - `internal_id` — internal numeric award id
 
-## Drilldown workflow
+## Parent award handoff note
 
 When a transaction row looks interesting:
 
 1. Keep the row-level context you screened on.
 2. Capture `generated_internal_id` from that row.
-3. Use that value for parent-award drilldown rather than relying on the display `Award ID`.
+3. Treat that value as parent-award context rather than relying on the display `Award ID`.
 
-`generated_internal_id` is the safer reusable business key for cross-endpoint award follow-up. Reuse it unchanged for `v2__awards__award_id` path `award_id` or `v2__awards__funding` body `award_id`.
+`generated_internal_id` is the safer reusable parent-award identity handle. No parent-award detail or funding bundle is currently promoted in the clean-slate MCP, so this bundle preserves the handoff value without advertising an unavailable follow-up endpoint.
 
 ## Measurement caveat
 

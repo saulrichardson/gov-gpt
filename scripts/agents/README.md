@@ -31,7 +31,7 @@ affordance requests. Those findings become task-scoped repair or synthesis work.
 ```bash
 npm --prefix scripts/agents install
 npm --prefix scripts/agents run semantic:agent -- \
-  --slug v2__search__spending_by_geography \
+  --slug v2__search__spending_by_transaction \
   --out-root runs/agents-sdk-demo \
   --reasoning-effort high \
   --timeout-ms 1200000
@@ -49,7 +49,7 @@ To promote a validated bundle into the MCP-loaded profile directory:
 
 ```bash
 npm --prefix scripts/agents run semantic:agent -- \
-  --slug v2__search__spending_by_geography \
+  --slug v2__search__spending_by_transaction \
   --out-root runs/agents-sdk-demo \
   --reasoning-effort high \
   --promote

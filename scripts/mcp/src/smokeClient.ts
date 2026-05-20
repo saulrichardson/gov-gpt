@@ -28,7 +28,7 @@ async function main() {
     throw new Error(`invalid SMOKE_TIMEOUT_MS: expected positive number, got '${process.env.SMOKE_TIMEOUT_MS}'`);
   }
 
-  const smokeSlug = process.env.SMOKE_SLUG || "v2__search__spending_over_time";
+  const smokeSlug = process.env.SMOKE_SLUG || "v2__search__spending_by_transaction";
   const callApi =
     process.env.SMOKE_CALL_API === "1" ||
     String(process.env.SMOKE_CALL_API || "").toLowerCase() === "true";
@@ -139,8 +139,8 @@ async function main() {
         arguments: {
           slug: smokeSlug,
           request: {
-            group: "bad",
-            filters: { keywords: ["infrastructure"] },
+            filters: { award_type_codes: ["A", "B", "C", "D"] },
+            fields: ["Award ID"],
           },
         },
       }),
@@ -148,14 +148,14 @@ async function main() {
       `timeout calling usaspending.validateRequest after ${timeoutMs}ms; stderr=${serverStderr}`
     );
     const validation = (validationRes as any)?.structuredContent as any;
-    assert(validation && validation.valid === false, "validateRequest did not reject known bad group value");
+    assert(validation && validation.valid === false, "validateRequest did not reject missing required transaction sort");
 
     let apiStatus: number | null = null;
     if (callApi) {
       const templateRes = await withTimeout(
         client.callTool({
           name: "usaspending.getRequestTemplate",
-          arguments: { slug: smokeSlug, useCase: "small spending over time contract obligations" },
+          arguments: { slug: smokeSlug, useCase: "bounded contract transaction screen" },
         }),
         timeoutMs,
         `timeout calling usaspending.getRequestTemplate after ${timeoutMs}ms; stderr=${serverStderr}`

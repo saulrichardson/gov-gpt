@@ -91,13 +91,13 @@ describe("Agents SDK semantic endpoint producer", () => {
 
   it("builds a concrete endpoint task with explicit tool arguments", () => {
     const task = buildEndpointAgentTask({
-      slug: "v2__search__spending_by_geography",
+      slug: "v2__search__spending_by_transaction",
       outRoot: "runs/agents-sdk-test",
       currentDate: "2026-05-09",
       promote: false,
     });
 
-    expect(task).toContain("Endpoint slug: v2__search__spending_by_geography");
+    expect(task).toContain("Endpoint slug: v2__search__spending_by_transaction");
     expect(task).toContain('"maxCharsPerFile":16000');
     expect(task).toContain(JSON.stringify(DEFAULT_SEARCH_GLOBS));
     expect(task).toContain('queryJson: "{}"');
@@ -177,7 +177,7 @@ describe("Agents SDK semantic endpoint producer", () => {
 
   it("refuses producer finalization before the self-story gate runs", async () => {
     const outRoot = `runs/agents-self-story-required-${Date.now()}`;
-    const slug = "v2__search__spending_over_time";
+    const slug = "v2__search__spending_by_transaction";
     cpSync(join(repoRoot, "profiles", slug, "semantic"), join(repoRoot, outRoot, slug), { recursive: true });
 
     try {

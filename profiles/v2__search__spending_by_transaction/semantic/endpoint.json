@@ -105,13 +105,6 @@
         "retrievedAt": "2026-05-20T01:00:00+00:00"
       },
       {
-        "id": "src-doc-award-drilldown-targets",
-        "kind": "documentation",
-        "title": "Award detail and award funding request docs used for transaction drilldown handoff",
-        "locator": "staging/docs/v2/awards/award_id.md; staging/docs/v2/awards/funding.md",
-        "retrievedAt": "2026-05-20T01:05:00+00:00"
-      },
-      {
         "id": "src-live-agency-filter-2026-05-20",
         "kind": "live_probe",
         "title": "Live agency-scoped DoD contract transaction probe",
@@ -1528,7 +1521,7 @@
       {
         "id": "warn_display_award_id_not_canonical_handoff",
         "path": "fields",
-        "message": "Display Award ID is useful for presentation, but downstream award-detail drilldown should reuse generated_internal_id from the response rather than the human-facing Award ID string.",
+        "message": "Display Award ID is useful for presentation, but generated_internal_id is the safer parent-award identity handle to preserve for future promoted parent-award bundles.",
         "when": {
           "missingAll": [],
           "missingAny": [],
@@ -1618,7 +1611,7 @@
         "type": "string | null",
         "required": true,
         "status": "documented_and_observed",
-        "description": "Generated unique award identifier for the parent award behind the transaction row. This is the safest drilldown handoff key for award-detail and award-funding follow-ups.",
+        "description": "Generated unique award identifier for the parent award behind the transaction row. Preserve it as the safest parent-award identity handle for future promoted parent-award bundles.",
         "documented": {
           "type": "string",
           "required": true
@@ -2212,7 +2205,7 @@
     "quirks": [
       {
         "statement": "Source code always adds internal_id and generated_internal_id to every row after projecting the requested fields.",
-        "impact": "These helper ids are available for drilldown even when not listed in fields.",
+        "impact": "These helper ids are available as row context even when not listed in fields.",
         "status": "inferred",
         "evidenceRefs": [
           "ev-source-implementation"
@@ -2294,8 +2287,8 @@
         ]
       },
       {
-        "statement": "Human-facing Award ID values are not the safest cross-endpoint join key for award drilldown.",
-        "impact": "Use generated_internal_id for award-detail handoff instead of assuming Award ID will resolve uniquely across endpoint families.",
+        "statement": "Human-facing Award ID values are not the safest parent-award identity handle.",
+        "impact": "Preserve generated_internal_id instead of assuming Award ID will resolve uniquely across endpoint families.",
         "status": "inferred",
         "evidenceRefs": [
           "ev-source-implementation",
@@ -2309,23 +2302,11 @@
       {
         "name": "canonical_award_lookup_id",
         "sourcePath": "results[].generated_internal_id",
-        "description": "Reuse the generated_internal_id on a transaction row as the award drilldown key for the parent award. This is the durable business identifier to carry into award detail or award funding follow-up calls.",
-        "targetEndpoints": [
-          {
-            "slug": "v2__awards__award_id",
-            "requestPath": "pathParams.award_id",
-            "description": "Pass generated_internal_id unchanged as pathParams.award_id for award profile drilldown."
-          },
-          {
-            "slug": "v2__awards__funding",
-            "requestPath": "body.award_id",
-            "description": "Pass generated_internal_id unchanged as body.award_id for award funding follow-up."
-          }
-        ],
+        "description": "Retain generated_internal_id from each transaction row as the parent-award identity handle. The clean-slate MCP currently exposes only this transaction bundle, so no promoted downstream award endpoint is declared here yet.",
+        "targetEndpoints": [],
         "evidenceRefs": [
           "ev-source-implementation",
           "ev-derived-coverage",
-          "ev-doc-award-drilldown-targets",
           "ev-source-lookup"
         ]
       }
@@ -2346,20 +2327,6 @@
     ],
     "recommendedFollowups": [
       {
-        "trigger": "A chosen transaction row needs parent-award context, summary attributes, or downstream funding history.",
-        "nextSlug": "v2__awards__award_id",
-        "reason": "The transaction response includes generated_internal_id for the parent award, which is the safest drilldown handoff value to inspect the award behind the transaction.",
-        "requestMapping": {
-          "pathParams.award_id": "results[].generated_internal_id"
-        },
-        "evidenceRefs": [
-          "ev-source-implementation",
-          "ev-derived-coverage",
-          "ev-doc-award-drilldown-targets",
-          "ev-source-lookup"
-        ]
-      },
-      {
         "trigger": "The current page reports page_metadata.hasNext=true and the analysis still needs more transaction rows in the same sorted population.",
         "nextSlug": "v2__search__spending_by_transaction",
         "reason": "This endpoint uses regular page/limit pagination and returns page_metadata.next for bounded continuation.",
@@ -2369,19 +2336,6 @@
         "evidenceRefs": [
           "ev-doc-endpoint-surface",
           "ev-source-helper"
-        ]
-      },
-      {
-        "trigger": "The analysis needs federal account funding rows or fiscal reporting slices for the parent award behind a transaction hit.",
-        "nextSlug": "v2__awards__funding",
-        "reason": "Award funding accepts award_id and documents generated natural award ids as the preferred input, which aligns with the generated_internal_id helper returned by this transaction search.",
-        "requestMapping": {
-          "body.award_id": "results[].generated_internal_id"
-        },
-        "evidenceRefs": [
-          "ev-doc-award-drilldown-targets",
-          "ev-source-lookup",
-          "ev-source-implementation"
         ]
       }
     ]

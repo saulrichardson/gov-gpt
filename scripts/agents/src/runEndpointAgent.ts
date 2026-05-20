@@ -21,7 +21,7 @@ function usage(): string {
     "Usage: npm --prefix scripts/agents run semantic:agent -- --slug <endpoint-slug> [options]",
     "",
     "Options:",
-    "  --slug <slug>                    Required endpoint slug, e.g. v2__search__spending_by_geography",
+    "  --slug <slug>                    Required endpoint slug, e.g. v2__search__spending_by_transaction",
     "  --out-root <path>                Artifact root, default runs/agents-sdk",
     "  --model <model>                  OpenAI model, default OPENAI_AGENT_MODEL or gpt-5.4",
     "  --reasoning-effort <effort>      none|low|medium|high|xhigh, default high",

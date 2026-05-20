@@ -112,7 +112,7 @@
     },
     {
       "name": "Parent-award handoff key",
-      "description": "generated_internal_id is the transaction-row handoff key for the parent award and should be preserved for downstream award drilldown.",
+      "description": "generated_internal_id is the transaction-row identity handle for the parent award and should be preserved as row context.",
       "evidenceRefs": [
         "ev-source-implementation",
         "ev-derived-coverage"
@@ -138,8 +138,8 @@
       ]
     },
     {
-      "name": "Which transactions should I drill into at the award level?",
-      "description": "Use transaction search to identify interesting rows, then carry generated_internal_id into award detail or funding follow-up.",
+      "name": "Which transactions carry useful parent-award context?",
+      "description": "Use transaction search to identify interesting rows, then retain generated_internal_id as parent-award context for future promoted bundles.",
       "evidenceRefs": [
         "ev-source-implementation",
         "ev-derived-coverage"
@@ -195,8 +195,8 @@
       ]
     },
     {
-      "name": "Using Award ID as the canonical drilldown key",
-      "description": "Award ID is display-oriented; generated_internal_id is the safer award handoff key for cross-endpoint drilldown.",
+      "name": "Using Award ID as the canonical parent-award handle",
+      "description": "Award ID is display-oriented; generated_internal_id is the safer parent-award identity handle to preserve for any future promoted parent-award bundle.",
       "evidenceRefs": [
         "ev-source-implementation",
         "ev-derived-coverage"
@@ -206,26 +206,23 @@
   "joins": [
     {
       "from": "results[].generated_internal_id",
-      "to": "parent-award detail workflows",
+      "to": "future parent-award semantic bundles",
       "on": [
-        "generated_internal_id",
-        "award_id",
-        "generated_unique_award_id"
+        "generated_internal_id"
       ],
       "confidence": "high",
-      "description": "Treat generated_internal_id as the transaction-surface handoff key for the parent award. Award detail accepts it as path award_id, and award funding accepts the same business key as body award_id.",
+      "description": "Treat generated_internal_id as the transaction-surface parent-award identity handle. This clean-slate MCP does not currently promote a downstream award-detail or funding bundle.",
       "evidenceRefs": [
         "ev-source-implementation",
         "ev-derived-coverage",
-        "ev-doc-award-drilldown-targets",
         "ev-source-lookup"
       ]
     }
   ],
   "workflows": [
     {
-      "name": "Screen high-value transactions and drill into the parent award",
-      "description": "Use a bounded transaction search to find noteworthy obligation rows, then preserve generated_internal_id for the parent-award follow-up.",
+      "name": "Screen high-value transaction rows",
+      "description": "Use a bounded transaction search to find noteworthy obligation rows, while preserving generated_internal_id as parent-award context for future promoted bundles.",
       "steps": [
         {
           "order": 1,
@@ -261,17 +258,6 @@
           "evidenceRefs": [
             "ev-source-implementation"
           ]
-        },
-        {
-          "order": 5,
-          "action": "Use the captured generated_internal_id as the parent-award drilldown key in a follow-up award-detail workflow, or reuse the same value in award funding when the next question is about federal account funding rather than award profile context.",
-          "endpointSlug": "v2__awards__award_id",
-          "evidenceRefs": [
-            "ev-source-implementation",
-            "ev-derived-coverage",
-            "ev-doc-award-drilldown-targets",
-            "ev-source-lookup"
-          ]
         }
       ],
       "evidenceRefs": [
@@ -279,13 +265,12 @@
         "ev-doc-endpoint-surface",
         "ev-source-implementation",
         "ev-source-lookup",
-        "ev-derived-coverage",
-        "ev-doc-award-drilldown-targets"
+        "ev-derived-coverage"
       ]
     },
     {
       "name": "Screen top transactions for one awarding agency",
-      "description": "Use the live-backed agency-bounded template to isolate one awarding agency and then inspect the returned transaction rows before drilldown.",
+      "description": "Use the live-backed agency-bounded template to isolate one awarding agency and inspect the returned transaction rows.",
       "steps": [
         {
           "order": 1,
@@ -303,20 +288,10 @@
           "evidenceRefs": [
             "ev-live-agency-scoped-dod-contract-transactions"
           ]
-        },
-        {
-          "order": 3,
-          "action": "Read generated_internal_id from any interesting row and reuse it unchanged in award detail or award funding follow-up.",
-          "endpointSlug": "v2__awards__award_id",
-          "evidenceRefs": [
-            "ev-source-implementation",
-            "ev-doc-award-drilldown-targets"
-          ]
         }
       ],
       "evidenceRefs": [
-        "ev-live-agency-scoped-dod-contract-transactions",
-        "ev-doc-award-drilldown-targets"
+        "ev-live-agency-scoped-dod-contract-transactions"
       ]
     }
   ],

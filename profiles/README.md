@@ -16,6 +16,11 @@ There is no promoted raw-profile fixture set in the forward architecture.
 Endpoint directories without a `semantic/` bundle are not part of the runtime
 surface.
 
+The current clean-slate MCP surface includes only bundles that were promoted
+under the forward semantic workflow and do not cite retired raw-profile
+artifacts. Re-add endpoints by running the agentic producer/review/story loop
+and promoting the resulting four-file bundle.
+
 ## Bundle Files
 
 - `endpoint.json`

@@ -1,5 +1,5 @@
 REPO_ROOT := $(CURDIR)
-SLUG ?= v2__search__spending_over_time
+SLUG ?= v2__search__spending_by_transaction
 SEMANTIC_ROOT ?= runs/agents-sdk
 AGENTS_OUT_ROOT ?= runs/agents-sdk
 AGENTS_MODEL ?= gpt-5.4
