@@ -56,8 +56,10 @@ evidence references.
 measures, dimensions, suitable questions, not-suitable-for cases, joins,
 workflows, and caveats.
 
-`evidence.jsonl` records documentation, source-code, live-probe, derived-check,
-review, story-gate, and retired-artifact observations.
+`evidence.jsonl` records documentation, source-code, live-probe,
+derived-check, review, and story-gate observations. Retired low-level artifacts
+are not a forward source; existing citations should be replaced through
+bundle-level refresh or repair rather than expanded.
 
 `usage.md` is prose for a downstream coding agent. It must be derived from the
 JSON artifacts and evidence, not from private reasoning or prompt narration.

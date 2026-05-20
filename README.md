@@ -27,7 +27,7 @@ agent trying to reason about them.
 
 ```mermaid
 flowchart LR
-    A["Evidence inputs<br/>docs, source, live probes,<br/>existing profiles"]
+    A["Evidence inputs<br/>docs, source, live probes,<br/>promoted semantic bundles"]
     B["Agents SDK authoring loop<br/>producer, reviewer,<br/>repairer, story gate"]
     C["Semantic profile<br/>callable shape, business meaning,<br/>evidence, usage guidance"]
     D{"Quality gates<br/>schema checks, evidence checks,<br/>MCP story tests"}
@@ -44,8 +44,8 @@ flowchart LR
 
 ## How It Works
 
-1. Evidence is gathered from documentation, source behavior, existing endpoint
-   profiles, and live USAspending probes. No single source is treated as
+1. Evidence is gathered from documentation, source behavior, promoted semantic
+   bundles, and live USAspending probes. No single source is treated as
    complete or automatically correct.
 2. The Agents SDK drives the authoring loop. A producer agent investigates an
    endpoint, reconciles contradictions, probes live behavior, and writes the
@@ -102,7 +102,8 @@ would need to use the endpoint responsibly:
 - important measures, dimensions, filters, sort behavior, pagination, joins, and
   workflow boundaries
 - live availability and known failure modes
-- contradictions between docs, source, existing profiles, and live behavior
+- contradictions between docs, source, promoted semantic bundles, and live
+  behavior
 - evidence and confidence status for important claims
 - practical guidance for when the endpoint is suitable or unsuitable
 
@@ -119,9 +120,11 @@ Deterministic code owns the contract. It should validate structure, check
 evidence, enforce request safety, load the MCP surface, and fail loudly when the
 profile is not good enough.
 
-Raw endpoint profiles remain useful as low-level execution context, but the
-semantic profile is the durable knowledge layer. The orchestration framework can
-change; the evidence-backed semantic contract is what needs to survive.
+Retired raw-profile artifacts are not part of the forward product or a
+compatibility target. If an older promoted semantic bundle still cites them,
+refresh that bundle through the agentic loop rather than preserving the old
+artifact path. The orchestration framework can change; the evidence-backed
+semantic contract is what needs to survive.
 
 ## Design Principles
 

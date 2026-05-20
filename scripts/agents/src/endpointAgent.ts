@@ -1,18 +1,14 @@
 import { Agent, Runner } from "@openai/agents";
-import { execFile } from "child_process";
 import { existsSync } from "fs";
-import { isAbsolute, join, relative } from "path";
-import { promisify } from "util";
+import { isAbsolute, join } from "path";
 import { z } from "zod";
 import { AgentRunSummarySchema, ARTIFACT_FILE_NAMES, type AgentRunSummary } from "./artifactContract.js";
 import { DEFAULT_AUTONOMY_MODE, type AutonomyMode } from "./autonomy.js";
 import { requireOpenAIApiKey } from "./env.js";
 import { buildEndpointAgentInstructions, buildEndpointAgentTask } from "./instructions.js";
-import { assertSafeOutputRoot, repoRelative, repoRoot } from "./paths.js";
+import { repoRoot } from "./paths.js";
 import { createEndpointAgentTools } from "./tools.js";
 import { createFullAccessTools } from "./fullAccessTools.js";
-
-const execFileAsync = promisify(execFile);
 
 export const ReasoningEffortSchema = z.enum(["none", "low", "medium", "high", "xhigh"]);
 export type ReasoningEffort = z.infer<typeof ReasoningEffortSchema>;
@@ -97,18 +93,6 @@ function logStreamEvent(event: any) {
   );
 }
 
-function extractJsonObject(text: string): unknown {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end < start) throw new Error("validator did not print a JSON object");
-  return JSON.parse(text.slice(start, end + 1));
-}
-
-function findValidationResult(stdout: string, slug: string) {
-  const parsed = extractJsonObject(stdout) as any;
-  return parsed?.results?.find((item: any) => item?.slug === slug);
-}
-
 function normalizeToolOutput(output: unknown): Record<string, unknown> | null {
   if (!output) return null;
   if (typeof output === "object" && !Array.isArray(output)) return output as Record<string, unknown>;
@@ -164,53 +148,6 @@ function stopAfterFinalizedBundle() {
   };
 }
 
-async function tryRecoverValidatedSummary(options: RunSemanticEndpointAgentOptions, reason: string): Promise<AgentRunSummary | null> {
-  const outRoot = assertSafeOutputRoot(options.outRoot);
-  const dir = join(outRoot, options.slug);
-  if (!existsSync(dir)) return null;
-
-  const validation = await execFileAsync(
-    "npm",
-    ["--prefix", "scripts/agents", "run", "semantic:validate", "--", "--root", relative(repoRoot, outRoot)],
-    {
-      cwd: repoRoot,
-      timeout: 60_000,
-      maxBuffer: 1024 * 1024 * 4,
-      env: process.env,
-    }
-  ).catch(() => null);
-
-  if (!validation) return null;
-  const result = findValidationResult(validation.stdout, options.slug);
-  if (!result) return null;
-
-  const missingFiles = ARTIFACT_FILE_NAMES.filter((name) => !existsSync(join(dir, name)));
-  if (missingFiles.length > 0) return null;
-
-  const artifacts = ARTIFACT_FILE_NAMES.map((name) => repoRelative(join(dir, name)));
-
-  const summary = AgentRunSummarySchema.parse({
-    slug: options.slug,
-    status: options.promote ? "blocked" : "completed",
-    outputRoot: repoRelative(outRoot),
-    promoted: false,
-    validationPassed: true,
-    summary: options.promote
-      ? `${reason} The bundle validates, but promotion was requested and was not confirmed by the agent before recovery.`
-      : `${reason} The runner recovered by validating the agent-authored bundle on disk.`,
-    keyFindings: [
-      `Validator accepted ${result.requestFacts} request facts and ${result.responseFacts} response facts.`,
-      `Availability is ${result.availability}.`,
-      `Evidence records: ${result.evidenceRecords}.`,
-    ],
-    artifacts,
-    nextSteps: options.promote
-      ? ["Run the same command with --promote again or promote the validated bundle after review."]
-      : ["Review the generated semantic bundle, then rerun with --promote if it should become part of the MCP surface."],
-  });
-  return summary.status === "completed" ? assertAgentRunArtifacts(summary) : summary;
-}
-
 export async function runSemanticEndpointAgent(options: RunSemanticEndpointAgentOptions): Promise<AgentRunSummary> {
   requireOpenAIApiKey();
   const currentDate = options.currentDate ?? todayYmd();
@@ -255,20 +192,12 @@ export async function runSemanticEndpointAgent(options: RunSemanticEndpointAgent
   }
 
   if (result.cancelled) {
-    const recovered = await tryRecoverValidatedSummary(
-      options,
-      "Agent run was cancelled before returning structured final output."
+    throw new Error(
+      "Agent run was cancelled before finalize_validated_bundle returned structured final output. Partial artifacts may exist on disk, but completion must happen inside the agent loop."
     );
-    if (recovered) return recovered;
-    throw new Error("Agent run was cancelled before returning structured final output.");
   }
 
   if (result.error) {
-    const recovered = await tryRecoverValidatedSummary(
-      options,
-      `Agent run ended with SDK error before returning structured final output: ${String((result.error as any)?.message ?? result.error)}.`
-    );
-    if (recovered) return recovered;
     throw result.error;
   }
 
@@ -276,21 +205,13 @@ export async function runSemanticEndpointAgent(options: RunSemanticEndpointAgent
   try {
     finalOutput = result.finalOutput;
   } catch (error: any) {
-    const recovered = await tryRecoverValidatedSummary(
-      options,
-      `Agent run did not expose finalOutput cleanly: ${String(error?.message ?? error)}.`
-    );
-    if (recovered) return recovered;
     throw error;
   }
 
   if (!finalOutput) {
-    const recovered = await tryRecoverValidatedSummary(
-      options,
-      "Agent run ended without a structured final output."
+    throw new Error(
+      "Agent run ended without structured final output from finalize_validated_bundle. Partial artifacts may exist on disk, but the run is not complete."
     );
-    if (recovered) return recovered;
-    throw new Error("Agent run ended without a structured final output.");
   }
 
   return assertAgentRunArtifacts(AgentRunSummarySchema.parse(finalOutput));

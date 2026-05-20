@@ -28,7 +28,9 @@ The primary semantic workflow is the Agents SDK implementation in
   not completion; before promotion/finalization the producer must call
   `run_self_story_gate`, then inspect the declared output directory and call
   `finalize_validated_bundle`, which verifies validation, self-story readiness,
-  and canonical artifact placement before returning a success summary.
+  and canonical artifact placement before returning a success summary. If the
+  agent stops before finalization, the run is failed even if partial artifacts
+  validate on disk.
 
 The durable output is a Semantic Profile V2 bundle:
 
@@ -93,9 +95,10 @@ surface options instead of silently choosing.
   and smoke clients.
 - Keep shared schemas in `src/agent/core`.
 - Prefer artifact contracts and tests over hidden runtime heuristics.
-- Put generic acceptance gates behind tools the agent can call and recover from
-  during the run; avoid parent-side repair that silently moves or patches
-  generated endpoint artifacts after the agent has stopped.
+- Put generic acceptance gates behind tools the agent can call and respond to
+  during the run; avoid parent-side repair or recovery that silently moves,
+  patches, or completes generated endpoint artifacts after the agent has
+  stopped.
 - Producer self-story gates should exercise the candidate bundle through the
   MCP before finalization. If they find owned blocker/major gaps, the producer
   should repair and rerun validation plus the story gate inside the same agent

@@ -39,7 +39,7 @@ npm --prefix scripts/agents run semantic:agent -- \
 
 Complex fresh endpoints can need long first-pass context gathering, probing, and
 self-story time. The default producer timeout is 20 minutes so the agent has
-room to validate and finalize instead of relying on runner-side recovery.
+room to validate and finalize inside the agent loop.
 
 The runner loads `.env.local` and `.env`. If `OPENAI_API_KEY` is absent and
 `CODEX_API_KEY` is present, it maps `CODEX_API_KEY` into `OPENAI_API_KEY` for the
@@ -122,11 +122,10 @@ Finalization reruns validation and refuses to return a success summary unless
 the exact four canonical files exist under `<out-root>/<slug>/`, so story, path,
 and inventory mistakes are visible to the agent while it can still fix them.
 
-If the model produces a complete validator-passing bundle but the SDK does not
-return a clean structured final output before timeout, the runner can return a
-recovered run summary from the files already on disk. That recovery path does
-not author, move, or alter artifacts, and it is not used when any canonical file
-is missing.
+If the SDK run ends before `finalize_validated_bundle` returns structured final
+output, the run fails. Partial files can still be inspected manually, but the
+runner does not recover, promote, or complete endpoint work outside the agentic
+loop.
 
 ## Artifact Contract
 
@@ -148,5 +147,5 @@ npm --prefix scripts/agents run semantic:validate -- --root <out-root>
 
 The agent must use validation before returning `status: "completed"`. The
 validator is package-local because semantic authoring, validation, and
-agent-loop recovery are one workflow. Completion still requires the stronger
+agent-loop repair are one workflow. Completion still requires the stronger
 producer finalization gate, not validation alone.

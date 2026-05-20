@@ -4,8 +4,8 @@ The active workflow uses OpenAI Agents SDK in `scripts/agents` to produce,
 review, repair, and story-test Semantic Profile V2 bundles.
 
 The goal is not deterministic endpoint extraction. The goal is a general coding
-agent that can reason from docs, source, live probes, and prior artifacts, then
-author a useful semantic MCP bundle on the first serious pass.
+agent that can reason from docs, source, live probes, and promoted semantic
+bundles, then author a useful semantic MCP bundle on the first serious pass.
 
 ## Default Autonomy
 
