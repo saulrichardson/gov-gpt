@@ -551,3 +551,67 @@ This is now the strongest version of the operating model:
 3. Repair agents move those learnings into durable semantic affordances.
 4. Runtime code only applies declared affordances generically.
 5. Promotion happens after validation, live receipt checks, and story acceptance.
+
+## Fresh Endpoint Scale Probe
+
+The next scale probe used a fresh, unpromoted endpoint:
+
+- `v2__search__spending_by_transaction`
+
+The producer was run with the updated instructions and no endpoint-specific
+parent repair. The first-pass result was mixed in the right way:
+
+- It produced a validator-passing four-file bundle with 14 evidence records, 66
+  request facts, and 28 response facts.
+- It naturally authored useful `semanticAffordances`: a
+  `canonical_award_lookup_id` handoff from `results[].generated_internal_id`, a
+  `Transaction Amount` measure interpretation, pagination follow-up, award
+  detail follow-up, and award funding follow-up.
+- It did not finalize before timeout; the runner recovered the validated bundle
+  from disk. This suggests complex fresh endpoints need a longer producer
+  timeout so the agent can complete validation, self-story, and finalization
+  instead of relying on recovery.
+
+A staged MCP story then tested the generated bundle by finding a concrete 2024
+Department of Defense high-value transaction and carrying the parent award id
+into award detail and funding. The story succeeded analytically and identified
+two repairable semantic-affordance issues:
+
+- the transaction handoff target paths were too generic (`award_id` instead of
+  `pathParams.award_id` and `body.award_id`)
+- award detail lacked structured measure interpretations for `total_obligation`,
+  `total_account_obligation`, `total_account_outlay`, and `total_outlay`
+
+Task-scoped repair agents fixed both issues. A follow-up story passed with high
+confidence, then two minor cleanups aligned transaction follow-up mappings and
+promoted live-observed `filters.agencies` evidence in
+`v2__search__spending_by_award`.
+
+The final staged surface validated with 12 semantic bundles, and direct runtime
+checks showed:
+
+```json
+{
+  "transactionReceipt": {
+    "handoffTargets": [
+      { "slug": "v2__awards__award_id", "requestPath": "pathParams.award_id" },
+      { "slug": "v2__awards__funding", "requestPath": "body.award_id" }
+    ],
+    "followupMappings": [
+      { "pathParams.award_id": "results[].generated_internal_id" },
+      { "page": "page_metadata.next" },
+      { "body.award_id": "results[].generated_internal_id" }
+    ]
+  },
+  "awardSearchValidation": {
+    "valid": true,
+    "warnings": [],
+    "errors": []
+  }
+}
+```
+
+The operating-model lesson is important: the first-pass producer did generalize
+the new semantic-affordance instruction, but story gates are still necessary to
+raise the precision of those affordances from useful prose-backed structure to
+fully automation-ready request mappings.

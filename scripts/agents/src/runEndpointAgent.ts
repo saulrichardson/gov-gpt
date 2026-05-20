@@ -26,7 +26,7 @@ function usage(): string {
     "  --model <model>                  OpenAI model, default OPENAI_AGENT_MODEL or gpt-5.4",
     "  --reasoning-effort <effort>      none|low|medium|high|xhigh, default high",
     "  --max-turns <n>                  Agents SDK turn limit, default 48",
-    "  --timeout-ms <n>                 Outer run timeout, default 600000",
+    "  --timeout-ms <n>                 Outer run timeout, default 1200000",
     "  --quiet-events                   Do not print SDK tool/event milestones",
     "  --promote                        Copy validated bundle into profiles/<slug>/semantic",
     "  --current-date <YYYY-MM-DD>       Override artifact lastVerified date",
@@ -46,7 +46,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): CliArgs {
   let model = process.env.OPENAI_AGENT_MODEL || "gpt-5.4";
   let reasoningEffort: ReasoningEffort = "high";
   let maxTurns = 48;
-  let timeoutMs = 600_000;
+  let timeoutMs = 1_200_000;
   let streamEvents = true;
   let promote = false;
   let currentDate: string | undefined;

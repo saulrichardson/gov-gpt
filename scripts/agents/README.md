@@ -34,8 +34,12 @@ npm --prefix scripts/agents run semantic:agent -- \
   --slug v2__search__spending_by_geography \
   --out-root runs/agents-sdk-demo \
   --reasoning-effort high \
-  --timeout-ms 600000
+  --timeout-ms 1200000
 ```
+
+Complex fresh endpoints can need long first-pass context gathering, probing, and
+self-story time. The default producer timeout is 20 minutes so the agent has
+room to validate and finalize instead of relying on runner-side recovery.
 
 The runner loads `.env.local` and `.env`. If `OPENAI_API_KEY` is absent and
 `CODEX_API_KEY` is present, it maps `CODEX_API_KEY` into `OPENAI_API_KEY` for the

@@ -1,0 +1,378 @@
+{
+  "schemaVersion": "2.0.0",
+  "slug": "v2__search__spending_by_transaction",
+  "generatedAt": "2026-05-20T00:00:00+00:00",
+  "endpointRef": "v2__search__spending_by_transaction",
+  "summary": "Returns paginated transaction-level search rows for a filtered advanced-search population. Live probes confirmed HTTP 200 availability, transaction-grain rows, dynamic derived objects, helper ids on every row, hard sort-in-fields validation, the special no intersection short-circuit, and an agency-scoped Department of Defense screening pattern.",
+  "businessPurpose": "Use this endpoint when you need to inspect the actual transactions behind a complex USAspending filter set, especially when award-level summaries would hide modifications, individual obligation events, or transaction-specific dates and descriptions.",
+  "analyticalGrain": "One result row per matching transaction record from the transaction search index, not one row per award.",
+  "primaryEntities": [
+    {
+      "name": "Transaction row",
+      "description": "A single transaction matched by the advanced-search filters, with requested projected fields and helper ids for the parent award.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-source-implementation",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "Parent award reference",
+      "description": "Each transaction row carries generated_internal_id and internal_id for the award that owns the transaction.",
+      "evidenceRefs": [
+        "ev-doc-response-surface",
+        "ev-source-implementation",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "Filtered transaction population",
+      "description": "The underlying set of transactions selected by AdvancedFilterObject before the fields list, sort, and pagination are applied.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-derived-coverage"
+      ]
+    }
+  ],
+  "measures": [
+    {
+      "name": "Transaction Amount",
+      "description": "Transaction-level federal_action_obligation value on each returned row when requested. It describes the obligation recorded on that individual transaction, not a lifetime award amount.",
+      "evidenceRefs": [
+        "ev-source-lookup",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "Loan Value",
+      "description": "Loan-value measure available for applicable loan-family transaction rows when requested.",
+      "evidenceRefs": [
+        "ev-doc-response-surface",
+        "ev-doc-filter-surface"
+      ]
+    },
+    {
+      "name": "Subsidy Cost",
+      "description": "Loan subsidy-cost measure available for applicable loan-family transaction rows when requested.",
+      "evidenceRefs": [
+        "ev-doc-response-surface",
+        "ev-doc-filter-surface"
+      ]
+    }
+  ],
+  "dimensions": [
+    {
+      "name": "Action date",
+      "description": "Docs describe transaction search time filtering on action_date, and the Action Date field can also be projected into response rows.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-doc-response-surface"
+      ]
+    },
+    {
+      "name": "Award family and type",
+      "description": "award_type_codes shape the eligible population, and Award Type can be projected into response rows.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-doc-response-surface"
+      ]
+    },
+    {
+      "name": "Agencies",
+      "description": "The filters object supports awarding and funding agency filters, and rows can project awarding and funding agency names.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-doc-response-surface"
+      ]
+    },
+    {
+      "name": "Recipient and recipient geography",
+      "description": "Rows can be filtered by recipient text or location and can project Recipient Name, Recipient UEI, recipient_id, and the derived Recipient Location object. A live 2026-05-20 preview confirmed Recipient Location returns a nested object with country/state/city/county/address/congressional/zip and foreign-postal keys.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-source-implementation",
+        "ev-live-derived-recipient-location-preview"
+      ]
+    },
+    {
+      "name": "Primary place of performance",
+      "description": "Filters can scope place of performance, and rows can project a derived Primary Place of Performance object.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-source-implementation"
+      ]
+    },
+    {
+      "name": "Industry and product/service classification",
+      "description": "NAICS and PSC can be used in filters and also projected as derived code+description objects.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-source-implementation"
+      ]
+    },
+    {
+      "name": "Parent-award handoff key",
+      "description": "generated_internal_id is the transaction-row handoff key for the parent award and should be preserved for downstream award drilldown.",
+      "evidenceRefs": [
+        "ev-source-implementation",
+        "ev-derived-coverage"
+      ]
+    }
+  ],
+  "suitableQuestions": [
+    {
+      "name": "Which transactions matched this filter set?",
+      "description": "Use this endpoint when the answer needs row-level transactions rather than grouped totals or one row per award.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "What are the largest transaction obligations in a bounded contract slice?",
+      "description": "Use a bounded time_period, contract award_type_codes, and sort by Transaction Amount descending to screen the biggest transaction rows.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-source-validation-rules",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "Which transactions should I drill into at the award level?",
+      "description": "Use transaction search to identify interesting rows, then carry generated_internal_id into award detail or funding follow-up.",
+      "evidenceRefs": [
+        "ev-source-implementation",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "Which transactions have a particular recipient, location, or agency context?",
+      "description": "The shared filters plus projection-driven row fields let you inspect transactions by recipient, agency, place of performance, NAICS, PSC, and assistance-listing context.",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-source-implementation"
+      ]
+    },
+    {
+      "name": "What are the largest contract transactions for a specific awarding agency in a bounded period?",
+      "description": "Use filters.agencies with a toptier or subtier object, then sort by Transaction Amount descending for a compact agency-scoped transaction screen.",
+      "evidenceRefs": [
+        "ev-live-agency-scoped-dod-contract-transactions",
+        "ev-doc-filter-surface"
+      ]
+    }
+  ],
+  "notSuitableFor": [
+    {
+      "name": "One-row-per-award analysis",
+      "description": "This endpoint can return multiple rows for the same award because the grain is transaction-level.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "Grouped summaries or totals by category",
+      "description": "This endpoint returns detail rows, not aggregated buckets by geography, time, or award type.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "name": "Huge bulk extraction through deep pagination",
+      "description": "The validator caps limit at 100 and the source blocks requests once the page window reaches 50000 records.",
+      "evidenceRefs": [
+        "ev-source-validation-rules"
+      ]
+    },
+    {
+      "name": "Assuming every documented column is always present",
+      "description": "Response rows are shaped by the fields request, not by a fixed default schema.",
+      "evidenceRefs": [
+        "ev-doc-response-surface",
+        "ev-source-implementation"
+      ]
+    },
+    {
+      "name": "Using Award ID as the canonical drilldown key",
+      "description": "Award ID is display-oriented; generated_internal_id is the safer award handoff key for cross-endpoint drilldown.",
+      "evidenceRefs": [
+        "ev-source-implementation",
+        "ev-derived-coverage"
+      ]
+    }
+  ],
+  "joins": [
+    {
+      "from": "results[].generated_internal_id",
+      "to": "parent-award detail workflows",
+      "on": [
+        "generated_internal_id",
+        "award_id",
+        "generated_unique_award_id"
+      ],
+      "confidence": "high",
+      "description": "Treat generated_internal_id as the transaction-surface handoff key for the parent award. Award detail accepts it as path award_id, and award funding accepts the same business key as body award_id.",
+      "evidenceRefs": [
+        "ev-source-implementation",
+        "ev-derived-coverage",
+        "ev-doc-award-drilldown-targets",
+        "ev-source-lookup"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "name": "Screen high-value transactions and drill into the parent award",
+      "description": "Use a bounded transaction search to find noteworthy obligation rows, then preserve generated_internal_id for the parent-award follow-up.",
+      "steps": [
+        {
+          "order": 1,
+          "action": "Start with a bounded time_period and explicit award_type_codes so the transaction population is analytically scoped before paging.",
+          "endpointSlug": "v2__search__spending_by_transaction",
+          "evidenceRefs": [
+            "ev-doc-filter-surface",
+            "ev-derived-coverage"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "Request only the fields needed for the first screen, including Transaction Amount and any context columns such as Award ID, Recipient Name, Action Date, and Awarding Agency.",
+          "endpointSlug": "v2__search__spending_by_transaction",
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-source-implementation"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Sort by Transaction Amount descending when screening for the largest obligation rows, but remember those are transaction amounts rather than award totals.",
+          "endpointSlug": "v2__search__spending_by_transaction",
+          "evidenceRefs": [
+            "ev-source-lookup",
+            "ev-derived-coverage"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Capture generated_internal_id from the selected row even if it was not explicitly listed in fields, because source code appends it as a helper id.",
+          "endpointSlug": "v2__search__spending_by_transaction",
+          "evidenceRefs": [
+            "ev-source-implementation"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Use the captured generated_internal_id as the parent-award drilldown key in a follow-up award-detail workflow, or reuse the same value in award funding when the next question is about federal account funding rather than award profile context.",
+          "endpointSlug": "v2__awards__award_id",
+          "evidenceRefs": [
+            "ev-source-implementation",
+            "ev-derived-coverage",
+            "ev-doc-award-drilldown-targets",
+            "ev-source-lookup"
+          ]
+        }
+      ],
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-doc-endpoint-surface",
+        "ev-source-implementation",
+        "ev-source-lookup",
+        "ev-derived-coverage",
+        "ev-doc-award-drilldown-targets"
+      ]
+    },
+    {
+      "name": "Screen top transactions for one awarding agency",
+      "description": "Use the live-backed agency-bounded template to isolate one awarding agency and then inspect the returned transaction rows before drilldown.",
+      "steps": [
+        {
+          "order": 1,
+          "action": "Set filters.time_period, contract award_type_codes, and an agencies object with type=awarding, tier=toptier or subtier, and the desired agency name.",
+          "endpointSlug": "v2__search__spending_by_transaction",
+          "evidenceRefs": [
+            "ev-doc-filter-surface",
+            "ev-live-agency-scoped-dod-contract-transactions"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "Request the compact screening columns Award ID, Mod, Recipient Name, Action Date, Transaction Amount, Awarding Agency, Awarding Sub Agency, and Award Type, then sort by Transaction Amount descending with a small limit.",
+          "endpointSlug": "v2__search__spending_by_transaction",
+          "evidenceRefs": [
+            "ev-live-agency-scoped-dod-contract-transactions"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Read generated_internal_id from any interesting row and reuse it unchanged in award detail or award funding follow-up.",
+          "endpointSlug": "v2__awards__award_id",
+          "evidenceRefs": [
+            "ev-source-implementation",
+            "ev-doc-award-drilldown-targets"
+          ]
+        }
+      ],
+      "evidenceRefs": [
+        "ev-live-agency-scoped-dod-contract-transactions",
+        "ev-doc-award-drilldown-targets"
+      ]
+    }
+  ],
+  "caveats": [
+    {
+      "statement": "Response row shape is dynamic and driven by fields; do not assume every documented label appears in every row.",
+      "impact": "Always inspect or control the requested fields set before downstream parsing or charting.",
+      "status": "contradicted",
+      "evidenceRefs": [
+        "ev-doc-response-surface",
+        "ev-source-implementation"
+      ]
+    },
+    {
+      "statement": "Transaction search is transaction-grain, so repeated Award IDs across rows are normal.",
+      "impact": "Row counts and sums answer transaction questions, not award-count questions.",
+      "status": "inferred",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "statement": "Transaction Amount is a row-level obligation measure rather than an award-total measure.",
+      "impact": "Do not narrate top transaction rows as top awards without an award-level follow-up.",
+      "status": "inferred",
+      "evidenceRefs": [
+        "ev-source-lookup",
+        "ev-derived-coverage"
+      ]
+    },
+    {
+      "statement": "Deep pagination is bounded by limit<=100 and a 50000-record result window.",
+      "impact": "Use download workflows or other endpoints for very large exports.",
+      "status": "inferred",
+      "evidenceRefs": [
+        "ev-source-validation-rules"
+      ]
+    },
+    {
+      "statement": "Program_activity appears in docs but may no longer be supported by the actual view validator.",
+      "impact": "Prefer program_activities until live testing proves otherwise.",
+      "status": "contradicted",
+      "evidenceRefs": [
+        "ev-doc-filter-surface",
+        "ev-source-validation-rules"
+      ]
+    },
+    {
+      "statement": "The special award_type_codes value no intersection short-circuits to an empty 200 response and omits the normal messages array.",
+      "impact": "Treat it as an upstream sentinel for an already-empty intersection, not as evidence that the endpoint found zero rows after a full normal search path.",
+      "status": "documented_and_observed",
+      "evidenceRefs": [
+        "ev-source-implementation",
+        "ev-live-special-no-intersection-short-circuit"
+      ]
+    }
+  ]
+}

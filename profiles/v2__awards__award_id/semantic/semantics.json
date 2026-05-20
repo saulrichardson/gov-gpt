@@ -61,6 +61,15 @@
         "ev-doc-001",
         "ev-live-001"
       ]
+    },
+    {
+      "name": "Do not collapse award totals, account totals, and transaction-row amounts",
+      "description": "total_obligation is the award-headline obligation total; total_account_obligation and total_account_outlay are account-based measures derived from financial-account data; and total_outlay is a separate outlay measure. Preserve those measure families when comparing award detail to transaction search or funding rows.",
+      "evidenceRefs": [
+        "ev-doc-002",
+        "ev-src-002",
+        "ev-review-award-detail-totals-001"
+      ]
     }
   ],
   "dimensions": [
@@ -217,6 +226,15 @@
         "ev-review-award-detail-procurement-humana-001",
         "ev-review-award-detail-procurement-sandia-001",
         "ev-live-001"
+      ]
+    },
+    {
+      "name": "How do award-level totals differ from account-based totals for this award?",
+      "description": "Use total_obligation, total_account_obligation, total_account_outlay, and total_outlay together to distinguish headline award totals from account-based measures. These fields provide award context, but they are not direct substitutes for a transaction-row Transaction Amount.",
+      "evidenceRefs": [
+        "ev-doc-002",
+        "ev-src-002",
+        "ev-review-award-detail-totals-001"
       ]
     }
   ],
@@ -441,6 +459,16 @@
         "ev-review-award-detail-offers-count-gap-001",
         "ev-review-award-detail-offers-count-ai-2020-001",
         "ev-review-award-detail-offers-count-ai-2025-001"
+      ]
+    },
+    {
+      "statement": "Award-detail totals belong to different measure families: total_obligation is an award-headline obligation total, total_account_obligation and total_account_outlay are DEFC or financial-account measures, and total_outlay is a separate outlay measure that may be null.",
+      "impact": "Do not directly reconcile these fields to one transaction-row Transaction Amount or to a small set of funding slices. Use them to frame award context while keeping award-level, account-level, and transaction-level grain explicit.",
+      "status": "observed",
+      "evidenceRefs": [
+        "ev-doc-002",
+        "ev-src-002",
+        "ev-review-award-detail-totals-001"
       ]
     }
   ]

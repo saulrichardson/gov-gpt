@@ -55,6 +55,14 @@ Common fields observed/documented on the live contract sample include:
 
 Treat `generated_unique_award_id` as this endpoint's response label for `canonical_award_lookup_id`. If you continue to `v2__awards__funding`, send that same string unchanged under the funding request body field `award_id`.
 
+## Award totals versus account totals
+- `total_obligation` is the headline award-level obligation total for the whole award. Use it for award context, not as a replacement for one transaction-row `Transaction Amount`.
+- `total_account_obligation` is an account-based obligation measure derived from DEFC / financial-account rows. It is a different measure family from `total_obligation`.
+- `total_account_outlay` is the account-based outlay measure, and `total_outlay` is a separate outlay measure that may be present as `null`. Neither should be collapsed into the other.
+- If you arrived here from `v2__search__spending_by_transaction`, keep the grain change explicit: the search row's `Transaction Amount` describes one transaction event, while these award-detail fields describe award-level or account-level context.
+- Do **not** expect a direct reconciliation between `Transaction Amount`, `total_obligation`, `total_account_obligation`, `total_account_outlay`, `total_outlay`, or a few `v2__awards__funding` rows.
+- Reviewer-backed example: canonical award `CONT_AWD_N0001923C0003_9700_-NONE-_-NONE-` returned `total_obligation = 24499786640`, `total_account_obligation = 0`, `total_account_outlay = 0`, and `total_outlay = null`, even though the originating 2024 transaction row had `Transaction Amount = 7384655472`. That supports a transaction-level narration of the event, but not a claim that the transaction amount equals the whole-award total or reconciles to account-based measures.
+
 ## Semantic handoff and competition warnings
 - `generated_unique_award_id` is the returned `canonical_award_lookup_id` echo. Reuse it unchanged when you normalize future award-detail calls or call `v2__awards__funding` with body field `award_id`.
 - Read `latest_transaction_contract_data` as latest-transaction procurement context for contract and IDV awards, not as a guaranteed whole-award lifetime summary.

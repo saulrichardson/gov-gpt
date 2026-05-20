@@ -88,6 +88,13 @@
         "title": "Reviewer report for repair-award-detail-offers-count-caveat",
         "locator": "Structured reviewer report selecting repair-award-detail-offers-count-caveat for v2__awards__award_id",
         "retrievedAt": "2026-05-16T00:00:00Z"
+      },
+      {
+        "id": "src-review-award-detail-total-interpretation",
+        "kind": "review_report",
+        "title": "Reviewer report selecting repair-002 for award totals versus account totals",
+        "locator": "Structured reviewer report selecting repair-002 for v2__awards__award_id",
+        "retrievedAt": "2026-05-20T00:00:00Z"
       }
     ]
   },
@@ -1382,6 +1389,59 @@
           "ev-review-award-detail-offers-count-gap-001",
           "ev-review-award-detail-offers-count-ai-2020-001",
           "ev-review-award-detail-offers-count-ai-2025-001"
+        ]
+      },
+      {
+        "name": "Award-level total obligation",
+        "path": "total_obligation",
+        "meaning": "total_obligation is the headline obligation total for the award as a whole. It lives at the award-detail grain, so it can be materially different from a single transaction-row Transaction Amount that led you here.",
+        "safeUse": "Use total_obligation to describe whole-award obligation context or to show that one transaction does not equal the entire award. Keep the grain change explicit when comparing it with transaction-search results.",
+        "unsafeUse": "Do not restate total_obligation as the same thing as a transaction-row Transaction Amount, and do not expect it to reconcile 1:1 with total_account_obligation or a few award-funding rows.",
+        "dashboardWarning": "Award detail total_obligation is a headline award total, not the obligation on one transaction row and not an automatic sum of visible funding slices.",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001",
+          "ev-review-award-detail-totals-001"
+        ]
+      },
+      {
+        "name": "Account-based obligation total",
+        "path": "total_account_obligation",
+        "meaning": "total_account_obligation is an account-based obligation measure derived from DEFC and File C financial-account rows. It is a different measure family from the award-headline total_obligation.",
+        "safeUse": "Use total_account_obligation when you specifically need the account-based obligation view, and pair it with account_obligations_by_defc or funding-slice context rather than treating it as the award's single definitive total.",
+        "unsafeUse": "Do not assume total_account_obligation will match total_obligation, the originating transaction-row Transaction Amount, or the first page of funding rows. Zero values do not erase the existence of award-level obligations.",
+        "dashboardWarning": "A large award can still show total_account_obligation = 0; treat it as a separate accounting measure family, not a reconciliation check against headline award totals or transaction rows.",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-review-award-detail-totals-001"
+        ]
+      },
+      {
+        "name": "Account-based outlay total",
+        "path": "total_account_outlay",
+        "meaning": "total_account_outlay is the account-based outlay measure derived from financial-account rows. It belongs to the accounting slice family rather than the award-headline obligation family.",
+        "safeUse": "Use total_account_outlay for account or outlay interpretation together with account_outlays_by_defc or funding-slice analysis when you want the accounting view of spend on the award.",
+        "unsafeUse": "Do not compare total_account_outlay directly to a transaction-row Transaction Amount, and do not read it as the same measure as total_obligation or total_outlay.",
+        "dashboardWarning": "Account-based outlay can be zero or otherwise non-reconciling even when the award has large obligation totals, so preserve the measure-family distinction.",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-review-award-detail-totals-001"
+        ]
+      },
+      {
+        "name": "Award-level outlay total",
+        "path": "total_outlay",
+        "meaning": "total_outlay is a separate award-detail outlay measure computed separately from DEFC-based total_account_outlay, and the field may be present with a null value.",
+        "safeUse": "Use total_outlay only as its own outlay measure family, and distinguish null from zero when the payload does not populate a value.",
+        "unsafeUse": "Do not collapse total_outlay into total_account_outlay, and do not use it as a direct substitute for transaction-row obligation amounts or funding-slice measures.",
+        "dashboardWarning": "total_outlay and total_account_outlay are different measures; null or zero values do not prove transaction-level or funding-slice reconciliation.",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-src-002",
+          "ev-live-001",
+          "ev-review-award-detail-totals-001"
         ]
       }
     ],

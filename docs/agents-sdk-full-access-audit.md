@@ -305,3 +305,13 @@ warned that bounded-screen `Award Amount` is not current-period spend, and
 warned that funding rows have their own reporting-period scope. The story gate
 then passed with high confidence and produced a defensible legacy-contract
 analysis without adding endpoint-specific runtime branches.
+
+The next fresh-endpoint probe on `v2__search__spending_by_transaction` confirmed
+that the producer now tends to author semantic affordances on the first pass. It
+created a valid bundle with transaction-grain warnings and generated-award-id
+handoffs without parent-side semantic patching. The remaining repairs were
+precision improvements discovered by the story agent: path-qualified handoff
+targets, path-qualified follow-up mappings, and award-detail measure warnings
+for headline totals versus account totals. This is the desired scale pattern:
+first-pass agents produce useful semantics, then story gates and narrow repair
+agents harden them for automation.

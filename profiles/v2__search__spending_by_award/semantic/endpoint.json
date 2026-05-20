@@ -125,6 +125,13 @@
         "title": "Reviewer report for spending_by_award canonical handoff alias clarity in AI contract story",
         "locator": "Structured reviewer report selecting repair-search-canonical-handoff-alias-clarity for v2__search__spending_by_award",
         "retrievedAt": "2026-05-16T00:00:00Z"
+      },
+      {
+        "id": "src-review-search-agencies-live-proof-2026-05-20",
+        "kind": "review_report",
+        "title": "Reviewer report for spending_by_award agency-filter live proof",
+        "locator": "Structured reviewer report selecting repair-task-001 for v2__search__spending_by_award",
+        "retrievedAt": "2026-05-20T00:00:00Z"
       }
     ]
   },
@@ -487,14 +494,27 @@
         "location": "body.filters",
         "type": "array[AgencyObject]",
         "required": false,
-        "status": "documented_unverified",
+        "status": "documented_and_observed",
         "description": "Awarding or funding agency filter objects.",
         "constraints": [],
         "evidenceRefs": [
-          "ev-doc-filter-surface"
+          "ev-doc-filter-surface",
+          "ev-review-search-agencies-live-proof-2026-05-20"
         ],
         "documented": {
           "type": "array[AgencyObject]"
+        },
+        "observed": {
+          "examples": [
+            [
+              {
+                "name": "Department of Defense",
+                "tier": "toptier",
+                "type": "awarding"
+              }
+            ]
+          ],
+          "notes": "Reviewer-backed 2024 DoD award screen returned HTTP 200 and 3 award rows using an awarding toptier agency object."
         }
       },
       {
@@ -503,11 +523,12 @@
         "location": "body.filters",
         "type": "string",
         "required": true,
-        "status": "documented_unverified",
+        "status": "documented_and_observed",
         "description": "Agency filter role.",
         "constraints": [],
         "evidenceRefs": [
-          "ev-doc-filter-surface"
+          "ev-doc-filter-surface",
+          "ev-review-search-agencies-live-proof-2026-05-20"
         ],
         "documented": {
           "type": "enum[string]",
@@ -515,6 +536,11 @@
           "allowedValues": [
             "awarding",
             "funding"
+          ]
+        },
+        "observed": {
+          "acceptedValues": [
+            "awarding"
           ]
         }
       },
@@ -524,11 +550,12 @@
         "location": "body.filters",
         "type": "string",
         "required": true,
-        "status": "documented_unverified",
+        "status": "documented_and_observed",
         "description": "Agency hierarchy tier.",
         "constraints": [],
         "evidenceRefs": [
-          "ev-doc-filter-surface"
+          "ev-doc-filter-surface",
+          "ev-review-search-agencies-live-proof-2026-05-20"
         ],
         "documented": {
           "type": "enum[string]",
@@ -536,6 +563,11 @@
           "allowedValues": [
             "toptier",
             "subtier"
+          ]
+        },
+        "observed": {
+          "acceptedValues": [
+            "toptier"
           ]
         }
       },
@@ -545,15 +577,21 @@
         "location": "body.filters",
         "type": "string",
         "required": true,
-        "status": "documented_unverified",
+        "status": "documented_and_observed",
         "description": "Agency name within an AgencyObject.",
         "constraints": [],
         "evidenceRefs": [
-          "ev-doc-filter-surface"
+          "ev-doc-filter-surface",
+          "ev-review-search-agencies-live-proof-2026-05-20"
         ],
         "documented": {
           "type": "string",
           "required": true
+        },
+        "observed": {
+          "examples": [
+            "Department of Defense"
+          ]
         }
       },
       {

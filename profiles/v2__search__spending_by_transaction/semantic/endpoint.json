@@ -1,0 +1,2389 @@
+{
+  "schemaVersion": "2.0.0",
+  "slug": "v2__search__spending_by_transaction",
+  "generatedAt": "2026-05-20T00:00:00+00:00",
+  "endpoint": {
+    "method": "POST",
+    "host": "https://api.usaspending.gov",
+    "path": "/api/v2/search/spending_by_transaction/"
+  },
+  "availability": {
+    "status": "available",
+    "confidence": "high",
+    "lastVerified": "2026-05-20",
+    "summary": "A live bounded contract transaction probe on 2026-05-20 returned HTTP 200 JSON with transaction rows, page metadata, helper ids, and the standard search-floor message, confirming the endpoint is currently callable.",
+    "evidenceRefs": [
+      "ev-live-baseline-bounded-contract-transactions",
+      "ev-doc-endpoint-surface",
+      "ev-source-implementation"
+    ]
+  },
+  "provenance": {
+    "sources": [
+      {
+        "id": "src-doc-staged",
+        "kind": "documentation",
+        "title": "Staged docs for Spending by Transaction",
+        "locator": "staging/docs/v2/search/spending_by_transaction.md",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-doc-filter-section",
+        "kind": "documentation",
+        "title": "AdvancedFilterObject and FieldNameObject in Spending by Transaction docs",
+        "locator": "staging/docs/v2/search/spending_by_transaction.md#advancedfilterobject",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-doc-response-section",
+        "kind": "documentation",
+        "title": "TransactionResponse and sample response in Spending by Transaction docs",
+        "locator": "staging/docs/v2/search/spending_by_transaction.md#transactionresponse",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-source-view",
+        "kind": "source_code",
+        "title": "SpendingByTransactionVisualizationViewSet implementation",
+        "locator": "usaspending-api/usaspending_api/search/v2/views/spending_by_transaction.py",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-source-validator",
+        "kind": "source_code",
+        "title": "Shared award filter and pagination validators used by transaction search",
+        "locator": "usaspending-api/usaspending_api/common/validator/award_filter.py; usaspending-api/usaspending_api/common/validator/pagination.py",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-source-lookup",
+        "kind": "source_code",
+        "title": "TransactionField enum and Elasticsearch field mappings",
+        "locator": "usaspending-api/usaspending_api/awards/v2/lookups/elasticsearch_lookups.py",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-source-helper",
+        "kind": "source_code",
+        "title": "Generic helper pagination and messages used by transaction search",
+        "locator": "usaspending-api/usaspending_api/common/helpers/generic_helper.py",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-derived-coverage",
+        "kind": "derived_check",
+        "title": "Derived coverage and workflow assessment for transaction search",
+        "locator": "derived-from-staged-docs-and-source-inspection",
+        "retrievedAt": "2026-05-20T00:00:00+00:00"
+      },
+      {
+        "id": "src-live-baseline-2026-05-20",
+        "kind": "live_probe",
+        "title": "Live bounded contract transaction baseline probe",
+        "locator": "POST https://api.usaspending.gov/api/v2/search/spending_by_transaction/",
+        "retrievedAt": "2026-05-20T00:30:00+00:00"
+      },
+      {
+        "id": "src-live-recipient-location-2026-05-20",
+        "kind": "live_probe",
+        "title": "Live derived Recipient Location preview probe",
+        "locator": "POST https://api.usaspending.gov/api/v2/search/spending_by_transaction/",
+        "retrievedAt": "2026-05-20T00:40:00+00:00"
+      },
+      {
+        "id": "src-live-invalid-sort-2026-05-20",
+        "kind": "live_probe",
+        "title": "Live invalid sort-not-in-fields probe",
+        "locator": "POST https://api.usaspending.gov/api/v2/search/spending_by_transaction/",
+        "retrievedAt": "2026-05-20T00:50:00+00:00"
+      },
+      {
+        "id": "src-live-no-intersection-2026-05-20",
+        "kind": "live_probe",
+        "title": "Live special no-intersection short-circuit probe",
+        "locator": "POST https://api.usaspending.gov/api/v2/search/spending_by_transaction/",
+        "retrievedAt": "2026-05-20T01:00:00+00:00"
+      },
+      {
+        "id": "src-doc-award-drilldown-targets",
+        "kind": "documentation",
+        "title": "Award detail and award funding request docs used for transaction drilldown handoff",
+        "locator": "staging/docs/v2/awards/award_id.md; staging/docs/v2/awards/funding.md",
+        "retrievedAt": "2026-05-20T01:05:00+00:00"
+      },
+      {
+        "id": "src-live-agency-filter-2026-05-20",
+        "kind": "live_probe",
+        "title": "Live agency-scoped DoD contract transaction probe",
+        "locator": "POST https://api.usaspending.gov/api/v2/search/spending_by_transaction/",
+        "retrievedAt": "2026-05-20T01:15:00+00:00"
+      }
+    ]
+  },
+  "request": {
+    "contentType": "application/json",
+    "parameters": [
+      {
+        "path": "filters",
+        "direction": "request",
+        "location": "body",
+        "type": "object",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Advanced search filter object that scopes which transaction rows are eligible before field projection, sorting, and pagination.",
+        "documented": {
+          "type": "AdvancedFilterObject",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "fields",
+        "direction": "request",
+        "location": "body",
+        "type": "array[string]",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Required list of API-defined field labels to project into each transaction row. The actual row schema is projection-driven and can include either simple scalar columns or derived nested objects.",
+        "documented": {
+          "type": "FieldNameObject",
+          "required": true
+        },
+        "constraints": [
+          "Sort must also be one of the requested field labels."
+        ],
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-doc-filter-surface",
+          "ev-source-implementation",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions",
+          "ev-live-invalid-sort-not-in-fields"
+        ]
+      },
+      {
+        "path": "limit",
+        "direction": "request",
+        "location": "body",
+        "type": "integer",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Maximum rows returned on one page.",
+        "documented": {
+          "type": "number",
+          "required": false,
+          "default": "10"
+        },
+        "constraints": [
+          "Source validator enforces 1 <= limit <= 100."
+        ],
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "page",
+        "direction": "request",
+        "location": "body",
+        "type": "integer",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "1-indexed page number for regular pagination.",
+        "documented": {
+          "type": "number",
+          "required": false,
+          "default": "1"
+        },
+        "constraints": [
+          "Source validator enforces page >= 1.",
+          "Source blocks requests whose (page-1)*limit is 50000 or greater."
+        ],
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "sort",
+        "direction": "request",
+        "location": "body",
+        "type": "string",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Field label used to order results. Derived labels such as Recipient Location or NAICS are also valid sort keys because the source expands them to multiple Elasticsearch sort columns.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "default": "Transaction Amount"
+        },
+        "constraints": [
+          "Source validator requires sort to be present.",
+          "Sort value must appear in fields or the endpoint raises InvalidParameterException."
+        ],
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-source-implementation",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions",
+          "ev-live-invalid-sort-not-in-fields"
+        ],
+        "observed": {
+          "rejectedValues": [
+            "Action Date when Action Date is absent from fields"
+          ],
+          "notes": "Live negative probe returned HTTP 400 when sort=Action Date but fields only contained Award ID and Transaction Amount."
+        }
+      },
+      {
+        "path": "order",
+        "direction": "request",
+        "location": "body",
+        "type": "string",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Sort direction for the selected sort key.",
+        "documented": {
+          "type": "enum[string]",
+          "required": false,
+          "default": "desc",
+          "allowedValues": [
+            "asc",
+            "desc"
+          ]
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "filters.keywords",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Keyword search terms. Source sanitizes these into keyword_search before executing the Elasticsearch query.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [
+          "Source validator requires each keyword string to have at least 3 characters."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.description",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Transaction or award-description text filter.",
+        "documented": {
+          "type": "string"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.time_period",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[TimePeriodObject]",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "One or more date ranges used by transaction search. Docs describe action_date-based filtering; source also exposes an undocumented date_type member on each time period object.",
+        "documented": {
+          "type": "array[TimePeriodObject]"
+        },
+        "constraints": [
+          "Shared validator enforces the USAspending search floor and max date."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "filters.time_period[].start_date",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "date",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Start date for one time period range.",
+        "documented": {
+          "type": "date",
+          "required": true
+        },
+        "constraints": [
+          "Shared validator enforces the search floor and max date."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "filters.time_period[].end_date",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "date",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "End date for one time period range.",
+        "documented": {
+          "type": "date",
+          "required": true
+        },
+        "constraints": [
+          "Shared validator enforces the search floor and max date."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "filters.time_period[].date_type",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Undocumented source-accepted selector that can switch the time-period comparator away from the default transaction action_date behavior.",
+        "documented": {
+          "type": "enum[string]",
+          "required": false,
+          "allowedValues": [
+            "action_date",
+            "last_modified_date",
+            "date_signed",
+            "new_awards_only"
+          ],
+          "notes": "Accepted by the shared source validator even though the endpoint docs only describe action_date."
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.award_type_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Required award-type family filter for the transaction search population.",
+        "documented": {
+          "type": "FilterObjectAwardTypes",
+          "required": true
+        },
+        "constraints": [
+          "Source validator forces this field to be required.",
+          "Source also accepts a special sentinel value no intersection that short-circuits to an empty result set."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation",
+          "ev-source-validation-rules",
+          "ev-live-baseline-bounded-contract-transactions",
+          "ev-live-special-no-intersection-short-circuit"
+        ],
+        "observed": {
+          "acceptedValues": [
+            "no intersection"
+          ],
+          "notes": "Live short-circuit probe accepted the sentinel value no intersection and returned an empty 200 response."
+        }
+      },
+      {
+        "path": "filters.place_of_performance_scope",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Domestic or foreign place-of-performance scope filter.",
+        "documented": {
+          "type": "enum[string]",
+          "allowedValues": [
+            "domestic",
+            "foreign"
+          ]
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[LocationObject]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Structured place-of-performance location filters using the shared StandardLocationObject shape.",
+        "documented": {
+          "type": "array[LocationObject]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations[].country",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": true,
+        "status": "inferred",
+        "description": "Country code or name in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": true,
+          "notes": "Source validator field for StandardLocationObject."
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations[].state",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional state component in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations[].zip",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional ZIP component in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations[].district_original",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional original congressional district in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [
+          "Source validator enforces 2-character district strings when provided."
+        ],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations[].district_current",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional current congressional district in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [
+          "Source validator enforces 2-character district strings when provided."
+        ],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations[].county",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional county in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.place_of_performance_locations[].city",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional city in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.agencies",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[AgencyObject]",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Awarding or funding agency filter objects.",
+        "documented": {
+          "type": "array[AgencyObject]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-live-agency-scoped-dod-contract-transactions"
+        ],
+        "observed": {
+          "examples": [
+            [
+              {
+                "name": "Department of Defense",
+                "tier": "toptier",
+                "type": "awarding"
+              }
+            ]
+          ],
+          "notes": "Live bounded DoD transaction screen returned HTTP 200 using an awarding toptier agency object."
+        }
+      },
+      {
+        "path": "filters.agencies[].type",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Agency filter role.",
+        "documented": {
+          "type": "enum[string]",
+          "required": true,
+          "allowedValues": [
+            "awarding",
+            "funding"
+          ]
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-live-agency-scoped-dod-contract-transactions"
+        ],
+        "observed": {
+          "acceptedValues": [
+            "awarding"
+          ]
+        }
+      },
+      {
+        "path": "filters.agencies[].tier",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Agency hierarchy tier.",
+        "documented": {
+          "type": "enum[string]",
+          "required": true,
+          "allowedValues": [
+            "toptier",
+            "subtier"
+          ]
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-live-agency-scoped-dod-contract-transactions"
+        ],
+        "observed": {
+          "acceptedValues": [
+            "toptier"
+          ]
+        }
+      },
+      {
+        "path": "filters.agencies[].name",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Agency name in an AgencyObject.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-live-agency-scoped-dod-contract-transactions"
+        ],
+        "observed": {
+          "examples": [
+            "Department of Defense"
+          ]
+        }
+      },
+      {
+        "path": "filters.agencies[].toptier_name",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Optional toptier disambiguator for subtier agency names.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.recipient_search_text",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Recipient text searched across recipient name, UEI, and DUNS.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.recipient_scope",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Domestic or foreign recipient-location scope filter.",
+        "documented": {
+          "type": "enum[string]",
+          "allowedValues": [
+            "domestic",
+            "foreign"
+          ]
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[LocationObject]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Structured recipient-location filters using the shared StandardLocationObject shape.",
+        "documented": {
+          "type": "array[LocationObject]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations[].country",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": true,
+        "status": "inferred",
+        "description": "Country component in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations[].state",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional state component in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations[].zip",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional ZIP component in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations[].district_original",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional original congressional district in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [
+          "Source validator enforces 2-character district strings when provided."
+        ],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations[].district_current",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional current congressional district in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [
+          "Source validator enforces 2-character district strings when provided."
+        ],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations[].county",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional county in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.recipient_locations[].city",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Optional city in the source validator StandardLocationObject shape.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.recipient_type_names",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Recipient-type category filters.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.recipient_id",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "inferred",
+        "description": "Undocumented source-accepted recipient identifier filter.",
+        "documented": {
+          "type": "string",
+          "required": false,
+          "notes": "Accepted by the shared source validator although omitted from the endpoint docs."
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.award_ids",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Award identifier filter. Docs say quoted values perform exact matches instead of fuzzier full-text matching.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [
+          "Wrap an award id in double quotes to request exact matching for ids with spaces or other delimiters."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.award_amounts",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[AwardAmounts]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Transaction population filter by amount range.",
+        "documented": {
+          "type": "array[AwardAmounts]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.award_amounts[].lower_bound",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "number",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Lower bound for an amount range.",
+        "documented": {
+          "type": "number"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.award_amounts[].upper_bound",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "number",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Upper bound for an amount range.",
+        "documented": {
+          "type": "number"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.program_numbers",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Assistance program number filters.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.naics_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "object|array[integer]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "NAICS include/exclude filter. Docs describe the object form; source also accepts a legacy flat array of integers.",
+        "documented": {
+          "type": "NAICSCodeObject"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.naics_codes.require",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string|integer]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "NAICS values to include.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.naics_codes.exclude",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string|integer]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "NAICS values to exclude.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.tas_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[TASCodeObject]|object",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Treasury Account Symbol include/exclude filters.",
+        "documented": {
+          "type": "array[TASCodeObject]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.psc_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "object|array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "PSC filters supporting either the structured object or a legacy array of codes.",
+        "documented": {
+          "type": "enum[PSCCodeObject, array[string]]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.contract_pricing_type_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Contract pricing type code filters.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.set_aside_type_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Set-aside type code filters.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.extent_competed_type_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Extent competed code filters.",
+        "documented": {
+          "type": "array[string]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[TreasuryAccountComponentsObject]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Treasury account component filters.",
+        "documented": {
+          "type": "array[TreasuryAccountComponentsObject]"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components[].ata",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Allocation Transfer Agency identifier component.",
+        "documented": {
+          "type": "string, nullable"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components[].aid",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": true,
+        "status": "documented_unverified",
+        "description": "Agency Identifier component.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components[].bpoa",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Beginning period of availability component.",
+        "documented": {
+          "type": "string, nullable"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components[].epoa",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Ending period of availability component.",
+        "documented": {
+          "type": "string, nullable"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components[].a",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Availability type code component.",
+        "documented": {
+          "type": "string, nullable"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components[].main",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": true,
+        "status": "documented_unverified",
+        "description": "Main account code component.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.treasury_account_components[].sub",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Sub-account code component.",
+        "documented": {
+          "type": "string, nullable"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.program_activity",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[number]",
+        "required": false,
+        "status": "contradicted",
+        "description": "The endpoint docs list this legacy numeric program_activity filter, but the transaction-search request validator assembled in source does not include it.",
+        "documented": {
+          "type": "array[number]",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.program_activities",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[ProgramActivityObject]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Structured program activity filter objects.",
+        "documented": {
+          "type": "array[ProgramActivityObject]"
+        },
+        "constraints": [
+          "If program_activities is used, each object must include at least one of name or code."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.program_activities[].name",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Program activity name.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [
+          "At least one of name or code is required within each ProgramActivityObject."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.program_activities[].code",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "integer",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Program activity code.",
+        "documented": {
+          "type": "number",
+          "required": false
+        },
+        "constraints": [
+          "At least one of name or code is required within each ProgramActivityObject."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "path": "filters.def_codes",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Disaster Emergency Fund Code filters with enactment-date eligibility rules documented for COVID-19 and IIJA codes.",
+        "documented": {
+          "type": "array[DEFC]"
+        },
+        "constraints": [
+          "Docs say COVID-19 and IIJA DEFC filters only return transactions whose associated File C public law enactment date precedes the transaction action_date."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "filters.award_unique_id",
+        "direction": "request",
+        "location": "body.filters",
+        "type": "string",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Award unique id filter.",
+        "documented": {
+          "type": "string"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      }
+    ],
+    "templates": [
+      {
+        "name": "bounded_contract_transaction_screen",
+        "description": "Screen a small page of contract transactions in a bounded time period, sorted by transaction amount.",
+        "request": {
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_transaction/",
+          "query": {},
+          "body": {
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2024-01-01",
+                  "end_date": "2024-12-31"
+                }
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ]
+            },
+            "fields": [
+              "Award ID",
+              "Mod",
+              "Recipient Name",
+              "Action Date",
+              "Transaction Amount",
+              "Awarding Agency",
+              "Awarding Sub Agency",
+              "Award Type"
+            ],
+            "page": 1,
+            "limit": 5,
+            "sort": "Transaction Amount",
+            "order": "desc"
+          }
+        },
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "name": "location_enriched_transaction_preview",
+        "description": "Preview transaction rows with a derived nested Recipient Location object and chronological ordering.",
+        "request": {
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_transaction/",
+          "query": {},
+          "body": {
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2024-01-01",
+                  "end_date": "2024-12-31"
+                }
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ]
+            },
+            "fields": [
+              "Award ID",
+              "Action Date",
+              "Transaction Amount",
+              "Recipient Location"
+            ],
+            "page": 1,
+            "limit": 5,
+            "sort": "Action Date",
+            "order": "asc"
+          }
+        },
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-doc-filter-surface",
+          "ev-source-implementation",
+          "ev-source-validation-rules",
+          "ev-live-derived-recipient-location-preview"
+        ]
+      },
+      {
+        "name": "agency_bounded_contract_transaction_screen",
+        "description": "Screen a small page of the largest contract transactions for one awarding agency in a bounded time period.",
+        "request": {
+          "method": "POST",
+          "path": "/api/v2/search/spending_by_transaction/",
+          "query": {},
+          "body": {
+            "filters": {
+              "time_period": [
+                {
+                  "start_date": "2024-01-01",
+                  "end_date": "2024-12-31"
+                }
+              ],
+              "award_type_codes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ],
+              "agencies": [
+                {
+                  "name": "Department of Defense",
+                  "tier": "toptier",
+                  "type": "awarding"
+                }
+              ]
+            },
+            "fields": [
+              "Award ID",
+              "Mod",
+              "Recipient Name",
+              "Action Date",
+              "Transaction Amount",
+              "Awarding Agency",
+              "Awarding Sub Agency",
+              "Award Type"
+            ],
+            "page": 1,
+            "limit": 5,
+            "sort": "Transaction Amount",
+            "order": "desc"
+          }
+        },
+        "evidenceRefs": [
+          "ev-live-agency-scoped-dod-contract-transactions",
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      }
+    ],
+    "validationWarnings": [
+      {
+        "id": "warn_unbounded_transaction_search",
+        "path": "filters.time_period",
+        "message": "A request without filters.time_period is valid but can scan an extremely broad transaction population. Add a bounded time period for dashboarding, debugging, or first-pass analysis.",
+        "when": {
+          "missingAll": [
+            "filters.time_period"
+          ],
+          "missingAny": [],
+          "presentAll": [],
+          "presentAny": [],
+          "valueIn": {}
+        },
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-derived-coverage"
+        ]
+      },
+      {
+        "id": "warn_display_award_id_not_canonical_handoff",
+        "path": "fields",
+        "message": "Display Award ID is useful for presentation, but downstream award-detail drilldown should reuse generated_internal_id from the response rather than the human-facing Award ID string.",
+        "when": {
+          "missingAll": [],
+          "missingAny": [],
+          "presentAll": [
+            "fields"
+          ],
+          "presentAny": [],
+          "valueIn": {
+            "fields": [
+              "Award ID"
+            ]
+          }
+        },
+        "evidenceRefs": [
+          "ev-source-implementation",
+          "ev-derived-coverage"
+        ]
+      }
+    ]
+  },
+  "response": {
+    "contentType": "application/json",
+    "shapeSummary": "JSON object with limit, page_metadata, results, and usually messages. Each results[] row is projection-driven: requested field labels become response keys, derived labels such as Recipient Location or NAICS expand into nested objects, and source code always appends internal_id plus generated_internal_id even when they were not requested.",
+    "fields": [
+      {
+        "path": "limit",
+        "direction": "response",
+        "location": "response",
+        "type": "integer",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Echo of the page size used for the response.",
+        "documented": {
+          "type": "number",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results",
+        "direction": "response",
+        "location": "response",
+        "type": "array[object]",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Array of matching transaction rows.",
+        "documented": {
+          "type": "array[TransactionResponse]",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[]",
+        "direction": "response",
+        "location": "response.results",
+        "type": "object",
+        "required": true,
+        "status": "contradicted",
+        "description": "Actual row objects are not a fixed default schema. Source code builds each row from the requested fields list, derives nested objects for several labels, and then appends internal_id and generated_internal_id.",
+        "documented": {
+          "type": "TransactionResponse",
+          "required": true,
+          "notes": "Docs present TransactionResponse as a fixed-type response object with a default field list."
+        },
+        "constraints": [
+          "Requested fields control most visible keys on each row.",
+          "internal_id and generated_internal_id are always added by source code."
+        ],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "path": "results[].generated_internal_id",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Generated unique award identifier for the parent award behind the transaction row. This is the safest drilldown handoff key for award-detail and award-funding follow-ups.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-source-implementation",
+          "ev-derived-coverage",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].internal_id",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | integer | null",
+        "required": true,
+        "status": "documented_and_observed",
+        "description": "Internal numeric award id for the parent award behind the transaction row.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-source-implementation",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].Award ID",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Human-facing award identifier label when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].Mod",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Transaction modification number when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].Action Date",
+        "direction": "response",
+        "location": "response.results",
+        "type": "date | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Transaction action date when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions",
+          "ev-live-derived-recipient-location-preview"
+        ]
+      },
+      {
+        "path": "results[].Action Type",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Action type label when requested.",
+        "documented": {
+          "type": "string"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "results[].Transaction Amount",
+        "direction": "response",
+        "location": "response.results",
+        "type": "number|string|null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Transaction-level federal action obligation amount for the returned row when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [
+          "Source maps this label to federal_action_obligation in the transaction search index."
+        ],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-source-lookup",
+          "ev-derived-coverage",
+          "ev-live-baseline-bounded-contract-transactions",
+          "ev-live-derived-recipient-location-preview"
+        ]
+      },
+      {
+        "path": "results[].Recipient Name",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Recipient legal or display name when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].Recipient UEI",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Recipient UEI when requested.",
+        "documented": {
+          "type": "string"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "results[].recipient_id",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "inferred",
+        "description": "Normalized recipient identifier derived from recipient_agg_key when requested.",
+        "documented": {
+          "type": "string",
+          "required": false
+        },
+        "constraints": [
+          "Source reformats the raw recipient_agg_key suffix into an id like <uuid>-C or <uuid>-P."
+        ],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "path": "results[].Awarding Agency",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Awarding toptier agency name when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].Awarding Sub Agency",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Awarding subtier agency name when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].Funding Agency",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Funding toptier agency name when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "results[].Funding Sub Agency",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Funding subtier agency name when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "results[].Award Type",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Transaction award type description when requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface",
+          "ev-live-baseline-bounded-contract-transactions"
+        ]
+      },
+      {
+        "path": "results[].Loan Value",
+        "direction": "response",
+        "location": "response.results",
+        "type": "number|string|null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Loan-value measure when the returned transaction belongs to a relevant loan family and the field was requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "results[].Subsidy Cost",
+        "direction": "response",
+        "location": "response.results",
+        "type": "number|string|null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Subsidy-cost measure when the returned transaction belongs to a relevant loan family and the field was requested.",
+        "documented": {
+          "type": "string",
+          "required": true
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-doc-filter-surface"
+        ]
+      },
+      {
+        "path": "results[].Transaction Description",
+        "direction": "response",
+        "location": "response.results",
+        "type": "string | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Transaction description when requested.",
+        "documented": {
+          "type": "string"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-lookup"
+        ]
+      },
+      {
+        "path": "results[].def_codes",
+        "direction": "response",
+        "location": "response.results",
+        "type": "array[string] | null",
+        "required": false,
+        "status": "documented_unverified",
+        "description": "Associated DEFC codes when requested.",
+        "documented": {
+          "type": "string"
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-lookup"
+        ]
+      },
+      {
+        "path": "results[].Recipient Location",
+        "direction": "response",
+        "location": "response.results",
+        "type": "object",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Derived nested recipient location object assembled by source code when the field label Recipient Location is requested.",
+        "documented": {
+          "type": "object",
+          "required": false,
+          "notes": "FieldNameObject includes Recipient Location, but the endpoint docs do not spell out the nested object shape."
+        },
+        "constraints": [
+          "Live preview confirmed a nested object with country/state/city/county/address/congressional/zip and foreign postal/province keys."
+        ],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation",
+          "ev-live-derived-recipient-location-preview"
+        ]
+      },
+      {
+        "path": "results[].Primary Place of Performance",
+        "direction": "response",
+        "location": "response.results",
+        "type": "object",
+        "required": false,
+        "status": "inferred",
+        "description": "Derived nested place-of-performance object assembled by source code when that field label is requested.",
+        "documented": {
+          "type": "object",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "path": "results[].NAICS",
+        "direction": "response",
+        "location": "response.results",
+        "type": "object",
+        "required": false,
+        "status": "inferred",
+        "description": "Derived nested NAICS object with code and description when requested.",
+        "documented": {
+          "type": "object",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "path": "results[].PSC",
+        "direction": "response",
+        "location": "response.results",
+        "type": "object",
+        "required": false,
+        "status": "inferred",
+        "description": "Derived nested PSC object with code and description when requested.",
+        "documented": {
+          "type": "object",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "path": "results[].Assistance Listing",
+        "direction": "response",
+        "location": "response.results",
+        "type": "object",
+        "required": false,
+        "status": "inferred",
+        "description": "Derived nested assistance-listing object with cfda_number and cfda_title when requested.",
+        "documented": {
+          "type": "object",
+          "required": false
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "path": "messages",
+        "direction": "response",
+        "location": "response",
+        "type": "array[string]",
+        "required": false,
+        "status": "documented_and_observed",
+        "description": "Generic informational messages on the normal search path. Live probing showed the standard earliest-search-date warning on normal requests, but the no intersection short-circuit response omitted messages entirely.",
+        "documented": {
+          "type": "array[string]",
+          "required": false,
+          "notes": "Not described in the endpoint docs but returned by source code on the main execution path."
+        },
+        "constraints": [],
+        "evidenceRefs": [
+          "ev-source-implementation",
+          "ev-source-helper",
+          "ev-live-baseline-bounded-contract-transactions",
+          "ev-live-special-no-intersection-short-circuit"
+        ]
+      }
+    ],
+    "pagination": {
+      "strategy": "page-based pagination using page and limit, with a hard source-side maximum record window of 50000 based on (page-1)*limit.",
+      "fields": [
+        {
+          "path": "page_metadata.page",
+          "direction": "response",
+          "location": "response.page_metadata",
+          "type": "integer",
+          "required": true,
+          "status": "documented_and_observed",
+          "description": "Current page number.",
+          "documented": {
+            "type": "number",
+            "required": true
+          },
+          "constraints": [],
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-live-baseline-bounded-contract-transactions"
+          ]
+        },
+        {
+          "path": "page_metadata.hasNext",
+          "direction": "response",
+          "location": "response.page_metadata",
+          "type": "boolean",
+          "required": true,
+          "status": "documented_and_observed",
+          "description": "Whether another page exists.",
+          "documented": {
+            "type": "boolean",
+            "required": true
+          },
+          "constraints": [],
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-source-helper",
+            "ev-live-baseline-bounded-contract-transactions"
+          ]
+        },
+        {
+          "path": "page_metadata.hasPrevious",
+          "direction": "response",
+          "location": "response.page_metadata",
+          "type": "boolean",
+          "required": true,
+          "status": "documented_and_observed",
+          "description": "Whether a previous page exists.",
+          "documented": {
+            "type": "boolean",
+            "required": true
+          },
+          "constraints": [],
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-source-helper",
+            "ev-live-baseline-bounded-contract-transactions"
+          ]
+        },
+        {
+          "path": "page_metadata.next",
+          "direction": "response",
+          "location": "response.page_metadata",
+          "type": "integer | null",
+          "required": true,
+          "status": "documented_and_observed",
+          "description": "Next page number if available.",
+          "documented": {
+            "type": "number",
+            "required": true
+          },
+          "constraints": [],
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-source-helper",
+            "ev-live-baseline-bounded-contract-transactions"
+          ]
+        },
+        {
+          "path": "page_metadata.previous",
+          "direction": "response",
+          "location": "response.page_metadata",
+          "type": "integer | null",
+          "required": true,
+          "status": "documented_and_observed",
+          "description": "Previous page number if available.",
+          "documented": {
+            "type": "number",
+            "required": true
+          },
+          "constraints": [],
+          "evidenceRefs": [
+            "ev-doc-endpoint-surface",
+            "ev-source-helper",
+            "ev-live-baseline-bounded-contract-transactions"
+          ]
+        }
+      ],
+      "notes": "The implementation fetches limit+1 rows from Elasticsearch and then derives hasNext from the extra row.",
+      "evidenceRefs": [
+        "ev-doc-endpoint-surface",
+        "ev-source-implementation",
+        "ev-source-helper",
+        "ev-source-validation-rules"
+      ]
+    }
+  },
+  "behavior": {
+    "contradictions": [
+      {
+        "statement": "The endpoint docs list filters.program_activity, but the source request validator assembled for this view does not include that field while separately adding filters.program_activities.",
+        "impact": "Do not assume the documented legacy program_activity array is still accepted; prefer filters.program_activities and treat program_activity as a documentation contradiction until live-probed.",
+        "status": "contradicted",
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "statement": "Docs describe results as fixed TransactionResponse objects, but source code makes row shape projection-driven and always appends helper ids even when they were not requested.",
+        "impact": "Callers must treat results[] as dynamic row objects keyed by the fields request, not as a fixed schema with every documented column present.",
+        "status": "contradicted",
+        "evidenceRefs": [
+          "ev-doc-response-surface",
+          "ev-source-implementation"
+        ]
+      }
+    ],
+    "quirks": [
+      {
+        "statement": "Source code always adds internal_id and generated_internal_id to every row after projecting the requested fields.",
+        "impact": "These helper ids are available for drilldown even when not listed in fields.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "statement": "Sort keys for derived labels such as Recipient Location, Primary Place of Performance, NAICS, PSC, and Assistance Listing expand into multiple Elasticsearch sort fields rather than a single raw column.",
+        "impact": "Alphabetic ordering on those derived labels is source-defined and based on multiple component fields.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-source-implementation"
+        ]
+      },
+      {
+        "statement": "Live probing confirmed that award_type_codes containing the source sentinel no intersection short-circuits to a 200 response with empty results and page metadata.",
+        "impact": "Clients may receive an intentionally empty response without normal search execution when upstream UI logic has already concluded that filter sets do not intersect.",
+        "status": "documented_and_observed",
+        "evidenceRefs": [
+          "ev-source-implementation",
+          "ev-source-validation-rules",
+          "ev-live-special-no-intersection-short-circuit"
+        ]
+      },
+      {
+        "statement": "Live negative probing confirmed the endpoint rejects sort values that are not also requested in fields.",
+        "impact": "Request builders must keep sort and fields aligned or the API returns HTTP 400.",
+        "status": "observed",
+        "evidenceRefs": [
+          "ev-live-invalid-sort-not-in-fields"
+        ]
+      }
+    ],
+    "gaps": [
+      {
+        "statement": "Endpoint docs do not mention the source-accepted filters.recipient_id field.",
+        "impact": "Request construction from docs alone can miss a filter the implementation appears to support.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "statement": "Endpoint docs describe time_period using transaction action_date only, but the shared validator used by this view also exposes time_period[].date_type values action_date, last_modified_date, date_signed, and new_awards_only.",
+        "impact": "The live support and semantics of these alternative date_type values remain unverified for this endpoint and should be tested before production use.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-validation-rules"
+        ]
+      },
+      {
+        "statement": "The endpoint docs include field labels such as Recipient Location, NAICS, PSC, and Assistance Listing but do not document the nested object shape returned for those derived fields.",
+        "impact": "Callers need source inspection or live probes to know the nested keys they will receive.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-doc-filter-surface",
+          "ev-source-implementation"
+        ]
+      }
+    ],
+    "risks": [
+      {
+        "statement": "Transaction Amount is a transaction-level obligation measure, not a lifetime award total and not a grouped aggregate.",
+        "impact": "Do not compare it directly to award-level Award Amount metrics or interpret one row as the whole award.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-source-lookup",
+          "ev-derived-coverage"
+        ]
+      },
+      {
+        "statement": "The same Award ID or generated_internal_id can appear on multiple rows because the endpoint grain is transaction-level.",
+        "impact": "Counting rows is not the same as counting awards, and summing across rows can double-count awards when the analysis question is award-centric.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-source-implementation",
+          "ev-derived-coverage"
+        ]
+      },
+      {
+        "statement": "Human-facing Award ID values are not the safest cross-endpoint join key for award drilldown.",
+        "impact": "Use generated_internal_id for award-detail handoff instead of assuming Award ID will resolve uniquely across endpoint families.",
+        "status": "inferred",
+        "evidenceRefs": [
+          "ev-source-implementation",
+          "ev-derived-coverage"
+        ]
+      }
+    ]
+  },
+  "semanticAffordances": {
+    "handoffKeys": [
+      {
+        "name": "canonical_award_lookup_id",
+        "sourcePath": "results[].generated_internal_id",
+        "description": "Reuse the generated_internal_id on a transaction row as the award drilldown key for the parent award. This is the durable business identifier to carry into award detail or award funding follow-up calls.",
+        "targetEndpoints": [
+          {
+            "slug": "v2__awards__award_id",
+            "requestPath": "pathParams.award_id",
+            "description": "Pass generated_internal_id unchanged as pathParams.award_id for award profile drilldown."
+          },
+          {
+            "slug": "v2__awards__funding",
+            "requestPath": "body.award_id",
+            "description": "Pass generated_internal_id unchanged as body.award_id for award funding follow-up."
+          }
+        ],
+        "evidenceRefs": [
+          "ev-source-implementation",
+          "ev-derived-coverage",
+          "ev-doc-award-drilldown-targets",
+          "ev-source-lookup"
+        ]
+      }
+    ],
+    "measureInterpretations": [
+      {
+        "name": "Transaction Amount",
+        "path": "results[].Transaction Amount",
+        "meaning": "Transaction Amount is the federal_action_obligation recorded on the individual transaction row returned by this search.",
+        "safeUse": "Safe for ranking or summing returned transaction rows when the question is explicitly about transaction-level obligations within the filtered result set.",
+        "unsafeUse": "Unsafe as a proxy for lifetime award size, current-period outlays, or award-level totals because multiple rows can belong to the same award and the label maps to a transaction obligation field.",
+        "dashboardWarning": "If a dashboard asks for top awards, use an award-level endpoint or group transactions first rather than charting raw transaction rows as awards.",
+        "evidenceRefs": [
+          "ev-source-lookup",
+          "ev-derived-coverage"
+        ]
+      }
+    ],
+    "recommendedFollowups": [
+      {
+        "trigger": "A chosen transaction row needs parent-award context, summary attributes, or downstream funding history.",
+        "nextSlug": "v2__awards__award_id",
+        "reason": "The transaction response includes generated_internal_id for the parent award, which is the safest drilldown handoff value to inspect the award behind the transaction.",
+        "requestMapping": {
+          "pathParams.award_id": "results[].generated_internal_id"
+        },
+        "evidenceRefs": [
+          "ev-source-implementation",
+          "ev-derived-coverage",
+          "ev-doc-award-drilldown-targets",
+          "ev-source-lookup"
+        ]
+      },
+      {
+        "trigger": "The current page reports page_metadata.hasNext=true and the analysis still needs more transaction rows in the same sorted population.",
+        "nextSlug": "v2__search__spending_by_transaction",
+        "reason": "This endpoint uses regular page/limit pagination and returns page_metadata.next for bounded continuation.",
+        "requestMapping": {
+          "page": "page_metadata.next"
+        },
+        "evidenceRefs": [
+          "ev-doc-endpoint-surface",
+          "ev-source-helper"
+        ]
+      },
+      {
+        "trigger": "The analysis needs federal account funding rows or fiscal reporting slices for the parent award behind a transaction hit.",
+        "nextSlug": "v2__awards__funding",
+        "reason": "Award funding accepts award_id and documents generated natural award ids as the preferred input, which aligns with the generated_internal_id helper returned by this transaction search.",
+        "requestMapping": {
+          "body.award_id": "results[].generated_internal_id"
+        },
+        "evidenceRefs": [
+          "ev-doc-award-drilldown-targets",
+          "ev-source-lookup",
+          "ev-source-implementation"
+        ]
+      }
+    ]
+  }
+}
