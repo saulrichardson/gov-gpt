@@ -109,6 +109,37 @@ It also registers semantic resources under `usaspending://semantic/...`.
 The runtime must not hard-code endpoint-specific semantics. Endpoint-specific
 meaning belongs in the bundle.
 
+`callEndpoint` returns a semantic execution receipt in addition to the raw live
+response. The receipt is generated only from agent-authored bundle declarations:
+
+- handoff values extracted from declared `semanticAffordances.handoffKeys`
+- measure warnings from declared `semanticAffordances.measureInterpretations`
+- recommended follow-ups from declared `semanticAffordances.recommendedFollowups`
+
+This lets the MCP make important semantic handles visible without adding
+endpoint-specific runtime branches.
+
+## Exploratory Learning Loop
+
+Story agents are not only acceptance tests. They are exploratory MCP users that
+try to answer real analysis questions through the promoted MCP and report
+generalizable semantic learnings.
+
+The loop is:
+
+```mermaid
+flowchart LR
+    A["Semantic bundle"] --> B["Semantic MCP runtime"]
+    B --> C["Exploratory story agent"]
+    C --> D["Generalizable learnings<br/>and runtime affordance requests"]
+    D --> E["Repair or synthesis agent"]
+    E --> A
+```
+
+Story reports distinguish one-off narrative facts from reusable MCP learnings,
+such as handoff fragility, measure interpretation, dashboard safety, response
+shape, request construction, workflow sequencing, and evidence gaps.
+
 ## Verification
 
 Use the narrowest checks for small changes. For repo-level architecture changes:

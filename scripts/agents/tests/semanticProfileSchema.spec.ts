@@ -203,4 +203,56 @@ describe("semantic profile v2 schemas", () => {
 
     expect(evidence.source.kind).toBe("mcp_story_gate");
   });
+
+  it("accepts agent-authored semantic affordances for handoffs and measure warnings", () => {
+    const endpoint = EndpointArtifactSchema.parse({
+      schemaVersion: SEMANTIC_PROFILE_SCHEMA_VERSION,
+      slug: "v2__handoff_example",
+      generatedAt: createdAt,
+      endpoint: { method: "POST", host: "https://api.usaspending.gov", path: "/api/v2/handoff_example/" },
+      availability: {
+        status: "available",
+        confidence: "high",
+        lastVerified: "2026-05-09",
+        summary: "Available in fixture.",
+        evidenceRefs: [evidenceId],
+      },
+      provenance: { sources: [source] },
+      request: { parameters: [], templates: [] },
+      response: { shapeSummary: "Rows.", fields: [] },
+      behavior: { contradictions: [], quirks: [], gaps: [], risks: [] },
+      semanticAffordances: {
+        handoffKeys: [
+          {
+            name: "canonical_record_id",
+            sourcePath: "results[].raw_id",
+            description: "Use the raw id as the cross-endpoint handoff key.",
+            targetEndpoints: [{ slug: "v2__detail", requestPath: "pathParams.record_id" }],
+            evidenceRefs: [evidenceId],
+          },
+        ],
+        measureInterpretations: [
+          {
+            name: "Award Amount",
+            path: "results[].Award Amount",
+            meaning: "Lifetime award size, not current-period spend.",
+            dashboardWarning: "Do not chart as current-period spend without follow-up.",
+            evidenceRefs: [evidenceId],
+          },
+        ],
+        recommendedFollowups: [
+          {
+            trigger: "A row looks legacy but appears in a current-period screen.",
+            nextSlug: "v2__detail",
+            reason: "Confirm row vintage before making current-period claims.",
+            requestMapping: { "pathParams.record_id": "canonical_record_id" },
+            evidenceRefs: [evidenceId],
+          },
+        ],
+      },
+    });
+
+    expect(endpoint.semanticAffordances.handoffKeys[0].name).toBe("canonical_record_id");
+    expect(endpoint.semanticAffordances.measureInterpretations[0].dashboardWarning).toContain("current-period");
+  });
 });

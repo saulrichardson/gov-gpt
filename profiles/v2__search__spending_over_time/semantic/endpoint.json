@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__search__spending_over_time",
-  "generatedAt": "2026-05-13T00:00:00.000Z",
+  "generatedAt": "2026-05-20T00:00:00.000Z",
   "endpoint": {
     "method": "POST",
     "host": "https://api.usaspending.gov",
@@ -737,6 +737,52 @@
         "statement": "When pairing this trend with a state/county/district geography map, omitting the matching location-scope filter can produce a false same-scope comparison because the geography endpoint documents domestic defaults for those map layers.",
         "impact": "Set filters.place_of_performance_scope or filters.recipient_scope explicitly so the trend and map use the same domestic-or-foreign scope.",
         "status": "documented_and_observed",
+        "evidenceRefs": [
+          "sot-doc-scope-filters",
+          "sot-review-rt1-location-scope"
+        ]
+      }
+    ]
+  },
+  "semanticAffordances": {
+    "handoffKeys": [],
+    "measureInterpretations": [
+      {
+        "name": "aggregated_amount",
+        "path": "results[].aggregated_amount",
+        "meaning": "Each aggregated_amount value is the total for one time bucket over the filtered population and selected spending_level.",
+        "safeUse": "Use these values as a trend for the exact request population. When comparing to geography outputs, only treat them as same-scope after reusing the same filters and setting the matching location-scope filter explicitly.",
+        "unsafeUse": "Do not assume an omitted trend location scope matches a domestic geography map, and do not compare place-of-performance trends to recipient-location geography without an intentional scope change.",
+        "dashboardWarning": "For same-scope dashboard comparisons, set filters.place_of_performance_scope when pairing with scope=place_of_performance geography or set filters.recipient_scope when pairing with scope=recipient_location geography.",
+        "evidenceRefs": [
+          "sot-probe-baseline-fy",
+          "sot-doc-scope-filters",
+          "sot-review-rt1-location-scope"
+        ]
+      }
+    ],
+    "recommendedFollowups": [
+      {
+        "trigger": "A spike, dip, or unusual period needs award-level drivers.",
+        "nextSlug": "v2__search__spending_by_award",
+        "reason": "Reuse the same filters to inspect award-level rows behind the trend. Preserve any explicit place_of_performance_scope or recipient_scope so the award screen stays on the same analytical population.",
+        "requestMapping": {
+          "body.filters": "current_request.filters"
+        },
+        "evidenceRefs": [
+          "sot-doc-contract",
+          "sot-retired-profile",
+          "sot-review-rt1-location-scope"
+        ]
+      },
+      {
+        "trigger": "The trend needs a same-scope geography comparison or dashboard panel.",
+        "nextSlug": "v2__search__spending_by_geography",
+        "reason": "Reuse the same core filters and align geography scope explicitly. Pair filters.place_of_performance_scope with scope=place_of_performance and filters.recipient_scope with scope=recipient_location; do not rely on geography defaults for state, county, or district comparisons.",
+        "requestMapping": {
+          "body.filters": "current_request.filters",
+          "body.scope": "match current_request.filters.place_of_performance_scope or current_request.filters.recipient_scope"
+        },
         "evidenceRefs": [
           "sot-doc-scope-filters",
           "sot-review-rt1-location-scope"

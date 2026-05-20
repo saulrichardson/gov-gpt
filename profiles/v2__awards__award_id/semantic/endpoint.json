@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__awards__award_id",
-  "generatedAt": "2026-05-16T00:00:00Z",
+  "generatedAt": "2026-05-20T00:00:00Z",
   "endpoint": {
     "method": "GET",
     "host": "https://api.usaspending.gov",
@@ -1326,5 +1326,65 @@
         ]
       }
     ]
+  },
+  "semanticAffordances": {
+    "handoffKeys": [
+      {
+        "name": "canonical_award_lookup_id",
+        "sourcePath": "generated_unique_award_id",
+        "description": "Treat response.generated_unique_award_id as the canonical cross-endpoint award lookup echo. This is the same business key that award search can label generated_internal_id and that award workflows reuse under request field name award_id.",
+        "targetEndpoints": [
+          {
+            "slug": "v2__awards__award_id",
+            "requestPath": "pathParams.award_id",
+            "description": "If the original lookup used a numeric or legacy identifier, reuse the echoed generated value as the normalized award detail path award_id on later calls."
+          },
+          {
+            "slug": "v2__awards__funding",
+            "requestPath": "body.award_id",
+            "description": "Pass the same echoed generated value unchanged as the funding request body award_id."
+          }
+        ],
+        "evidenceRefs": [
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-doc-001",
+          "ev-live-001"
+        ]
+      }
+    ],
+    "measureInterpretations": [
+      {
+        "name": "Latest-transaction procurement metadata",
+        "path": "latest_transaction_contract_data",
+        "meaning": "Competition, solicitation, pricing, multi-year, interagency-authority, PSC, and NAICS fields under latest_transaction_contract_data describe the latest procurement transaction branch for contract and IDV awards, not a guaranteed lifetime-invariant summary for the entire award.",
+        "safeUse": "Read these procurement fields only after category confirms a contract or IDV award, and pair them with award totals, period_of_performance, and any needed funding drilldown before making broader award-history claims.",
+        "unsafeUse": "Do not generalize one latest_transaction_contract_data code into an unconditional statement about the whole award history, and do not expect this procurement branch on assistance awards.",
+        "dashboardWarning": "Procurement interpretation here is latest-transaction context, not a universal whole-award summary.",
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-src-001",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001"
+        ]
+      },
+      {
+        "name": "Offers received",
+        "path": "latest_transaction_contract_data.number_of_offers_received",
+        "meaning": "number_of_offers_received is a count-like competition signal on the latest procurement transaction. Low literal-looking values can be informative, but some observed values such as 999 appear coded or unresolved rather than literal counts.",
+        "safeUse": "Use the raw value alongside extent_competed_description and solicitation_procedures_description. Low values such as 1 can support thin-offer or sole-source narratives when the companion competition labels agree.",
+        "unsafeUse": "Do not narrate sentinel-like values such as 999 as literal numbers of offers unless another source decodes them.",
+        "dashboardWarning": "Treat edge values in number_of_offers_received as ambiguous competition metadata until corroborating labels or documentation explain them.",
+        "evidenceRefs": [
+          "ev-doc-003",
+          "ev-review-award-detail-procurement-humana-001",
+          "ev-review-award-detail-procurement-sandia-001",
+          "ev-review-award-detail-offers-count-gap-001",
+          "ev-review-award-detail-offers-count-ai-2020-001",
+          "ev-review-award-detail-offers-count-ai-2025-001"
+        ]
+      }
+    ],
+    "recommendedFollowups": []
   }
 }

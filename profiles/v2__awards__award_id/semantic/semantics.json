@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__awards__award_id",
-  "generatedAt": "2026-05-16T00:00:00Z",
+  "generatedAt": "2026-05-20T00:00:00Z",
   "endpointRef": "v2__awards__award_id",
-  "summary": "Live-verified award-detail endpoint that returns one award profile object for a known award identifier, combining shared award summary fields with category-specific procurement or financial-assistance sections. This bundle normalizes the cross-endpoint generated award hash as canonical_award_lookup_id, maps the exact response paths for dashboard-relevant procurement facts inside latest_transaction_contract_data, and now warns that offers-count edge values such as 999 may be coded or unresolved rather than literal counts.",
-  "businessPurpose": "Use this endpoint when you already know a specific USAspending award identifier and need the detail-page payload: recipient and agency context, award type and identifiers, award-level financial summary fields, and category-specific contract or assistance metadata. It is the primary detail step after capturing canonical_award_lookup_id from award search or before passing the same identifier into award funding, and it is also the place to read named procurement response facts such as latest_transaction_contract_data.extent_competed, number_of_offers_received, solicitation_procedures, type_of_contract_pricing, multi_year_contract, interagency_contracting_authority, product_or_service_code, and naics for one contract or IDV; interpret number_of_offers_received as count-like competition metadata, but do not over-read sentinel-like values such as 999 as literal offer counts without corroborating competition labels.",
+  "summary": "Live-verified award-detail endpoint that returns one award profile object for a known award identifier, combining shared award summary fields with category-specific procurement or financial-assistance sections. This bundle normalizes the cross-endpoint generated award hash as canonical_award_lookup_id, declares generated_unique_award_id as the structural handoff echo for downstream award workflows, maps the exact response paths for dashboard-relevant procurement facts inside latest_transaction_contract_data, and warns that offers-count edge values such as 999 may be coded or unresolved rather than literal counts.",
+  "businessPurpose": "Use this endpoint when you already know a specific USAspending award identifier and need the detail-page payload: recipient and agency context, award type and identifiers, award-level financial summary fields, and category-specific contract or assistance metadata. It is the primary detail step after capturing canonical_award_lookup_id from award search or before passing the same identifier into award funding, and it is also the place to read named procurement response facts such as latest_transaction_contract_data.extent_competed, number_of_offers_received, solicitation_procedures, type_of_contract_pricing, multi_year_contract, interagency_contracting_authority, product_or_service_code, and naics for one contract or IDV. Treat generated_unique_award_id as the endpoint's canonical handoff echo for downstream award workflows, interpret latest_transaction_contract_data as latest-transaction procurement context rather than a guaranteed whole-award lifetime summary, and read number_of_offers_received as count-like competition metadata without over-reading sentinel-like values such as 999 as literal offer counts unless corroborating evidence explains them.",
   "analyticalGrain": "Exactly one response object per requested award, enriched with nested recipient, agency, accounting-total, and category-specific detail sections rather than a list of transactions or funding rows.",
   "primaryEntities": [
     {
@@ -84,7 +84,7 @@
     },
     {
       "name": "Canonical award lookup id",
-      "description": "Normalize the cross-endpoint handoff identifier as canonical_award_lookup_id: if you start from v2__search__spending_by_award use generated_internal_id as this route's award_id, and treat response.generated_unique_award_id as the same business key for downstream funding or other award drilldowns.",
+      "description": "Normalize the cross-endpoint handoff identifier as canonical_award_lookup_id: if you start from v2__search__spending_by_award use generated_internal_id as this route's award_id, and treat response.generated_unique_award_id as the same business key and structural handoff echo for downstream funding or other award drilldowns.",
       "evidenceRefs": [
         "ev-review-canonical-award-lookup-id",
         "ev-review-cross-endpoint-award-id-handoff",
@@ -106,7 +106,7 @@
     },
     {
       "name": "Procurement competition signals",
-      "description": "For contract and IDV awards, use latest_transaction_contract_data.extent_competed, latest_transaction_contract_data.extent_competed_description, latest_transaction_contract_data.number_of_offers_received, latest_transaction_contract_data.solicitation_procedures, and latest_transaction_contract_data.solicitation_procedures_description to reason about competition posture without inspecting raw nested JSON. Treat number_of_offers_received as count-like rather than automatically literal: low values such as 1 can be informative, while values such as 999 should be treated as potentially coded or unresolved unless corroborated by companion competition labels.",
+      "description": "For contract and IDV awards, use latest_transaction_contract_data.extent_competed, latest_transaction_contract_data.extent_competed_description, latest_transaction_contract_data.number_of_offers_received, latest_transaction_contract_data.solicitation_procedures, and latest_transaction_contract_data.solicitation_procedures_description to reason about competition posture without inspecting raw nested JSON. Treat number_of_offers_received as count-like rather than automatically literal: low values such as 1 can be informative, while values such as 999 should be treated as potentially coded or unresolved unless corroborated by companion competition labels. Read these fields as latest-transaction procurement context rather than as a guaranteed lifetime-invariant summary for the whole award.",
       "evidenceRefs": [
         "ev-review-award-detail-procurement-facts-gap-001",
         "ev-doc-003",

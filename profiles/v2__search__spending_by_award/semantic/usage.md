@@ -275,6 +275,23 @@ Example mapping from reviewer-backed drilldown evidence:
 - raw search field `generated_internal_id`: `CONT_AWD_HT940216C0001_9700_-NONE-_-NONE-`
 - bundle alias `canonical_award_lookup_id`: `CONT_AWD_HT940216C0001_9700_-NONE-_-NONE-`
 
+## Machine-readable semantic affordances
+
+This bundle now declares the same downstream guidance structurally so a generic MCP runtime can surface it in `semanticReceipt` instead of forcing callers to re-read workflows and caveats:
+
+- `handoffValues` should expose `canonical_award_lookup_id` by reading `results[].generated_internal_id` from prime-award rows and carrying that same string unchanged into downstream award calls.
+- `measureWarnings` should flag `Award Amount` as lifetime award size on the matched award row, not as bounded-period spend, whenever a bounded `time_period` search returns award rows.
+- `recommendedFollowups` should point legacy-looking or current-period questions to `v2__awards__award_id` for award-vintage confirmation and to `v2__awards__funding` for current-period funding slices.
+
+Use the receipt generically, but keep the transport names straight:
+
+- raw search payload: `generated_internal_id`
+- semantic handoff name: `canonical_award_lookup_id`
+- award-detail request mapping: `path award_id <- canonical_award_lookup_id`
+- funding request mapping: `body.award_id <- canonical_award_lookup_id`
+
+The reviewer-backed Regents example is the main dashboard-safety case: if `DEAC3243AL00036` appears in a bounded FY2026 screen with 1978 start and 2006 end dates, the semantic receipt warning is telling you to keep `Award Amount` labeled as lifetime award size until follow-up confirms the current-period story.
+
 ## How to read the response
 
 The top-level response contains:

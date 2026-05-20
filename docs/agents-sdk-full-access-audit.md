@@ -276,3 +276,32 @@ The right shape is:
 3. Run story gates in full-access mode so the agent can diagnose MCP, bundle, and live-call issues without an approval loop.
 4. Repair via narrow tasks, still with full-access shell authority by default.
 5. Promote only after validation plus story acceptance.
+
+## Follow-Up: Semantic Affordance Receipts
+
+A later iteration kept the same full-access posture but changed the quality bar:
+story agents now report reusable semantic learnings and runtime affordance
+requests in addition to pass/fail story results.
+
+The important finding was that high-quality prose in `semantics.json` and
+`usage.md` is not enough for a downstream coding agent. If a caller needs a
+handoff key, a measure warning, or a next-call recommendation at execution time,
+the bundle should declare it in `endpoint.json.semanticAffordances`.
+
+The runtime support added in this iteration is generic:
+
+- extract declared handoff values from live responses
+- return declared measure warnings with observed response values when available
+- return declared recommended follow-ups
+
+The runtime does not infer endpoint-specific business meaning from arbitrary
+text. The agent declares the semantics; the MCP exposes them structurally.
+
+The follow-up stress test used a FY2026 contract outlier story across
+`v2__search__spending_by_award`, `v2__awards__award_id`, and
+`v2__awards__funding`. After scoped repairs, live MCP calls returned semantic
+receipts that carried `generated_internal_id` as `canonical_award_lookup_id`,
+warned that bounded-screen `Award Amount` is not current-period spend, and
+warned that funding rows have their own reporting-period scope. The story gate
+then passed with high confidence and produced a defensible legacy-contract
+analysis without adding endpoint-specific runtime branches.

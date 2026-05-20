@@ -474,3 +474,80 @@ minor story-derived repairs still need autonomy, but they should not become a
 second producer run. When a repair task already includes concrete
 `evidenceToUse`, the repairer should inspect the target artifacts, make the
 focused semantic change, validate, and return.
+
+## Semantic Affordance Learning Loop
+
+The next stress test pushed the same idea one level deeper. The story agent was
+asked to use the MCP as a black-box downstream coding agent and report not only
+whether it could answer a story question, but also what reusable semantic
+handles were missing from the MCP surface.
+
+That run found the right architectural gap: several bundles already explained
+handoffs, measure caveats, and follow-up patterns in prose, but `callEndpoint`
+did not return those semantics structurally. The fix was not endpoint-specific
+runtime logic. The durable contract is now `endpoint.json.semanticAffordances`,
+where the producer or repair agent declares:
+
+- handoff keys, such as `generated_internal_id` becoming
+  `canonical_award_lookup_id`
+- measure interpretations, such as Award Amount being lifetime award size on a
+  bounded activity screen
+- recommended follow-ups, such as award detail before narrating a legacy row as
+  current-period spending
+
+The MCP runtime then exposes those declarations generically in a semantic
+execution receipt.
+
+Four task-scoped repair agents updated the promoted bundles for:
+
+- `v2__search__spending_by_award`
+- `v2__awards__award_id`
+- `v2__awards__funding`
+- `v2__search__spending_over_time`
+
+A post-repair live receipt check showed the behavior the MCP needs at scale:
+
+```json
+[
+  {
+    "slug": "v2__search__spending_by_award",
+    "handoffCount": 1,
+    "measureWarningCount": 1,
+    "recommendedFollowupCount": 2
+  },
+  {
+    "slug": "v2__awards__award_id",
+    "handoffCount": 1,
+    "measureWarningCount": 2,
+    "recommendedFollowupCount": 0
+  },
+  {
+    "slug": "v2__awards__funding",
+    "handoffCount": 0,
+    "measureWarningCount": 4,
+    "recommendedFollowupCount": 3
+  },
+  {
+    "slug": "v2__search__spending_over_time",
+    "handoffCount": 0,
+    "measureWarningCount": 1,
+    "recommendedFollowupCount": 2
+  }
+]
+```
+
+The final story gate investigated a FY2026 contract outlier. The MCP found a
+legacy Regents of the University of California / Los Alamos row, carried the
+canonical award id into award detail and funding, and prevented the unsafe claim
+that the row's `Award Amount` was FY2026 spending. The first pass found one
+remaining funding-scope caveat; a final scoped repair made the funding bundle
+state structurally that award identity carries across endpoints but the upstream
+search time period does not automatically carry into funding rows.
+
+This is now the strongest version of the operating model:
+
+1. Agents author semantic knowledge into the bundle.
+2. Story agents discover reusable gaps by using the MCP as a product.
+3. Repair agents move those learnings into durable semantic affordances.
+4. Runtime code only applies declared affordances generically.
+5. Promotion happens after validation, live receipt checks, and story acceptance.

@@ -18,6 +18,9 @@ The codebase should therefore separate three responsibilities:
   request validation, self-story gates, smoke tests, and frontier story gates.
 - **Runtime execution**: deterministic MCP tools that expose semantic context and
   make scoped USAspending calls.
+- **Exploratory learning**: story agents use the MCP as written, discover
+  reusable semantic gaps, and feed those learnings back into bundle repair or
+  generic runtime affordance work.
 
 This distinction matters. Deterministic checks are useful when they enforce a
 general contract. They are misaligned when they encode endpoint-specific
@@ -37,6 +40,18 @@ usage.md
 Those files are the interface between agents, validators, the MCP runtime, and
 future orchestration frameworks. Any new workflow should improve how these
 artifacts are produced or tested, not bypass them.
+
+Semantic affordances inside `endpoint.json` are part of this artifact contract.
+When a handoff key, measure warning, or follow-up pattern matters for downstream
+analysis, the model should declare it in the bundle with evidence. Runtime code
+may expose those declarations structurally, but it must not invent endpoint
+semantics on its own.
+
+If exploratory story work discovers useful meaning in joins, caveats, workflows,
+or usage prose, the preferred repair is to promote that meaning into
+`semanticAffordances` before asking the runtime to expose it. Runtime affordance
+work should apply declared semantics, not mine arbitrary text for endpoint
+meaning.
 
 ## Autonomy Model
 
@@ -70,6 +85,9 @@ Validation should be strict, generic, and artifact-focused:
 - producer self-story gates must exercise the candidate bundle through MCP
   before finalization, with owned blocker/major gaps repaired inside the same
   agent run
+- story reports should separate the story answer from generalizable learnings
+  and runtime affordance requests, so the loop improves the MCP rather than only
+  grading one scenario
 
 Do not weaken validators to make one generated bundle pass. Fix the bundle or
 surface the blocker.

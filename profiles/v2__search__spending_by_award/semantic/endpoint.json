@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__search__spending_by_award",
-  "generatedAt": "2026-05-16T00:00:00Z",
+  "generatedAt": "2026-05-20T00:00:00Z",
   "endpoint": {
     "method": "POST",
     "host": "https://api.usaspending.gov",
@@ -2522,6 +2522,78 @@
           "ev-retired-profile-surface",
           "ev-review-rt1-canonical-handoff-field",
           "ev-review-search-canonical-handoff-alias-2026-05-13"
+        ]
+      }
+    ]
+  },
+  "semanticAffordances": {
+    "handoffKeys": [
+      {
+        "name": "canonical_award_lookup_id",
+        "sourcePath": "results[].generated_internal_id",
+        "description": "For prime-award search rows, treat the raw generated_internal_id value as the canonical downstream award lookup id. This bundle normalizes that same returned string as canonical_award_lookup_id for award detail and funding handoffs.",
+        "targetEndpoints": [
+          {
+            "slug": "v2__awards__award_id",
+            "requestPath": "pathParams.award_id",
+            "description": "Pass the same string unchanged as the award detail path award_id."
+          },
+          {
+            "slug": "v2__awards__funding",
+            "requestPath": "body.award_id",
+            "description": "Pass the same string unchanged as the funding request award_id."
+          }
+        ],
+        "evidenceRefs": [
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-review-rt1-canonical-handoff-field",
+          "ev-review-search-canonical-handoff-alias-2026-05-13",
+          "ev-review-search-canonical-handoff-alias-clarity-2026-05-16"
+        ]
+      }
+    ],
+    "measureInterpretations": [
+      {
+        "name": "Award Amount",
+        "path": "results[].Award Amount",
+        "meaning": "In bounded time_period searches, Award Amount remains the award-level size on each matched row rather than a current-period spend subtotal. The row can appear because of in-period activity or updates even when visible award dates are much older than the filtered window.",
+        "safeUse": "Use Award Amount to rank or screen large awards, then pair it with Start Date, End Date, and Last Modified Date while treating the row as an activity-screen match until follow-up confirms period meaning.",
+        "unsafeUse": "Do not publish Award Amount from this search row as fiscal-year spend or as the amount of the in-period transaction, modification, or funding event that caused inclusion.",
+        "dashboardWarning": "Bounded time_period screens can surface clearly legacy awards such as DEAC3243AL00036; keep Award Amount labeled as lifetime award size on the matched row until award detail or funding follow-up supports a current-period interpretation.",
+        "evidenceRefs": [
+          "ev-review-period-screen-award-meaning",
+          "ev-review-search-rich-outlier-templates-2026-05-14",
+          "ev-review-search-legacy-activity-screen-guidance-2026-05-15"
+        ]
+      }
+    ],
+    "recommendedFollowups": [
+      {
+        "trigger": "A bounded time_period search hit looks legacy, already ended, or otherwise risky to describe as a new current-period award.",
+        "nextSlug": "v2__awards__award_id",
+        "reason": "Confirm date_signed and period_of_performance before describing the matched row as a newly signed award or using it in a current-period narrative.",
+        "requestMapping": {
+          "pathParams.award_id": "canonical_award_lookup_id"
+        },
+        "evidenceRefs": [
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-review-period-screen-award-meaning",
+          "ev-review-search-legacy-activity-screen-guidance-2026-05-15"
+        ]
+      },
+      {
+        "trigger": "You need current-period spending meaning or funding evidence instead of reusing Award Amount from the search row.",
+        "nextSlug": "v2__awards__funding",
+        "reason": "Use award_id with the same canonical award lookup value to inspect downstream funding slices rather than interpreting Award Amount as a bounded-period spend subtotal.",
+        "requestMapping": {
+          "body.award_id": "canonical_award_lookup_id"
+        },
+        "evidenceRefs": [
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-review-period-screen-award-meaning",
+          "ev-review-search-rich-outlier-templates-2026-05-14",
+          "ev-review-search-legacy-activity-screen-guidance-2026-05-15"
         ]
       }
     ]

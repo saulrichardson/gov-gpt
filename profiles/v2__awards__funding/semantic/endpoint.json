@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__awards__funding",
-  "generatedAt": "2026-05-14T00:00:00Z",
+  "generatedAt": "2026-05-20T00:00:00Z",
   "endpoint": {
     "method": "POST",
     "host": "https://api.usaspending.gov",
@@ -81,6 +81,13 @@
         "title": "Reviewer report selecting rt-award-funding-slice-caveat-01 for v2__awards__funding",
         "locator": "Structured reviewer report selecting rt-award-funding-slice-caveat-01 for v2__awards__funding",
         "retrievedAt": "2026-05-14T00:00:00Z"
+      },
+      {
+        "id": "src-review-funding-search-scope-handoff",
+        "kind": "review_report",
+        "title": "Reviewer report selecting repair-funding-search-scope-handoff for v2__awards__funding",
+        "locator": "Structured reviewer report selecting repair-funding-search-scope-handoff for v2__awards__funding",
+        "retrievedAt": "2026-05-20T00:00:00Z"
       }
     ]
   },
@@ -94,7 +101,7 @@
         "type": "string | integer",
         "required": true,
         "status": "documented_and_observed",
-        "description": "Award identifier to inspect. Treat this request field as the endpoint's carrier for canonical_award_lookup_id: if you are chaining from v2__search__spending_by_award, pass generated_internal_id unchanged here; if you are chaining from v2__awards__award_id, pass generated_unique_award_id unchanged. Documentation prefers generated natural award ids but also allows deprecated numeric surrogate award ids for backward compatibility.",
+        "description": "Award identifier to inspect. Treat this request field as the endpoint's carrier for canonical_award_lookup_id: if you are chaining from v2__search__spending_by_award, pass generated_internal_id unchanged here; if you are chaining from v2__awards__award_id, pass generated_unique_award_id unchanged. Documentation prefers generated natural award ids but also allows deprecated numeric surrogate award ids for backward compatibility. This handoff preserves award identity only; it does not carry any originating search time_period into funding automatically.",
         "documented": {
           "type": "string",
           "required": true,
@@ -111,13 +118,15 @@
           "Required request body field.",
           "Treat award_id as the endpoint's request-field carrier for canonical_award_lookup_id.",
           "When chaining from search or award detail workflows, reuse canonical_award_lookup_id unchanged rather than substituting the display Award ID.",
-          "Generated award identifiers are preferred over numeric surrogate ids."
+          "Generated award identifiers are preferred over numeric surrogate ids.",
+          "Passing canonical_award_lookup_id preserves award identity only; interpret scope from this endpoint's reporting_fiscal_* fields because an upstream spending_by_award time_period is not inherited automatically."
         ],
         "evidenceRefs": [
           "ev-doc-001",
           "ev-live-001",
           "ev-review-canonical-award-lookup-id",
-          "ev-review-cross-endpoint-award-id-handoff"
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-review-funding-search-scope-handoff-001"
         ]
       },
       {
@@ -280,7 +289,7 @@
       },
       {
         "name": "safe-template-award-funding-page",
-        "description": "Primary safe template for one page of funding records using canonical_award_lookup_id under request body award_id plus explicit pagination and ordering so callers do not rely on contradicted omitted-sort behavior. This stabilizes order but does not change the accounting-slice grain, so first pages can still cluster on repeated same-period rows.",
+        "description": "Primary safe template for one page of funding records using canonical_award_lookup_id under request body award_id plus explicit pagination and ordering so callers do not rely on contradicted omitted-sort behavior. This stabilizes order but does not change the accounting-slice grain or inherit any originating spending_by_award time_period, so page 1 cannot be read as the current-period total from an upstream bounded search.",
         "request": {
           "method": "POST",
           "path": "/api/v2/awards/funding/",
@@ -299,14 +308,15 @@
           "ev-review-001",
           "ev-review-cross-endpoint-award-id-handoff",
           "ev-review-rt2-sort-safety-001",
-          "ev-review-funding-same-period-outlay-slices-001"
+          "ev-review-funding-same-period-outlay-slices-001",
+          "ev-review-funding-search-scope-handoff-001"
         ]
       }
     ]
   },
   "response": {
     "contentType": "application/json",
-    "shapeSummary": "JSON object containing a results array of award funding rows and a page_metadata object; a live probe returned four rows for one award and page_metadata showing no next page for that sample.",
+    "shapeSummary": "JSON object containing a results array of award funding rows and a page_metadata object; a live probe returned four rows for one award and page_metadata showing no next page for that sample. Rows are labeled by this endpoint's own reporting fiscal period fields, so a bounded time_period from an upstream spending_by_award screen does not carry into funding automatically.",
     "fields": [
       {
         "path": "results",
@@ -351,7 +361,7 @@
         "type": "number | null",
         "required": true,
         "status": "documented_and_observed",
-        "description": "Fiscal year associated with the reporting submission date for the funding row.",
+        "description": "Fiscal year associated with the reporting submission date for the funding row. Use this field to re-establish time scope on the funding endpoint itself; it does not automatically inherit any bounded search time_period used upstream.",
         "documented": {
           "type": "number",
           "required": true,
@@ -360,7 +370,8 @@
         "constraints": [],
         "evidenceRefs": [
           "ev-doc-002",
-          "ev-live-001"
+          "ev-live-001",
+          "ev-review-funding-search-scope-handoff-001"
         ]
       },
       {
@@ -1103,6 +1114,114 @@
         "status": "observed",
         "evidenceRefs": [
           "ev-review-funding-same-period-outlay-slices-001"
+        ]
+      },
+      {
+        "statement": "Cross-endpoint award handoff preserves award identity but not search-period scope. In the reviewer-backed Regents drilldown, a bounded v2__search__spending_by_award FY2026 screen (time_period 2025-10-01 through 2026-09-30) handed off canonical_award_lookup_id CONT_AWD_DEAC3243AL00036_8900_-NONE-_-NONE- into funding, yet funding page 1 returned reporting_fiscal_year 2025 rows and page_metadata.hasNext true.",
+        "impact": "Do not treat page membership or page-1 funding rows as the FY2026 amount that caused the upstream search hit. Re-establish scope from reporting_fiscal_year, reporting_fiscal_quarter, reporting_fiscal_month, and pagination before making current-period claims.",
+        "status": "observed",
+        "evidenceRefs": [
+          "ev-review-funding-search-scope-handoff-001"
+        ]
+      }
+    ]
+  },
+  "semanticAffordances": {
+    "handoffKeys": [],
+    "measureInterpretations": [
+      {
+        "name": "Funding row order",
+        "meaning": "Funding row order is request-dependent. The safe analytical pattern is to set both sort and order explicitly because the documented omitted-sort default is contradicted by live and reviewer-backed behavior.",
+        "safeUse": "When row order, ranking, pagination review, or page-to-page comparison matters, call the endpoint with an explicit documented sort value plus order and preserve that same ordering pattern as you page.",
+        "unsafeUse": "Do not infer a stable default ranking, chronology, or comparison basis from responses where sort was omitted.",
+        "dashboardWarning": "Before ranking or comparing funding rows, set explicit sort and order; omitted-sort output should be treated as unsafe for deterministic analysis.",
+        "evidenceRefs": [
+          "ev-doc-001",
+          "ev-live-001",
+          "ev-review-funding-reconciliation-001",
+          "ev-review-rt2-sort-safety-001"
+        ]
+      },
+      {
+        "name": "Transaction obligated amount",
+        "path": "results[].transaction_obligated_amount",
+        "meaning": "transaction_obligated_amount is the obligation value for one funding/accounting slice of the requested award, not a deduplicated award total. Valid rows can still have null transaction_obligated_amount when the page is carrying outlay-oriented accounting slices.",
+        "safeUse": "Use this value with reporting period, federal account, object class, program activity, and pagination context to describe slice-level funding activity for the same award.",
+        "unsafeUse": "Do not treat a first page of rows as a complete obligation ledger, a stable leaderboard, or the award's total funding.",
+        "dashboardWarning": "Safe explicit sorting can still return repeated same-period rows with null transaction_obligated_amount and hasNext true, so keep paging before turning page-1 rows into award-level summaries.",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001",
+          "ev-review-funding-reconciliation-001",
+          "ev-review-funding-same-period-outlay-slices-001"
+        ]
+      },
+      {
+        "name": "Gross outlay amount",
+        "path": "results[].gross_outlay_amount",
+        "meaning": "gross_outlay_amount is also reported at the funding-slice grain. It can be populated on valid rows even when transaction_obligated_amount is null, so it reflects accounting/outlay context rather than a single award-total measure.",
+        "safeUse": "Use gross outlay values to describe period-specific outlay slices within the returned reporting-period and classification grain.",
+        "unsafeUse": "Do not read a few outlay rows as the full current-period spend for the award or as a direct substitute for award-detail headline totals.",
+        "dashboardWarning": "Repeated same-period outlay slices on page 1 are accounting context, not a full-award subtotal; paginate further and reconcile carefully before aggregating.",
+        "evidenceRefs": [
+          "ev-doc-002",
+          "ev-live-001",
+          "ev-review-funding-reconciliation-001",
+          "ev-review-funding-same-period-outlay-slices-001"
+        ]
+      },
+      {
+        "name": "Reporting fiscal period scope",
+        "path": "results[].reporting_fiscal_year",
+        "meaning": "reporting_fiscal_year and its companion quarter/month fields define the funding row's own reporting-period scope. These rows can follow a bounded spending_by_award handoff for the same award without inheriting that search time_period automatically.",
+        "safeUse": "When you arrive from a bounded spending_by_award screen, carry canonical_award_lookup_id unchanged, then read reporting_fiscal_year, reporting_fiscal_quarter, reporting_fiscal_month, and page_metadata before saying anything about current-period funding.",
+        "unsafeUse": "Do not assume that because an award appeared in an FY2026 search screen, page-1 funding rows or funding page membership automatically represent FY2026 spend or the amount that caused inclusion in that search.",
+        "dashboardWarning": "Award identity carries across endpoints, but time scope does not: funding rows must be interpreted by their own reporting-period fields and page 1 is not a current-period total.",
+        "evidenceRefs": [
+          "ev-review-funding-search-scope-handoff-001"
+        ]
+      }
+    ],
+    "recommendedFollowups": [
+      {
+        "trigger": "You arrived from a bounded v2__search__spending_by_award screen and want to make a current-period funding claim for the same award.",
+        "nextSlug": "v2__awards__funding",
+        "reason": "Carry canonical_award_lookup_id unchanged, but re-establish scope using reporting_fiscal_year/reporting_fiscal_quarter/reporting_fiscal_month and paginate as needed; the originating search time_period is not inherited automatically.",
+        "requestMapping": {
+          "body.award_id": "canonical_award_lookup_id"
+        },
+        "evidenceRefs": [
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-review-funding-search-scope-handoff-001"
+        ]
+      },
+      {
+        "trigger": "page_metadata.hasNext is true, or the first page is dominated by repeated same-period funding slices.",
+        "nextSlug": "v2__awards__funding",
+        "reason": "Continue paging with the same award_id and the safe explicit sort/order pattern before claiming complete coverage, stable rankings, or a full-award summary.",
+        "requestMapping": {
+          "body.award_id": "canonical_award_lookup_id"
+        },
+        "evidenceRefs": [
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-doc-002",
+          "ev-review-rt2-sort-safety-001",
+          "ev-review-funding-same-period-outlay-slices-001"
+        ]
+      },
+      {
+        "trigger": "Funding rows look sparse or much smaller than an award-detail headline obligation figure.",
+        "nextSlug": "v2__awards__award_id",
+        "reason": "Re-check the same award in award detail and compare against total_account_obligation before expecting funding rows to reconcile to total_obligation.",
+        "requestMapping": {
+          "pathParams.award_id": "canonical_award_lookup_id"
+        },
+        "evidenceRefs": [
+          "ev-review-canonical-award-lookup-id",
+          "ev-review-cross-endpoint-award-id-handoff",
+          "ev-review-funding-reconciliation-001"
         ]
       }
     ]

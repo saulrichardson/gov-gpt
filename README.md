@@ -58,9 +58,14 @@ flowchart LR
 4. Generic gates check the profile without hard-coding endpoint-specific
    answers. The gates validate structure, evidence links, request behavior, and
    whether another agent can use the MCP surface to complete a realistic story.
-5. Once the profile is ready, the MCP runtime exposes it as a semantic interface:
+5. Story agents use the promoted MCP as black-box downstream users and report
+   generalizable semantic learnings: handoff fragility, measure interpretation,
+   dashboard safety, response shape, request construction, workflow sequencing,
+   and runtime affordance needs.
+6. Once the profile is ready, the MCP runtime exposes it as a semantic interface:
    search for the right capability, inspect meaning and evidence, construct and
-   validate requests, and make scoped live calls.
+   validate requests, make scoped live calls, and return semantic execution
+   receipts from agent-authored affordances.
 
 The Agents SDK is the production loop, not the product. The product is the
 validated semantic knowledge that the MCP can serve to another agent.
@@ -77,6 +82,8 @@ question in a grounded way:
 - build a valid request before calling the live API
 - inspect evidence for material claims
 - execute scoped calls and interpret the response in context
+- receive structured handoff values, measure warnings, and recommended follow-up
+  calls when the bundle declares those affordances
 
 That is the core difference from a generated client. A generated client says
 "this field exists." The semantic MCP should say "this field exists, here is

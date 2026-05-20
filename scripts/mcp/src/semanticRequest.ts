@@ -3,6 +3,10 @@ import type {
   EndpointArtifact,
   FieldFact,
   RequestValidationWarning,
+  SemanticAffordances,
+  SemanticHandoffKey,
+  SemanticMeasureInterpretation,
+  SemanticRecommendedFollowup,
 } from "../../../src/agent/core/semanticProfileSchema.ts";
 
 const DEFAULT_ALLOWED_HOSTS = ["https://api.usaspending.gov"];
@@ -32,6 +36,31 @@ export type SemanticValidationResult = {
     evidenceRefs: string[];
   }>;
   normalizedRequest: SemanticRequest;
+};
+
+export type ExtractedSemanticPathValue = {
+  sourcePath: string;
+  value: unknown;
+};
+
+export type SemanticHandoffValue = {
+  name: string;
+  sourcePath: string;
+  description: string;
+  targetEndpoints: SemanticHandoffKey["targetEndpoints"];
+  values: ExtractedSemanticPathValue[];
+  evidenceRefs: string[];
+};
+
+export type SemanticMeasureWarning = {
+  name: string;
+  path?: string;
+  meaning: string;
+  safeUse?: string;
+  unsafeUse?: string;
+  dashboardWarning?: string;
+  observedValues: ExtractedSemanticPathValue[];
+  evidenceRefs: string[];
 };
 
 type CallSemanticEndpointOptions = {
@@ -236,6 +265,80 @@ function primitiveValues(value: unknown): string[] {
     return [String(value)];
   }
   return [];
+}
+
+function semanticAffordances(endpoint: EndpointArtifact): SemanticAffordances {
+  return (
+    endpoint.semanticAffordances ?? {
+      handoffKeys: [],
+      measureInterpretations: [],
+      recommendedFollowups: [],
+    }
+  );
+}
+
+function extractPathValues(source: unknown, sourcePath: string, maxValues = 25): ExtractedSemanticPathValue[] {
+  const parts = splitPath(sourcePath);
+  const values: ExtractedSemanticPathValue[] = [];
+
+  function walk(value: unknown, remaining: string[], renderedPath: string) {
+    if (values.length >= maxValues) return;
+    if (remaining.length === 0) {
+      if (isProvided(value)) values.push({ sourcePath: renderedPath || sourcePath, value });
+      return;
+    }
+
+    const [part, ...rest] = remaining;
+    if (part.endsWith("[]")) {
+      const key = part.slice(0, -2);
+      if (!isRecord(value) || !Array.isArray(value[key])) return;
+      const arrayValue = value[key];
+      for (let index = 0; index < arrayValue.length; index += 1) {
+        walk(arrayValue[index], rest, renderedPath ? `${renderedPath}.${key}[${index}]` : `${key}[${index}]`);
+        if (values.length >= maxValues) return;
+      }
+      return;
+    }
+
+    if (!isRecord(value) || !(part in value)) return;
+    walk(value[part], rest, renderedPath ? `${renderedPath}.${part}` : part);
+  }
+
+  walk(source, parts, "");
+  return values;
+}
+
+function extractHandoffValues(body: unknown, affordances: SemanticAffordances): SemanticHandoffValue[] {
+  return affordances.handoffKeys
+    .map((key) => ({
+      name: key.name,
+      sourcePath: key.sourcePath,
+      description: key.description,
+      targetEndpoints: key.targetEndpoints,
+      values: extractPathValues(body, key.sourcePath),
+      evidenceRefs: key.evidenceRefs,
+    }))
+    .filter((item) => item.values.length > 0);
+}
+
+function measureWarnings(
+  body: unknown,
+  affordances: SemanticAffordances
+): SemanticMeasureWarning[] {
+  return affordances.measureInterpretations.map((measure: SemanticMeasureInterpretation) => ({
+    name: measure.name,
+    ...(measure.path ? { path: measure.path } : {}),
+    meaning: measure.meaning,
+    ...(measure.safeUse ? { safeUse: measure.safeUse } : {}),
+    ...(measure.unsafeUse ? { unsafeUse: measure.unsafeUse } : {}),
+    ...(measure.dashboardWarning ? { dashboardWarning: measure.dashboardWarning } : {}),
+    observedValues: measure.path ? extractPathValues(body, measure.path, 10) : [],
+    evidenceRefs: measure.evidenceRefs,
+  }));
+}
+
+function recommendedFollowups(affordances: SemanticAffordances): SemanticRecommendedFollowup[] {
+  return affordances.recommendedFollowups;
 }
 
 function semanticRequestPathValue(request: SemanticRequest, path: string): unknown {
@@ -510,6 +613,11 @@ export async function callSemanticEndpoint(
       body: hasBody ? validation.normalizedRequest.body ?? {} : {},
     },
     semanticValidation: validation,
+    semanticReceipt: {
+      handoffValues: extractHandoffValues(body, semanticAffordances(endpoint)),
+      measureWarnings: measureWarnings(body, semanticAffordances(endpoint)),
+      recommendedFollowups: recommendedFollowups(semanticAffordances(endpoint)),
+    },
     knownCaveats: [
       ...endpoint.behavior.contradictions,
       ...endpoint.behavior.quirks,

@@ -13,6 +13,18 @@ export const ReviewCategorySchema = z.enum([
   "generalization",
 ]);
 
+export const RepairTaskCategorySchema = z.enum([
+  "artifact_consistency",
+  "request_guidance",
+  "response_interpretation",
+  "workflow_handoff",
+  "dashboard_safety",
+  "evidence_gap",
+  "semantic_affordance",
+  "runtime_affordance",
+  "generalization",
+]);
+
 export const ReviewFindingSchema = z
   .object({
     severity: ReviewSeveritySchema,
@@ -29,6 +41,7 @@ export const RepairTaskSchema = z
   .object({
     id: z.string(),
     targetSlug: z.string().optional(),
+    category: RepairTaskCategorySchema,
     priority: z.enum(["blocker", "major", "minor"]),
     affectedArtifacts: z.array(
       z.enum(["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"])

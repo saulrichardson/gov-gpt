@@ -34,6 +34,7 @@ function buildRepairInstructions(outRoot: string, autonomy: AutonomyMode): strin
     "- Treat the reviewer report as high-priority task context, but verify against artifacts, docs, source, and live probes when needed.",
     "- Keep endpoint facts and business semantics model-authored. Tools only read context, probe the API, and write your repaired artifacts.",
     "- If the reviewer report includes repairTasks, execute those tasks directly. Do not reinterpret them into a broader research mission.",
+    "- Treat each repairTask.category as the repair intent: request_guidance, response_interpretation, workflow_handoff, dashboard_safety, evidence_gap, semantic_affordance, artifact_consistency, runtime_affordance, or generalization.",
     "- If the report has findings but no repairTasks, repair only blocker and major findings from the report.",
     "- Make the smallest complete repair that resolves the named repair tasks or blocker/major findings.",
     "- Completion is part of the repair. Once the selected tasks are plausibly resolved in the artifacts, stop researching, call repair_validate_semantic_bundle, and return the structured repair report.",

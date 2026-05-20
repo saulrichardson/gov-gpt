@@ -43,7 +43,9 @@ discovery, inspection, validation, bounded calls, evidence, and usage guidance.
   Explain validation failures or warnings using the endpoint artifact.
 - `usaspending.callEndpoint`
   Make a bounded live USAspending API call through the semantic endpoint
-  contract.
+  contract. The result includes the raw response plus a semantic execution
+  receipt derived from agent-authored bundle affordances, such as extracted
+  handoff values, measure warnings, and recommended follow-ups.
 - `usaspending.getEvidence`
   Return evidence records from `evidence.jsonl`.
 - `usaspending.getUsageGuide`
@@ -82,3 +84,8 @@ The runtime is intentionally generic. It may validate schemas, load bundles,
 preflight requests, enforce host allowlists, and report tool errors. It should
 not hard-code endpoint-specific business semantics. Endpoint-specific meaning
 belongs in the agent-authored semantic bundle.
+
+When `endpoint.json` declares `semanticAffordances`, the runtime can expose them
+structurally. For example, a bundle may declare that a raw response path is a
+handoff key for another endpoint; `callEndpoint` can then return that value in a
+semantic receipt without knowing anything endpoint-specific about USAspending.

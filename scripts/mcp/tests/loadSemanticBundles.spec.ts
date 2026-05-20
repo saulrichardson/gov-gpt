@@ -7,7 +7,7 @@ import {
   analysisPacketFromSemanticBundle,
   endpointSummaryFromSemanticBundle,
 } from "../src/semanticDiscovery.js";
-import { validateSemanticRequest } from "../src/semanticRequest.js";
+import { callSemanticEndpoint, validateSemanticRequest } from "../src/semanticRequest.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -68,12 +68,8 @@ function endpointWithRequestFacts(parameters: Array<Record<string, unknown>>, en
         evidenceRefs: ["ev-test"],
       },
     },
-    semantics: {
-      purpose: "Test endpoint",
-      domainConcepts: [],
-      workflows: [],
-      caveats: [],
-    },
+    behavior: { contradictions: [], quirks: [], gaps: [], risks: [] },
+    semanticAffordances: { handoffKeys: [], measureInterpretations: [], recommendedFollowups: [] },
   } as any;
 }
 
@@ -387,5 +383,80 @@ describe("semantic bundles", () => {
     expect(validation.valid).toBe(true);
     expect(validation.normalizedRequest.pathParams.award_id).toBe("CONT_AWD_DENA0003525_8900_-NONE-_-NONE-");
     expect(validation.normalizedRequest.query).toEqual({});
+  });
+
+  it("returns generic semantic execution receipts from declared affordances", async () => {
+    const endpoint = endpointWithRequestFacts(
+      [
+        requestFact({
+          path: "filters.award_type_codes",
+          location: "body.filters",
+          type: "array",
+          required: true,
+          description: "Award type filters",
+        }),
+      ],
+      { method: "POST", path: "/api/v2/search/example/" }
+    );
+    endpoint.semanticAffordances = {
+      handoffKeys: [
+        {
+          name: "canonical_award_lookup_id",
+          sourcePath: "results[].generated_internal_id",
+          description: "Use this generated id for downstream award calls.",
+          targetEndpoints: [{ slug: "v2__awards__award_id", requestPath: "pathParams.award_id" }],
+          evidenceRefs: ["ev-test"],
+        },
+      ],
+      measureInterpretations: [
+        {
+          name: "Award Amount",
+          path: "results[].Award Amount",
+          meaning: "Lifetime award size, not current-period spend.",
+          dashboardWarning: "Do not chart this as period spend without follow-up.",
+          evidenceRefs: ["ev-test"],
+        },
+      ],
+      recommendedFollowups: [
+        {
+          trigger: "Use detail before current-period claims.",
+          nextSlug: "v2__awards__award_id",
+          reason: "Confirm award vintage.",
+          requestMapping: { "pathParams.award_id": "canonical_award_lookup_id" },
+          evidenceRefs: ["ev-test"],
+        },
+      ],
+    };
+
+    const result = await callSemanticEndpoint(
+      endpoint,
+      { filters: { award_type_codes: ["A"] } },
+      {
+        fetchImpl: (async () =>
+          ({
+            status: 200,
+            headers: new Map([["content-type", "application/json"]]),
+            text: async () =>
+              JSON.stringify({
+                results: [
+                  {
+                    generated_internal_id: "CONT_AWD_EXAMPLE",
+                    "Award Amount": 42,
+                  },
+                ],
+              }),
+          }) as any) as any,
+      }
+    );
+
+    expect(result.semanticReceipt.handoffValues[0]).toMatchObject({
+      name: "canonical_award_lookup_id",
+      values: [{ sourcePath: "results[0].generated_internal_id", value: "CONT_AWD_EXAMPLE" }],
+    });
+    expect(result.semanticReceipt.measureWarnings[0]).toMatchObject({
+      name: "Award Amount",
+      observedValues: [{ sourcePath: "results[0].Award Amount", value: 42 }],
+    });
+    expect(result.semanticReceipt.recommendedFollowups[0].nextSlug).toBe("v2__awards__award_id");
   });
 });

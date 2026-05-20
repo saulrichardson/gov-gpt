@@ -17,6 +17,7 @@ Live availability was confirmed on 2026-05-10 with a successful `POST /api/v2/aw
 - Do not expect funding rows to restate the headline `total_obligation` from award detail. Sparse results can align more closely with `total_account_obligation` instead.
 - Do not substitute the display `Award ID` from spending_by_award when `canonical_award_lookup_id` is available.
 - Do not read page 1 as an obligation leaderboard without checking for repeated same-period rows and null `transaction_obligated_amount`; the safe explicit-sort template can still surface outlay-only slice clusters.
+- Do not assume a bounded `v2__search__spending_by_award` `time_period` carries into this endpoint automatically. The award handoff preserves which award to inspect, but funding rows must be scoped by their own `reporting_fiscal_year` / quarter / month fields.
 
 ## Request shape
 **Method:** `POST`
@@ -59,6 +60,15 @@ Send `canonical_award_lookup_id` under `award_id`, and set `sort` and `order` ex
 
 Using the safe explicit-sort template does **not** turn the endpoint into an obligation leaderboard. Reviewer-backed Sandia funding evidence showed page 1 returning five rows all at FY2026 Q2 month 6 with `transaction_obligated_amount: null`, `gross_outlay_amount` values `4906371.73`, `2359010.76`, `630711.31`, `3398742.41`, and `1210.35`, and `hasNext: true`.
 
+That same safe template also does **not** preserve an upstream search window. In the reviewer-backed Regents drilldown, `v2__search__spending_by_award` used `time_period` `2025-10-01` through `2026-09-30`, handed off `canonical_award_lookup_id` `CONT_AWD_DEAC3243AL00036_8900_-NONE-_-NONE-`, and funding page 1 still returned `reporting_fiscal_year: 2025` rows with `hasNext: true`. Read that pattern as a scope warning: the search identified the award, but the funding endpoint must be interpreted by its own reporting-period labels and pagination state before you say anything about FY2026 funding.
+
+## Semantic guidance for downstream agents
+Treat four warnings as first-class when you call this endpoint through the semantic MCP:
+- **Funding row order** — if row order or ranking matters, set both `sort` and `order` explicitly. Omitted-sort output is not a safe default ordering.
+- **Row amounts are accounting slices** — `transaction_obligated_amount` and `gross_outlay_amount` belong to one reporting-period/accounting slice, not a deduplicated award total. Null `transaction_obligated_amount` can still appear on valid outlay-oriented rows.
+- **Search scope is not inherited** — carrying `canonical_award_lookup_id` from a bounded `spending_by_award` screen preserves award identity only. Use `reporting_fiscal_year`, `reporting_fiscal_quarter`, and `reporting_fiscal_month` to establish the funding scope on this endpoint itself.
+- **Standard follow-ups** — if `page_metadata.hasNext` is `true` or page 1 is dominated by repeated same-period rows, keep paging with the same `award_id` and explicit sort/order. If funding looks sparse relative to award detail, compare against `total_account_obligation` before expecting reconciliation to `total_obligation`.
+
 ## Response shape
 The response is a JSON object with:
 - `results`: array of funding rows
@@ -80,6 +90,8 @@ Each funding row is observed/documented to include:
 ## How to interpret the data
 Treat each result row as one funding/accounting slice for the requested award, labeled by reporting period and account classification. This endpoint is best for explaining how a known award maps to federal accounts and how obligations/outlays are distributed across reporting periods.
 
+If you reached funding from a bounded `v2__search__spending_by_award` screen, keep the award handoff and the time scope separate in your narration. The search receipt tells you why the award was eligible for follow-up; the funding response tells you its own row-level reporting periods. Those are related but not automatically identical scopes.
+
 Even under the safe explicit-sort pattern, the first page can be dominated by repeated same-period outlay slices. In the reviewer-backed Sandia drilldown, page 1 contained five rows all at `reporting_fiscal_year: 2026`, `reporting_fiscal_quarter: 2`, `reporting_fiscal_month: 6`, each with `transaction_obligated_amount: null` and non-null `gross_outlay_amount` values, while `hasNext` remained `true`. When you see that pattern, describe the rows as same-period accounting or outlay slices, not as the award's top obligations or full funding total.
 
 Funding rows may be sparse and may not resemble the award-detail headline total. In the reviewer-backed HT940216C0001 drilldown, award detail reported `total_obligation: 51269205263.03` and `total_account_obligation: 321840`, while this endpoint returned one row with `transaction_obligated_amount: 321840` and `hasNext: false`. Use that pattern as a caution: funding can line up more closely with `total_account_obligation` than with `total_obligation`.
@@ -87,7 +99,7 @@ Funding rows may be sparse and may not resemble the award-detail headline total.
 ## Practical workflow
 1. Obtain `canonical_award_lookup_id`. If you are chaining from `v2__search__spending_by_award`, prefer `generated_internal_id` over the display `Award ID`. If you are chaining from `v2__awards__award_id`, reuse `generated_unique_award_id`.
 2. Fetch page 1 by sending `canonical_award_lookup_id` under body field `award_id` plus explicit `sort` and `order`; treat that explicit-sort shape as the primary safe pattern because omitted-sort behavior is contradicted. Reviewer-confirmed evidence showed this exact pattern returning `200`.
-3. Read each row's federal account, agency, object class, program activity, and reporting period fields.
+3. Read each row's federal account, agency, object class, and program activity fields, and use the returned reporting period fields to re-establish scope on the funding endpoint itself. If you arrived from a bounded search screen, do not assume that upstream `time_period` carried forward automatically.
 4. Continue paging with `page_metadata.next` or while `page_metadata.hasNext` is true.
 5. If you compare the response to award detail, treat funding as accounting-slice evidence. Check `total_account_obligation` before assuming the endpoint should reconcile to headline `total_obligation`.
 
@@ -98,4 +110,5 @@ Funding rows may be sparse and may not resemble the award-detail headline total.
 - `gross_outlay_amount` may be `null` on valid rows.
 - Sparse funding is not automatically a join failure. Reviewer-backed drilldown showed a 51269205263.03 award whose funding response contained one 321840 row and `hasNext: false`, matching `total_account_obligation` much more closely than `total_obligation`.
 - Safe explicit sorting does not prevent repeated same-period slices. Reviewer-backed Sandia evidence showed page 1 with five FY2026 Q2 month-6 rows, all with `transaction_obligated_amount: null`, populated `gross_outlay_amount`, and `hasNext: true`. Treat that pattern as accounting-slice or outlay detail, not as an obligation ranking.
+- Cross-endpoint handoff does not preserve a bounded search window automatically. Reviewer-backed Regents evidence showed an FY2026-bounded search handing off the same `canonical_award_lookup_id` into funding page 1, where the returned rows were labeled `reporting_fiscal_year: 2025` and `hasNext: true`. Treat the funding rows' own reporting-period fields as authoritative for scope on this endpoint.
 - Current-profile evidence suggests unknown award ids may return `200` with empty `results`, so check empty arrays carefully.

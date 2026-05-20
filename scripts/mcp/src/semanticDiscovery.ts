@@ -236,6 +236,11 @@ export function analysisPacketFromSemanticBundle(
       gaps,
       interpretationWarnings,
     },
+    semanticAffordances: endpoint.semanticAffordances ?? {
+      handoffKeys: [],
+      measureInterpretations: [],
+      recommendedFollowups: [],
+    },
     recommendedMcpCallOrder: [
       "usaspending.findEndpoints",
       "usaspending.getAnalysisPacket",

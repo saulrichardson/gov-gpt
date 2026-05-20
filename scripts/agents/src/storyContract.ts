@@ -30,6 +30,43 @@ export const StoryGapSchema = z
   })
   .strict();
 
+export const StoryLearningCategorySchema = z.enum([
+  "handoff",
+  "measure_interpretation",
+  "dashboard_safety",
+  "workflow",
+  "request_construction",
+  "response_shape",
+  "evidence_gap",
+  "runtime_affordance",
+  "generalization",
+]);
+
+export const StoryGeneralizableLearningSchema = z
+  .object({
+    category: StoryLearningCategorySchema,
+    priority: z.enum(["blocker", "major", "minor"]),
+    learning: z.string(),
+    whyItGeneralizes: z.string(),
+    affectedSlugs: z.array(z.string()),
+    evidence: z.array(z.string()),
+    recommendedBundleChanges: z.array(z.string()),
+    recommendedRuntimeChanges: z.array(z.string()),
+  })
+  .strict();
+
+export const RuntimeAffordanceRequestSchema = z
+  .object({
+    id: z.string(),
+    priority: z.enum(["blocker", "major", "minor"]),
+    affordance: z.string(),
+    problem: z.string(),
+    expectedGenericBehavior: z.string(),
+    evidence: z.array(z.string()),
+    affectedSlugs: z.array(z.string()).default([]),
+  })
+  .strict();
+
 export const SemanticStoryReportSchema = z
   .object({
     question: z.string(),
@@ -41,6 +78,8 @@ export const SemanticStoryReportSchema = z
     story: z.string(),
     keyFindings: z.array(z.string()),
     mcpGaps: z.array(StoryGapSchema),
+    generalizableLearnings: z.array(StoryGeneralizableLearningSchema),
+    runtimeAffordanceRequests: z.array(RuntimeAffordanceRequestSchema),
     repairTasks: z.array(RepairTaskSchema),
     recommendedNextStep: z.string(),
   })

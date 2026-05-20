@@ -53,6 +53,15 @@ Returned buckets and chart labels from that live example:
 
 Render those as Jan-Jun 2024 on a calendar-month chart, not Apr-Sep 2024. Keep API result order or sort by `(fiscal_year, month)` rather than by `month` alone.
 
+## Same-filter follow-up handoffs
+
+This endpoint hands off analytical scope through the request `filters`, not through response ids. After you identify an interesting period, copy the same validated `filters` object forward:
+
+- Award drilldown: send the same `filters` to `v2__search__spending_by_award`, preserve any explicit `place_of_performance_scope` or `recipient_scope`, then add award-level `fields`, `sort`, and paging controls.
+- Geography comparison: send the same `filters` to `v2__search__spending_by_geography`, set `scope = place_of_performance` when the trend uses `filters.place_of_performance_scope`, or set `scope = recipient_location` when the trend uses `filters.recipient_scope`, then choose the needed `geo_layer`.
+
+Do not try to infer award-level or geography-level scope from the returned time buckets alone; the reusable handoff is the shared filter core.
+
 ## Same-scope map + trend alignment
 
 If you are pairing this endpoint with `v2__search__spending_by_geography`, set the matching location-scope filter explicitly on the trend request:
@@ -104,4 +113,4 @@ Quarter responses are fiscal as well, so `{"fiscal_year":"2024","quarter":"1"}` 
 
 The legacy `subawards` boolean is still documented, but live responses warn that callers should set `spending_level` instead. Search date ranges are also constrained by the live service; responses warn that advanced-search time periods are limited to an earliest date of `2007-10-01`.
 
-Use this endpoint to identify periods worth investigating, then reuse compatible `filters` on `v2__search__spending_by_award` to fetch award-level rows for a selected period or on `v2__search__spending_by_geography` to build a same-scope map.
+Use this endpoint to identify periods worth investigating, then reuse the same `filters` on `v2__search__spending_by_award` to fetch award-level rows for a selected period or on `v2__search__spending_by_geography` to build a same-scope map. Preserve any explicit location-scope filters when you need the follow-up request to represent the same analytical population.

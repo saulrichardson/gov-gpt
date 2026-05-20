@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__awards__funding",
-  "generatedAt": "2026-05-14T00:00:00Z",
+  "generatedAt": "2026-05-20T00:00:00Z",
   "endpointRef": "v2__awards__funding",
-  "summary": "Live-verified endpoint that returns paginated federal account funding rows for a single award, with reporting-period, agency, object class, and program activity context. This bundle normalizes the cross-endpoint generated award hash as canonical_award_lookup_id: search emits generated_internal_id, award detail echoes generated_unique_award_id, and funding accepts the same value under request body award_id. For safe pagination and comparison workflows, treat explicit sort plus order as the primary request pattern because omitted-sort behavior is contradicted. Funding rows can be sparse accounting slices and may align more closely with award-detail total_account_obligation than headline total_obligation. Reviewer-backed safe-template evidence also showed page 1 can be dominated by repeated same-period outlay slices with null transaction_obligated_amount values, so treat early rows as accounting context rather than an obligation ranking.",
-  "businessPurpose": "Use this endpoint to explain how one award is funded across federal accounts and reporting periods, including obligated and outlay amounts and the agencies and accounting classifications attached to each funding row. It is the funding-composition follow-up step after capturing canonical_award_lookup_id from award search or award detail, not the authoritative headline-award-total endpoint.",
+  "summary": "Live-verified endpoint that returns paginated federal account funding rows for a single award, with reporting-period, agency, object class, and program activity context. This bundle normalizes the cross-endpoint generated award hash as canonical_award_lookup_id: search emits generated_internal_id, award detail echoes generated_unique_award_id, and funding accepts the same value under request body award_id. For safe pagination and comparison workflows, treat explicit sort plus order as the primary request pattern because omitted-sort behavior is contradicted. Funding rows can be sparse accounting slices and may align more closely with award-detail total_account_obligation than headline total_obligation. Reviewer-backed safe-template evidence also showed page 1 can be dominated by repeated same-period outlay slices with null transaction_obligated_amount values, so treat early rows as accounting context rather than an obligation ranking and continue paging or reconcile against award detail before making award-total claims. When this endpoint is reached from a bounded spending_by_award screen, preserve award identity via canonical_award_lookup_id but re-establish time scope from the funding rows' own reporting_fiscal_* fields because the upstream search time_period is not inherited automatically.",
+  "businessPurpose": "Use this endpoint to explain how one award is funded across federal accounts and reporting periods, including obligated and outlay amounts and the agencies and accounting classifications attached to each funding row. It is the funding-composition follow-up step after capturing canonical_award_lookup_id from award search or award detail, not the authoritative headline-award-total endpoint. If you arrive from a bounded award-search screen, use funding to inspect current-period context cautiously: row scope comes from funding reporting-period fields, not from the upstream search window.",
   "analyticalGrain": "One row per award funding/accounting slice for a specific reporting fiscal period and agency/account/program-object-class combination within a single requested award.",
   "primaryEntities": [
     {
@@ -182,6 +182,13 @@
       "evidenceRefs": [
         "ev-review-funding-same-period-outlay-slices-001"
       ]
+    },
+    {
+      "name": "Assuming a bounded search screen's fiscal window carries into funding automatically",
+      "description": "A canonical_award_lookup_id handoff preserves which award to inspect, but funding rows must still be scoped by their own reporting_fiscal_year/quarter/month values and pagination state. Page 1 is not the current-period total from the upstream search.",
+      "evidenceRefs": [
+        "ev-review-funding-search-scope-handoff-001"
+      ]
     }
   ],
   "joins": [
@@ -249,7 +256,7 @@
         },
         {
           "order": 3,
-          "action": "Interpret each row as a funding/accounting slice for that same canonical_award_lookup_id and continue paging with page_metadata.next or hasNext until the needed coverage is collected; the reviewer-confirmed safe-template call echoed page_metadata.page=1, and reviewer-backed Sandia evidence showed page 1 can still contain five repeated FY2026 Q2 month-6 rows with transaction_obligated_amount null, populated gross_outlay_amount values, and hasNext=true.",
+          "action": "Interpret each row as a funding/accounting slice for that same canonical_award_lookup_id and read reporting_fiscal_year/reporting_fiscal_quarter/reporting_fiscal_month as this endpoint's own scope fields rather than as an inherited search window. Continue paging with page_metadata.next or hasNext until the needed coverage is collected; the reviewer-confirmed safe-template call echoed page_metadata.page=1, and reviewer-backed Regents evidence showed a bounded FY2026 search could hand off into funding page 1 that still returned reporting_fiscal_year 2025 rows with hasNext=true.",
           "endpointSlug": "v2__awards__funding",
           "evidenceRefs": [
             "ev-doc-002",
@@ -257,7 +264,8 @@
             "ev-prof-001",
             "ev-review-001",
             "ev-review-funding-reconciliation-001",
-            "ev-review-funding-same-period-outlay-slices-001"
+            "ev-review-funding-same-period-outlay-slices-001",
+            "ev-review-funding-search-scope-handoff-001"
           ]
         },
         {
@@ -290,7 +298,8 @@
         "ev-review-001",
         "ev-review-canonical-award-lookup-id",
         "ev-review-cross-endpoint-award-id-handoff",
-        "ev-review-funding-reconciliation-001"
+        "ev-review-funding-reconciliation-001",
+        "ev-review-funding-search-scope-handoff-001"
       ]
     }
   ],
@@ -359,6 +368,14 @@
       "status": "observed",
       "evidenceRefs": [
         "ev-review-funding-same-period-outlay-slices-001"
+      ]
+    },
+    {
+      "statement": "Arriving from a bounded v2__search__spending_by_award screen preserves the award handoff key, not the original search time_period. Reviewer-backed Regents evidence showed an FY2026-bounded search handing off the same canonical_award_lookup_id into funding page 1, where the returned rows were labeled reporting_fiscal_year 2025 and page_metadata.hasNext was true.",
+      "impact": "Do not claim that funding page membership or first-page rows are the upstream search-period total. Re-establish scope from reporting_fiscal_year/reporting_fiscal_quarter/reporting_fiscal_month and paginate before making current-period funding claims.",
+      "status": "observed",
+      "evidenceRefs": [
+        "ev-review-funding-search-scope-handoff-001"
       ]
     }
   ]

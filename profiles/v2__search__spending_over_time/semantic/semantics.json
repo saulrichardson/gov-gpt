@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2.0.0",
   "slug": "v2__search__spending_over_time",
-  "generatedAt": "2026-05-13T00:00:00.000Z",
+  "generatedAt": "2026-05-20T00:00:00.000Z",
   "endpointRef": "POST https://api.usaspending.gov/api/v2/search/spending_over_time/",
-  "summary": "Aggregates a filtered USAspending search population into time buckets such as fiscal years, calendar years, quarters, or months.",
-  "businessPurpose": "Use this endpoint when the analytical question is about how spending changes over time for a filtered set of awards, transactions, or subawards, not when the question needs individual award records. It is also the trend side of same-filter dashboards when you align any location-scope filters explicitly.",
+  "summary": "Aggregates a filtered USAspending search population into time buckets such as fiscal years, calendar years, quarters, or months, and supports same-filter follow-ups into award or geography views when analytical scope is preserved explicitly.",
+  "businessPurpose": "Use this endpoint when the analytical question is about how spending changes over time for a filtered set of awards, transactions, or subawards, not when the question needs individual award records. It is also the trend side of same-filter dashboards: reuse the same filters for award or geography follow-up calls, and set any location-scope filters explicitly when you need the follow-up to stay same-scope.",
   "analyticalGrain": "One row is one time bucket for the filtered population and selected spending_level. It is an aggregate time series, not an award, recipient, agency, or transaction row.",
   "primaryEntities": [
     {
@@ -153,7 +153,7 @@
         "filters"
       ],
       "confidence": "medium",
-      "description": "Reuse a compatible filters object to move from aggregate trend to representative award-level records.",
+      "description": "Same-filter handoff from aggregate trend to award-level rows. Reuse the current filters object on spending_by_award, preserving any explicit location-scope filters, then add award-level fields/sort/page controls.",
       "evidenceRefs": [
         "sot-doc-contract",
         "sot-retired-profile"
@@ -166,7 +166,7 @@
         "filters"
       ],
       "confidence": "high",
-      "description": "Reuse the same bounded filters and set the matching location-scope filter explicitly before comparing a time trend to a geography map. Pair filters.place_of_performance_scope with scope=place_of_performance and filters.recipient_scope with scope=recipient_location.",
+      "description": "Same-filter handoff from trend to geography summary. Reuse the same bounded filters and set the matching location-scope filter explicitly before comparing a time trend to a geography map. Pair filters.place_of_performance_scope with scope=place_of_performance and filters.recipient_scope with scope=recipient_location.",
       "evidenceRefs": [
         "sot-doc-scope-filters",
         "sot-review-rt1-location-scope"
@@ -195,7 +195,7 @@
         },
         {
           "order": 3,
-          "action": "Reuse the filters on spending_by_award and add fields/sort/page controls to retrieve award-level rows.",
+          "action": "Reuse the same filters on spending_by_award, keeping any explicit place_of_performance_scope or recipient_scope, and then add fields/sort/page controls to retrieve award-level rows.",
           "endpointSlug": "v2__search__spending_by_award",
           "evidenceRefs": [
             "sot-retired-profile"
@@ -238,7 +238,7 @@
         },
         {
           "order": 4,
-          "action": "Call spending_by_geography with the same core filters, the matching scope value, and the desired geo_layer such as state.",
+          "action": "Call spending_by_geography with the same filters, the matching scope value, and the desired geo_layer such as state.",
           "endpointSlug": "v2__search__spending_by_geography",
           "evidenceRefs": [
             "sot-review-rt1-location-scope"
@@ -293,6 +293,16 @@
       "impact": "Explicit scope alignment prevents comparing a domestic map to a mixed-scope trend.",
       "status": "documented_and_observed",
       "evidenceRefs": [
+        "sot-doc-scope-filters",
+        "sot-review-rt1-location-scope"
+      ]
+    },
+    {
+      "statement": "Same-filter follow-ups from this endpoint are request handoffs rather than response-key joins: the trend response does not emit award ids or geography ids, so downstream drilldowns should copy the validated filters object into spending_by_award or spending_by_geography and preserve any explicit location-scope fields.",
+      "impact": "Copy request filters forward instead of trying to derive drilldown scope from returned time buckets alone.",
+      "status": "documented_and_observed",
+      "evidenceRefs": [
+        "sot-retired-profile",
         "sot-doc-scope-filters",
         "sot-review-rt1-location-scope"
       ]

@@ -301,6 +301,7 @@ describe("Agents SDK semantic endpoint producer", () => {
         {
           id: "repair-order-case-sensitivity",
           targetSlug: "v2__recipient",
+          category: "request_guidance",
           priority: "major",
           affectedArtifacts: ["endpoint.json", "semantics.json", "evidence.jsonl", "usage.md"],
           objective: "Preserve lowercase-only order behavior.",
@@ -309,6 +310,7 @@ describe("Agents SDK semantic endpoint producer", () => {
         },
         {
           id: "repair-overshoot-pagination-note",
+          category: "response_interpretation",
           priority: "minor",
           affectedArtifacts: ["endpoint.json", "evidence.jsonl", "usage.md"],
           objective: "Capture overshoot page exhaustion.",
@@ -344,6 +346,7 @@ describe("Agents SDK semantic endpoint producer", () => {
         {
           id: "repair-story-gap",
           targetSlug: "v2__search__spending_by_award",
+          category: "request_guidance",
           priority: "major",
           affectedArtifacts: ["endpoint.json", "semantics.json", "usage.md"],
           objective: "Promote a missing nested request field.",
@@ -380,10 +383,24 @@ describe("Agents SDK semantic endpoint producer", () => {
           story: "The story exposed a dashboard gap.",
           keyFindings: [],
           mcpGaps: [],
+          generalizableLearnings: [
+            {
+              category: "dashboard_safety",
+              priority: "major",
+              learning: "Dashboard field guidance must be discoverable before live calls.",
+              whyItGeneralizes: "The same weakness affects any endpoint used for compact dashboard screens.",
+              affectedSlugs: ["v2__search__spending_by_award"],
+              evidence: ["story_call_mcp_tool getEndpointSemantics showed no field bundle."],
+              recommendedBundleChanges: ["Add reusable dashboard field guidance."],
+              recommendedRuntimeChanges: [],
+            },
+          ],
+          runtimeAffordanceRequests: [],
           repairTasks: [
             {
               id: "repair-dashboard-fields",
               targetSlug: "v2__search__spending_by_award",
+              category: "dashboard_safety",
               priority: "major",
               affectedArtifacts: ["endpoint.json", "semantics.json", "usage.md"],
               objective: "Add dashboard field guidance.",
@@ -410,9 +427,23 @@ describe("Agents SDK semantic endpoint producer", () => {
           story: "The story exposed a cross-endpoint gap.",
           keyFindings: [],
           mcpGaps: [],
+          generalizableLearnings: [
+            {
+              category: "workflow",
+              priority: "major",
+              learning: "Cross-endpoint workflows need an owning endpoint or routing decision.",
+              whyItGeneralizes: "Story-discovered workflow gaps can span bundles and need explicit routing.",
+              affectedSlugs: [],
+              evidence: ["story gate could not route the workflow."],
+              recommendedBundleChanges: ["Clarify the owning workflow bundle."],
+              recommendedRuntimeChanges: [],
+            },
+          ],
+          runtimeAffordanceRequests: [],
           repairTasks: [
             {
               id: "repair-cross-endpoint",
+              category: "workflow_handoff",
               priority: "major",
               affectedArtifacts: ["semantics.json", "usage.md"],
               objective: "Clarify a cross-endpoint workflow.",
@@ -460,10 +491,12 @@ describe("Agents SDK semantic endpoint producer", () => {
         "story_call_mcp_tool",
         "full_access_shell_command",
       ]);
-      expect(String(agent.instructions)).toContain("agentic MCP acceptance test");
+      expect(String(agent.instructions)).toContain("agentic MCP exploration and learning loop");
       expect(String(agent.instructions)).toContain("Use validateRequest before callEndpoint");
       expect(String(agent.instructions)).toContain("only promoted query surface");
       expect(String(agent.instructions)).toContain("usually 8-12 MCP calls are enough");
+      expect(String(agent.instructions)).toContain("generalizableLearnings");
+      expect(String(agent.instructions)).toContain("runtimeAffordanceRequests");
       expect(String(agent.instructions)).toContain("include evidence.jsonl in affectedArtifacts");
       expect(String(agent.instructions)).toContain("Full-access autonomous mode");
     } finally {

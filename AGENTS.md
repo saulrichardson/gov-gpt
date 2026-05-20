@@ -112,12 +112,19 @@ surface options instead of silently choosing.
   labels or lookup paths, row-order/ranking guarantees, measure reconciliation,
   lifetime-versus-period meaning, sample-versus-full-population boundaries,
   async/export artifact boundaries, and observed-versus-inferred shared filters.
+- Use `endpoint.json.semanticAffordances` for machine-usable semantic handles
+  that downstream MCP users should not infer from prose alone: handoff keys,
+  measure interpretations, and recommended follow-ups.
 - Preserve documented-but-unprobed fields with explicit statuses; do not drop
   them merely because they are absent from a generated template or probe.
 - Record contradictions, semantic caveats, and request-validation warnings as
   first-class information.
 - Story/review repair tasks should include `targetSlug` when one endpoint bundle
   owns the repair so frontier runs can produce a directly usable repair queue.
+- Story reports should include generalizable learnings and runtime affordance
+  requests. A story agent should use the MCP as written, discover reusable gaps,
+  and feed those lessons back into bundle repair or generic runtime affordance
+  work.
 - Update docs whenever the operating model, commands, or artifact contract
   changes.
 

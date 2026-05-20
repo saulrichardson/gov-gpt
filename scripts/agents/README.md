@@ -19,6 +19,13 @@ Full-access mode is contract-first: give the coding agent the semantic artifact
 contract and acceptance gates, then let it run whatever local commands, scripts,
 tests, live probes, or MCP workflows it needs to satisfy that contract.
 
+Story runs are exploratory learning loops, not only pass/fail tests. A story
+agent uses the promoted MCP as a downstream coding agent, attempts a real
+analysis, and returns both the story result and reusable semantic learnings:
+handoff gaps, measure-interpretation issues, dashboard-safety risks,
+request-construction gaps, response-shape surprises, workflow gaps, and runtime
+affordance requests. Those findings become task-scoped repair or synthesis work.
+
 ## Run
 
 ```bash

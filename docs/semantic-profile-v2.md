@@ -30,6 +30,8 @@ usage.md
 - request validation warnings for valid but risky near-miss calls
 - response shape, response fields, and pagination facts
 - contradictions, quirks, gaps, and risks
+- semantic affordances: handoff keys, measure interpretations, and recommended
+  follow-ups that the MCP can expose structurally after a live call
 
 Request fact paths are relative to their transport root:
 
@@ -38,6 +40,29 @@ Request fact paths are relative to their transport root:
 - path field: `award_id`
 
 Do not prefix body paths with `body.` or query paths with `query.`.
+
+### Semantic Affordances
+
+`semanticAffordances` is where the agent records machine-usable semantic
+handles that a downstream MCP user should not have to infer from prose alone.
+The runtime applies these declarations generically; it does not hard-code
+endpoint-specific facts.
+
+- `handoffKeys`
+  Map a raw response `sourcePath` such as `results[].generated_internal_id` to a
+  semantic name such as `canonical_award_lookup_id`, plus target endpoint
+  request paths where the same value can be reused.
+- `measureInterpretations`
+  Explain what a measure means, when it is safe or unsafe to use, and whether a
+  dashboard agent needs a warning before charting or aggregating it.
+- `recommendedFollowups`
+  Declare next-call patterns triggered by response interpretation, such as
+  using detail, rollup, reference, status, or download endpoints before making
+  stronger claims.
+
+These declarations must be evidence-backed. They are authored by the model from
+docs, source, live probes, story gates, and review findings; deterministic MCP
+code only extracts and presents the declared affordances.
 
 ## `semantics.json`
 
@@ -119,6 +144,8 @@ A bundle is promotion-grade when:
 - documented-but-unprobed fields are preserved with explicit statuses
 - contradictions, gaps, risks, and caveats are visible
 - request templates are bounded and useful
+- semantic affordances expose important handoffs, measure warnings, and follow-up
+  patterns when those are needed for downstream analysis
 - a self-story MCP gate shows that another agent can use the bundle for a
   realistic analytical question or returns repair tasks that have been handled
 

@@ -55,6 +55,11 @@ Common fields observed/documented on the live contract sample include:
 
 Treat `generated_unique_award_id` as this endpoint's response label for `canonical_award_lookup_id`. If you continue to `v2__awards__funding`, send that same string unchanged under the funding request body field `award_id`.
 
+## Semantic handoff and competition warnings
+- `generated_unique_award_id` is the returned `canonical_award_lookup_id` echo. Reuse it unchanged when you normalize future award-detail calls or call `v2__awards__funding` with body field `award_id`.
+- Read `latest_transaction_contract_data` as latest-transaction procurement context for contract and IDV awards, not as a guaranteed whole-award lifetime summary.
+- Read `latest_transaction_contract_data.number_of_offers_received` as count-like competition metadata rather than a universally literal decoded count. Pair it with `extent_competed_description` and `solicitation_procedures_description`; values such as `999` are ambiguous until another source decodes them.
+
 Category-specific sections:
 - **Contracts / IDVs:** `piid`, `latest_transaction_contract_data`, `parent_award`, `naics_hierarchy`, `psc_hierarchy`
 - **Assistance / loans / direct payments / grants:** `record_type`, `fain`, `uri`, `cfda_info`, `funding_opportunity`, and category-specific funding or loan totals

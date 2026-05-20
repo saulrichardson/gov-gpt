@@ -213,6 +213,59 @@ export const BehaviorNoteSchema = z
   })
   .strict();
 
+export const SemanticHandoffTargetSchema = z
+  .object({
+    slug: z.string().min(1),
+    requestPath: z.string().min(1),
+    description: z.string().min(1).optional(),
+  })
+  .strict();
+
+export const SemanticHandoffKeySchema = z
+  .object({
+    name: z.string().min(1),
+    sourcePath: z.string().min(1),
+    description: z.string().min(1),
+    targetEndpoints: z.array(SemanticHandoffTargetSchema).default([]),
+    evidenceRefs: z.array(EvidenceRefSchema).min(1),
+  })
+  .strict();
+
+export const SemanticMeasureInterpretationSchema = z
+  .object({
+    name: z.string().min(1),
+    path: z.string().min(1).optional(),
+    meaning: z.string().min(1),
+    safeUse: z.string().min(1).optional(),
+    unsafeUse: z.string().min(1).optional(),
+    dashboardWarning: z.string().min(1).optional(),
+    evidenceRefs: z.array(EvidenceRefSchema).min(1),
+  })
+  .strict();
+
+export const SemanticRecommendedFollowupSchema = z
+  .object({
+    trigger: z.string().min(1),
+    nextSlug: z.string().min(1),
+    reason: z.string().min(1),
+    requestMapping: z.record(z.string(), z.string()).default({}),
+    evidenceRefs: z.array(EvidenceRefSchema).min(1),
+  })
+  .strict();
+
+export const SemanticAffordancesSchema = z
+  .object({
+    handoffKeys: z.array(SemanticHandoffKeySchema).default([]),
+    measureInterpretations: z.array(SemanticMeasureInterpretationSchema).default([]),
+    recommendedFollowups: z.array(SemanticRecommendedFollowupSchema).default([]),
+  })
+  .strict()
+  .default({
+    handoffKeys: [],
+    measureInterpretations: [],
+    recommendedFollowups: [],
+  });
+
 export const EndpointArtifactSchema = z
   .object({
     schemaVersion: z.literal(SEMANTIC_PROFILE_SCHEMA_VERSION),
@@ -265,6 +318,7 @@ export const EndpointArtifactSchema = z
         risks: z.array(BehaviorNoteSchema).default([]),
       })
       .strict(),
+    semanticAffordances: SemanticAffordancesSchema,
   })
   .strict();
 
@@ -332,6 +386,10 @@ export type EndpointArtifact = z.infer<typeof EndpointArtifactSchema>;
 export type SemanticArtifact = z.infer<typeof SemanticArtifactSchema>;
 export type FieldFact = z.infer<typeof FieldFactSchema>;
 export type RequestValidationWarning = z.infer<typeof RequestValidationWarningSchema>;
+export type SemanticAffordances = z.infer<typeof SemanticAffordancesSchema>;
+export type SemanticHandoffKey = z.infer<typeof SemanticHandoffKeySchema>;
+export type SemanticMeasureInterpretation = z.infer<typeof SemanticMeasureInterpretationSchema>;
+export type SemanticRecommendedFollowup = z.infer<typeof SemanticRecommendedFollowupSchema>;
 
 export function validateEvidenceRecord(data: unknown) {
   return EvidenceRecordSchema.parse(data);

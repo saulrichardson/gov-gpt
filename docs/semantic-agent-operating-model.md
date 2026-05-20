@@ -35,7 +35,8 @@ The control surface is the artifact contract plus validation and story gates:
   returns a structured repair report.
 - Story agent
   Uses the MCP like a downstream coding agent: discovery, analysis packet,
-  request template, validation, live call, evidence, and interpretation.
+  request template, validation, live call, evidence, interpretation, and
+  reusable semantic learning.
 - Frontier suite
   Runs harder story questions and emits a repair queue.
 
@@ -66,7 +67,37 @@ Validation alone is not completion.
 - measure reconciliation and lifetime-versus-period meaning
 - sample-versus-full-population boundaries
 - async/export boundaries
+- semantic affordances such as handoff keys, measure interpretations, and
+  recommended follow-ups when downstream agents need structured handles
 - contradictions and risky-but-valid request patterns
+
+## Exploratory MCP Learning
+
+Story agents are expected to behave like black-box MCP users. They should answer
+the analysis question as far as the MCP allows, then report what the MCP taught
+them that should generalize beyond that one story.
+
+Every story report distinguishes:
+
+- the narrative story and live values observed in the run
+- MCP gaps that blocked or weakened the story
+- `generalizableLearnings`, such as handoff, request-construction,
+  response-shape, measure-interpretation, dashboard-safety, workflow, or
+  evidence-gap lessons
+- `runtimeAffordanceRequests`, where the bundle may already know the meaning but
+  the MCP should expose it through generic structured behavior
+- repair tasks that a repair agent can execute against one or more semantic
+  bundles
+
+If meaning exists only in prose, joins, workflows, or caveats, the first repair
+should normally be a `semantic_affordance` bundle task that declares that meaning
+in `endpoint.json.semanticAffordances`. Runtime affordance requests are reserved
+for cases where the bundle already declares the affordance and the MCP fails to
+present it generically.
+
+This keeps the loop agentic. The story agent discovers the gap by using the MCP;
+the repair or synthesis agent turns the learning into durable bundle content or
+generic runtime affordances.
 
 ## Commands
 
