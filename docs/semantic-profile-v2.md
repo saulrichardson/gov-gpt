@@ -27,7 +27,7 @@ usage.md
 - provenance sources
 - request facts, including nested body/query/path fields
 - request templates
-- request validation warnings for valid but risky near-miss calls
+- request warnings for valid but risky calls, used sparingly
 - response shape, response fields, and pagination facts
 - contradictions, quirks, gaps, and risks
 - semantic affordances: handoff keys, measure interpretations, and recommended
@@ -93,7 +93,6 @@ Each line is an evidence record. Evidence sources can include:
 - derived checks
 - reviewer reports
 - MCP story gates
-- retired artifacts used as historical context
 
 Every non-trivial claim in `endpoint.json` and `semantics.json` should cite one
 or more evidence ids. If evidence is incomplete, keep the field and mark it
@@ -129,8 +128,10 @@ scripts/mcp/bin/validate-semantic-bundles
 ```
 
 Validation checks schema shape, evidence references, availability evidence,
-contradiction policy, and usage consistency. It is a generic gate, not a
-semantic author.
+contradiction policy, basic request preflight, and usage consistency. It is a
+generic gate, not a semantic author or exhaustive API rule engine. Endpoint
+facts that are useful but not preflight-blocking should remain as usage
+guidance, caveats, behavior notes, and evidence-backed uncertainty.
 
 ## Promotion Criteria
 

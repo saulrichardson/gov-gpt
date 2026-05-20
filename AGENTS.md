@@ -20,10 +20,15 @@ The primary semantic workflow is the Agents SDK implementation in
   filesystem, environment, and network access when running inside the configured
   workflow.
 - Deterministic code is appropriate as a generic gate: schema validation,
-  evidence-link checking, MCP loading, request validation, smoke tests, story
-  gates, and promotion checks.
+  evidence-link checking, MCP loading, basic request preflight, smoke tests,
+  story gates, and promotion checks.
 - Deterministic code is not appropriate when it hard-codes endpoint-specific
   semantic answers that a general agent should discover and justify.
+- Prefer semantic guidance over expanding validation. The MCP should preserve
+  rich request guidance, caveats, examples, and evidence, then let coding agents
+  recover from visible USAspending API errors. Add new generic validation
+  machinery only after repeated agent/story failures prove guidance is not
+  enough.
 - Producer completion should happen inside the agent loop. Validation alone is
   not completion; before promotion/finalization the producer must call
   `run_self_story_gate`, then inspect the declared output directory and call
@@ -108,9 +113,10 @@ surface options instead of silently choosing.
   call `repair_validate_semantic_bundle`, and return a structured repair report;
   remaining nice-to-have work belongs in unresolved findings or next-review
   focus, not more open-ended edits.
-- Use generic artifact-declared validation warnings for valid but risky
-  near-miss requests. Do not add endpoint-specific runtime branches when a
-  `request.validationWarnings` rule can express the guardrail in the bundle.
+- Use `request.validationWarnings` sparingly for valid but risky calls where a
+  warning materially helps request construction. Prefer usage prose, caveats,
+  behavior notes, examples, and API-error recovery over adding new runtime
+  validation constraints.
 - Treat analysis affordances as first-class semantic content: opaque code
   labels or lookup paths, row-order/ranking guarantees, measure reconciliation,
   lifetime-versus-period meaning, sample-versus-full-population boundaries,
@@ -120,8 +126,8 @@ surface options instead of silently choosing.
   measure interpretations, and recommended follow-ups.
 - Preserve documented-but-unprobed fields with explicit statuses; do not drop
   them merely because they are absent from a generated template or probe.
-- Record contradictions, semantic caveats, and request-validation warnings as
-  first-class information.
+- Record contradictions, semantic caveats, API failure modes, and any
+  request-validation warnings as first-class information.
 - Story/review repair tasks should include `targetSlug` when one endpoint bundle
   owns the repair so frontier runs can produce a directly usable repair queue.
 - Story reports should include generalizable learnings and runtime affordance

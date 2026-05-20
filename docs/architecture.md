@@ -71,7 +71,7 @@ semantic bundle. Deterministic code provides generic gates only:
 - schema validation
 - evidence-reference checks
 - availability evidence checks
-- request preflight validation
+- basic request preflight validation
 - MCP loading and smoke checks
 - self-story gates
 - promotion checks
@@ -109,6 +109,12 @@ It also registers semantic resources under `usaspending://semantic/...`.
 
 The runtime must not hard-code endpoint-specific semantics. Endpoint-specific
 meaning belongs in the bundle.
+
+Request preflight is intentionally limited. It should catch generic shape,
+location, required-field, enum, and safety issues, but it should not attempt to
+encode every endpoint-specific API quirk. Richer request knowledge belongs in
+usage guidance, caveats, examples, evidence, and recoverable API-error handling
+unless repeated story-agent failures justify a new generic gate.
 
 `callEndpoint` returns a semantic execution receipt in addition to the raw live
 response. The receipt is generated only from agent-authored bundle declarations:

@@ -15,7 +15,8 @@ The codebase should therefore separate three responsibilities:
 - **Agent authorship**: model-owned investigation, probing, reconciliation, and
   business-semantic writing.
 - **Generic gates**: schema validation, evidence-link checks, MCP loading,
-  request validation, self-story gates, smoke tests, and frontier story gates.
+  basic request preflight, self-story gates, smoke tests, and frontier story
+  gates.
 - **Runtime execution**: deterministic MCP tools that expose semantic context and
   make scoped USAspending calls.
 - **Exploratory learning**: story agents use the MCP as written, discover
@@ -92,6 +93,13 @@ Validation should be strict, generic, and artifact-focused:
 Do not weaken validators to make one generated bundle pass. Fix the bundle or
 surface the blocker.
 
+At the same time, do not turn the MCP into an endpoint-specific rule engine.
+The default balance is semantic guidance first: preserve request caveats,
+known API failure modes, examples, and evidence in the bundle; let coding agents
+make scoped calls and recover from visible USAspending errors. Add new generic
+runtime validation only when repeated story-agent failures show that guidance is
+not enough.
+
 ## Code Organization Rules
 
 - Put semantic production logic in `scripts/agents`.
@@ -111,7 +119,7 @@ questions:
 - Can another agent use the MCP bundle to ask and answer an interesting
   USAspending question?
 - Does validation catch a real class of artifact or MCP failures without
-  encoding endpoint-specific answers?
+  encoding endpoint-specific answers or replacing agent reasoning?
 - Does the runtime expose the semantic context needed to construct valid,
   scoped API calls?
 

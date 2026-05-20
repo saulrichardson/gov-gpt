@@ -35,8 +35,8 @@ The control surface is the artifact contract plus validation and story gates:
   returns a structured repair report.
 - Story agent
   Uses the MCP like a downstream coding agent: discovery, analysis packet,
-  request template, validation, live call, evidence, interpretation, and
-  reusable semantic learning.
+  request template, basic preflight, live call, recoverable API-error handling,
+  evidence, interpretation, and reusable semantic learning.
 - Frontier suite
   Runs harder story questions and emits a repair queue.
 
@@ -57,6 +57,10 @@ The control surface is the artifact contract plus validation and story gates:
 
 Validation alone is not completion.
 
+Probe coverage is purposeful, not exhaustive. The producer should validate the
+core semantic contract and preserve uncertainty for unprobed branches instead
+of trying to enumerate every API combination.
+
 ## What The Agent Must Preserve
 
 - documented fields with explicit statuses, even if unprobed
@@ -70,6 +74,7 @@ Validation alone is not completion.
 - semantic affordances such as handoff keys, measure interpretations, and
   recommended follow-ups when downstream agents need structured handles
 - contradictions and risky-but-valid request patterns
+- visible API failure modes that help a future coding agent recover
 
 ## Exploratory MCP Learning
 
@@ -98,6 +103,11 @@ present it generically.
 This keeps the loop agentic. The story agent discovers the gap by using the MCP;
 the repair or synthesis agent turns the learning into durable bundle content or
 generic runtime affordances.
+
+Prefer bundle guidance over new validation machinery. A story agent is allowed
+to hit a documented API error, inspect it, and repair the request. Promote a
+new generic runtime validation rule only when the same avoidable failure keeps
+blocking agents despite clear bundle guidance.
 
 ## Commands
 

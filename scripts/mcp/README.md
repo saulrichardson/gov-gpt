@@ -38,7 +38,8 @@ discovery, inspection, validation, bounded calls, evidence, and usage guidance.
 - `usaspending.listRequestFields`
   Return request facts, optionally filtered by status.
 - `usaspending.validateRequest`
-  Preflight a proposed request against the semantic endpoint facts.
+  Preflight the basic shape of a proposed request against the semantic endpoint
+  facts.
 - `usaspending.explainValidationError`
   Explain validation failures or warnings using the endpoint artifact.
 - `usaspending.callEndpoint`
@@ -74,16 +75,18 @@ validity, evidence links, availability evidence, and usage-guide consistency.
 
 `smoke-client` starts the MCP over stdio, verifies that the semantic-only tool
 surface is present, verifies that per-endpoint raw wrapper tools are absent, and
-exercises discovery, analysis packets, and request validation. Set
+exercises discovery, analysis packets, and basic request preflight. Set
 `SMOKE_CALL_API=1` to also execute a small live call through
 `usaspending.callEndpoint`.
 
 ## Design Boundary
 
 The runtime is intentionally generic. It may validate schemas, load bundles,
-preflight requests, enforce host allowlists, and report tool errors. It should
-not hard-code endpoint-specific business semantics. Endpoint-specific meaning
-belongs in the agent-authored semantic bundle.
+preflight basic request shape, enforce host allowlists, and report tool errors.
+It should not hard-code endpoint-specific business semantics or become an
+exhaustive API rule engine. Endpoint-specific meaning belongs in the
+agent-authored semantic bundle, and coding agents may use visible API errors to
+repair requests when docs, source, and live behavior disagree.
 
 When `endpoint.json` declares `semanticAffordances`, the runtime can expose them
 structurally. For example, a bundle may declare that a raw response path is a

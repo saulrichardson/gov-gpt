@@ -13,10 +13,11 @@ A downstream coding agent should be able to:
    dimensions, joins, caveats, and workflows.
 3. Construct a bounded valid request from evidence-backed templates and field
    facts.
-4. Validate the request before sending it.
+4. Preflight the basic request shape and inspect semantic guidance.
 5. Make a scoped live call.
-6. Interpret the response in business terms.
-7. Inspect evidence behind non-trivial claims.
+6. Recover from visible API errors when docs/source/live behavior disagree.
+7. Interpret the response in business terms.
+8. Inspect evidence behind non-trivial claims.
 
 ## Runtime Tools
 
@@ -46,7 +47,7 @@ Every promoted endpoint must include:
 - response fields with statuses and evidence
 - availability status and live evidence when marked callable
 - request templates that are safe and bounded
-- validation warnings for valid but risky calls
+- request guidance and sparing validation warnings for valid but risky calls
 - business purpose and analytical grain
 - entities, measures, dimensions, workflows, and caveats
 - evidence records for material claims
@@ -54,7 +55,8 @@ Every promoted endpoint must include:
 
 ## What Makes It Valuable
 
-The MCP adds value when it prevents errors a thin wrapper would allow:
+The MCP adds value when it helps an agent prevent, recognize, or recover from
+errors a thin wrapper would allow:
 
 - using a display award id where a generated internal id is required
 - confusing lifetime award amounts with period activity

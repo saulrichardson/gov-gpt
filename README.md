@@ -56,8 +56,9 @@ flowchart LR
    request fields mean, what the response measures represent, what caveats
    matter, and what evidence backs those claims.
 4. Generic gates check the profile without hard-coding endpoint-specific
-   answers. The gates validate structure, evidence links, request behavior, and
-   whether another agent can use the MCP surface to complete a realistic story.
+   answers. The gates validate structure, evidence links, basic request shape,
+   and whether another agent can use the MCP surface to complete a realistic
+   story.
 5. Story agents use the promoted MCP as black-box downstream users and report
    generalizable semantic learnings: handoff fragility, measure interpretation,
    dashboard safety, response shape, request construction, workflow sequencing,
@@ -79,7 +80,7 @@ question in a grounded way:
 - understand the endpoint's business purpose and analytical grain
 - see which request fields are required, optional, risky, or poorly supported
 - distinguish documented facts from observed facts and known contradictions
-- build a valid request before calling the live API
+- build or repair a valid request before or after a scoped live API call
 - inspect evidence for material claims
 - execute scoped calls and interpret the response in context
 - receive structured handoff values, measure warnings, and recommended follow-up
@@ -117,8 +118,10 @@ The model owns endpoint understanding. It should investigate, reconcile, and
 explain what the endpoint means.
 
 Deterministic code owns the contract. It should validate structure, check
-evidence, enforce request safety, load the MCP surface, and fail loudly when the
-profile is not good enough.
+evidence, enforce basic request safety, load the MCP surface, and fail loudly
+when the profile is not good enough. It should not try to pre-encode every
+endpoint-specific API quirk; rich guidance and recoverable live API errors are
+part of the agentic workflow.
 
 Retired raw-profile artifacts are not part of the forward product, accepted
 evidence model, or compatibility target. The orchestration framework can change;
@@ -130,6 +133,8 @@ the evidence-backed semantic contract is what needs to survive.
 - Treat evidence as part of the product.
 - Preserve uncertainty instead of hiding it.
 - Keep endpoint-specific meaning out of validators and runtime shortcuts.
+- Prefer semantic guidance and API-error recovery over expanding validation
+  rules prematurely.
 - Make the MCP useful for real spending questions, not just successful test
   calls.
 - Prefer explicit gaps and contradictions over false simplicity.
